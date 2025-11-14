@@ -1,0 +1,8 @@
+{
+  "name": "ChefStack",
+  "description": "An MVP for a professional kitchen application focused on recipe management, costing, and HACCP for chefs in Greece and the EU.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}

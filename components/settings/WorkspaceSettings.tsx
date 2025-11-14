@@ -1,0 +1,28 @@
+import React from 'react';
+import { InventoryLocation, HaccpItem } from '../../types';
+import InventoryLocationsManager from './InventoryLocationsManager';
+import HaccpItemsManager from './HaccpItemsManager';
+
+interface WorkspaceSettingsProps {
+    inventoryLocations: InventoryLocation[];
+    setInventoryLocations: React.Dispatch<React.SetStateAction<InventoryLocation[]>>;
+    haccpItems: HaccpItem[];
+    setHaccpItems: React.Dispatch<React.SetStateAction<HaccpItem[]>>;
+}
+
+const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = ({ inventoryLocations, setInventoryLocations, haccpItems, setHaccpItems }) => {
+    return (
+        <div className="max-w-4xl mx-auto space-y-8">
+            <InventoryLocationsManager 
+                inventoryLocations={inventoryLocations}
+                setInventoryLocations={setInventoryLocations}
+            />
+            <HaccpItemsManager
+                haccpItems={haccpItems}
+                setHaccpItems={setHaccpItems}
+            />
+        </div>
+    );
+};
+
+export default WorkspaceSettings;
