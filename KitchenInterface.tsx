@@ -34,6 +34,7 @@ import InvoiceImportModal from './components/inventory/InvoiceImportModal';
 import InvoiceConfirmationModal from './components/inventory/InvoiceConfirmationModal';
 import InventoryHistoryView from './components/inventory/InventoryHistoryView';
 import UserManualView from './components/manual/UserManualView';
+import ApiKeyPromptModal from './components/common/ApiKeyPromptModal';
 
 
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -131,6 +132,39 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
       'Sous Chef': ['manage_recipes', 'manage_inventory', 'manage_shifts', 'manage_waste'],
       'Cook': [],
     });
+    
+    // State for API Key Prompt
+    const [isApiKeyPromptOpen, setIsApiKeyPromptOpen] = useState(false);
+    const [actionToResume, setActionToResume] = useState<(() => Promise<void> | void) | null>(null);
+
+    const withApiKeyCheck = async (action: () => Promise<void> | void) => {
+        try {
+            if (await (window as any).aistudio.hasSelectedApiKey()) {
+                action();
+            } else {
+                setActionToResume(() => action);
+                setIsApiKeyPromptOpen(true);
+            }
+        } catch (e) {
+            console.error("aistudio API check failed. This might happen in environments where it's not provided.", e);
+            alert("A Google API key is required for this feature, but the key selection mechanism is not available in this environment.");
+        }
+    };
+
+    const handleApiKeyConfirm = async () => {
+        try {
+            await (window as any).aistudio.openSelectKey();
+            if (actionToResume) {
+                await actionToResume();
+            }
+        } catch (e) {
+            console.error("Failed to open API key selection:", e);
+            alert("Could not open the API key selection dialog.");
+        } finally {
+            setIsApiKeyPromptOpen(false);
+            setActionToResume(null);
+        }
+    };
 
 
     const { t, language, setLanguage } = useTranslation();
@@ -525,6 +559,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                     allRecipes={recipes}
                     onSave={handleSaveRecipe}
                     onCancel={() => { setIsCreatingRecipe(false); setRecipeToEdit(null); }}
+                    withApiKeyCheck={withApiKeyCheck}
                 />;
             }
 
@@ -552,6 +587,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                             onBookCategorySelect={handleBookCategorySelect}
                             onGenerateBook={handleGenerateBook}
                             rolePermissions={rolePermissions}
+                            withApiKeyCheck={withApiKeyCheck}
                         />
                     </div>
                     <div className={`h-full lg:col-span-3 ${!selectedRecipeId ? 'hidden lg:flex' : 'flex'}`}>
@@ -568,6 +604,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                                 currentUserRole={currentUserRole}
                                 language={language}
                                 rolePermissions={rolePermissions}
+                                withApiKeyCheck={withApiKeyCheck}
                             />
                         ) : (
                              <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl flex items-center justify-center h-full text-light-text-secondary dark:text-dark-text-secondary p-6">
@@ -632,6 +669,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                     onTransfer={handleInventoryTransfer}
                     onImportInvoice={() => setIsInvoiceImportOpen(true)}
                     rolePermissions={rolePermissions}
+                    withApiKeyCheck={withApiKeyCheck}
                  />;
             case 'inventory_history':
                 return <InventoryHistoryView
@@ -671,6 +709,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                     allTeams={allTeams}
                     currentTeamId={currentTeamId}
                     rolePermissions={rolePermissions}
+                    withApiKeyCheck={withApiKeyCheck}
                 />;
             case 'labels':
                 return <LabelView recipes={recipes} menus={menus} />;
@@ -704,7 +743,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                     setAllChannels={setAllChannels}
                 />;
             case 'user_manual':
-                return <UserManualView />;
+                return <UserManualView withApiKeyCheck={withApiKeyCheck} />;
             default:
                 return <div>View not implemented</div>;
         }
@@ -778,6 +817,14 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                     onRecipeParsed={handleStartImportedRecipe}
                 />
             )}
+            <ApiKeyPromptModal
+                isOpen={isApiKeyPromptOpen}
+                onClose={() => {
+                    setIsApiKeyPromptOpen(false);
+                    setActionToResume(null);
+                }}
+                onConfirm={handleApiKeyConfirm}
+            />
         </div>
     );
 };

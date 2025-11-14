@@ -11,7 +11,8 @@
   "dependencies": {
     "@google/genai": "1.28.0",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "@supabase/supabase-js": "2.44.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

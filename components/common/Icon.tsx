@@ -56,7 +56,8 @@ export type IconName =
   | 'history'
   | 'help-circle'
   | 'thumbs-up'
-  | 'thumbs-down';
+  | 'thumbs-down'
+  | 'key';
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -117,6 +118,7 @@ const ICONS: Record<IconName, React.ReactNode> = {
     'help-circle': <><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></>,
     'thumbs-up': <><path d="M7 10v12" /><path d="M18 10V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v6H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2.76a2 2 0 0 1 1.79 1.11L12 22h7a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-3z" /></>,
     'thumbs-down': <><path d="M17 14V2" /><path d="M6 14v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-2.76a2 2 0 0 1-1.79-1.11L12 2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1z" /></>,
+    'key': <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />,
   };
 
 export const Icon: React.FC<IconProps> = ({ name, className, ...props }) => {

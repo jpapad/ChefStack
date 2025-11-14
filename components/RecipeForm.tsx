@@ -9,6 +9,7 @@ interface RecipeFormProps {
   allRecipes: Recipe[];
   onSave: (recipe: Omit<Recipe, 'id'> | Recipe) => void;
   onCancel: () => void;
+  withApiKeyCheck: (action: () => void) => void;
 }
 
 const initialRecipeState: Omit<Recipe, 'id'> = {
@@ -29,7 +30,7 @@ const initialRecipeState: Omit<Recipe, 'id'> = {
   yield: { quantity: 1, unit: 'kg' }
 };
 
-const RecipeForm: React.FC<RecipeFormProps> = ({ onSave, onCancel, recipeToEdit, allRecipes }) => {
+const RecipeForm: React.FC<RecipeFormProps> = ({ onSave, onCancel, recipeToEdit, allRecipes, withApiKeyCheck }) => {
   const [recipe, setRecipe] = useState(recipeToEdit || initialRecipeState);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAiImageModalOpen, setIsAiImageModalOpen] = useState(false);
@@ -108,6 +109,10 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSave, onCancel, recipeToEdit,
         console.error("Could not parse image data URL for editing", e);
     }
     return null;
+  };
+  
+  const openAiImageModal = () => {
+    withApiKeyCheck(() => setIsAiImageModalOpen(true));
   };
 
 
@@ -252,7 +257,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSave, onCancel, recipeToEdit,
                               <div className="relative group w-full h-full">
                                   <img src={recipe.imageUrl} alt="Προεπισκόπηση" className="w-full h-full object-contain rounded-md" />
                                   <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
-                                       <button type="button" onClick={() => setIsAiImageModalOpen(true)} title="Edit with AI" className="text-white p-2 rounded-full bg-purple-600 hover:bg-purple-700 transition-colors">
+                                       <button type="button" onClick={openAiImageModal} title="Edit with AI" className="text-white p-2 rounded-full bg-purple-600 hover:bg-purple-700 transition-colors">
                                           <Icon name="sparkles" className="w-6 h-6" />
                                       </button>
                                       <button type="button" onClick={handleRemoveImage} title="Remove image" className="text-white p-2 rounded-full bg-red-600 hover:bg-red-700 transition-colors">
@@ -269,7 +274,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSave, onCancel, recipeToEdit,
                                       </button>
                                   </p>
                                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">ή</p>
-                                   <button type="button" onClick={() => setIsAiImageModalOpen(true)} className="mt-2 flex items-center gap-2 text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900 lift-on-hover">
+                                   <button type="button" onClick={openAiImageModal} className="mt-2 flex items-center gap-2 text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900 lift-on-hover">
                                       <Icon name="sparkles" className="w-4 h-4"/> Δημιουργία με AI
                                    </button>
                               </div>

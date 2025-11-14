@@ -4,6 +4,10 @@ import { Icon } from '../common/Icon';
 import { GoogleGenAI } from '@google/genai';
 import AIResponseModal from '../common/AIResponseModal';
 
+interface UserManualViewProps {
+    withApiKeyCheck: (action: () => Promise<void> | void) => void;
+}
+
 type Chapter = {
   id: string;
   titleKey: string;
@@ -130,7 +134,7 @@ const ManualContent: FC = () => {
     );
 }
 
-const UserManualView: React.FC = () => {
+const UserManualView: React.FC<UserManualViewProps> = ({ withApiKeyCheck }) => {
   const { t } = useTranslation();
   const [aiSearchQuery, setAiSearchQuery] = useState('');
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -143,44 +147,48 @@ const UserManualView: React.FC = () => {
     ).join('\n\n');
   }, [t]);
 
-  const handleAiSearch = async (e: React.FormEvent) => {
+  const handleAiSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!aiSearchQuery.trim()) return;
 
-    setIsAiModalOpen(true);
-    setIsAiLoading(true);
-    setAiResponse('');
+    const searchAction = async () => {
+        setIsAiModalOpen(true);
+        setIsAiLoading(true);
+        setAiResponse('');
 
-    try {
-        if (!process.env.API_KEY) {
-            throw new Error("API_KEY is not configured.");
+        try {
+            if (!process.env.API_KEY) {
+                throw new Error("API_KEY is not configured.");
+            }
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+            const prompt = `You are a helpful assistant for the ChefStack application. Based ONLY on the following user manual content, answer the user's question concisely and in Greek. If the answer isn't in the manual, say that you don't have that information.
+            
+    User Question: "${aiSearchQuery}"
+
+    Manual Content:
+    ---
+    ${fullManualText}
+    ---`;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+            });
+            
+            setAiResponse(response.text);
+
+        } catch (error: any) {
+            console.error("AI search failed:", error);
+            const errorMessage = error.message.includes("API_KEY") 
+                ? "Σφάλμα διαμόρφωσης: Το κλειδί API δεν έχει ρυθμιστεί. Παρακαλώ επικοινωνήστε με την υποστήριξη."
+                : t('error_generic');
+            setAiResponse(errorMessage);
+        } finally {
+            setIsAiLoading(false);
         }
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-        const prompt = `You are a helpful assistant for the ChefStack application. Based ONLY on the following user manual content, answer the user's question concisely and in Greek. If the answer isn't in the manual, say that you don't have that information.
-        
-User Question: "${aiSearchQuery}"
+    };
 
-Manual Content:
----
-${fullManualText}
----`;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-        
-        setAiResponse(response.text);
-
-    } catch (error: any) {
-        console.error("AI search failed:", error);
-        const errorMessage = error.message.includes("API_KEY") 
-            ? "Σφάλμα διαμόρφωσης: Το κλειδί API δεν έχει ρυθμιστεί. Παρακαλώ επικοινωνήστε με την υποστήριξη."
-            : t('error_generic');
-        setAiResponse(errorMessage);
-    } finally {
-        setIsAiLoading(false);
-    }
+    withApiKeyCheck(searchAction);
   };
 
 

@@ -4,6 +4,7 @@ import { User, Team, View, Recipe, IngredientCost, Workstation, PrepTask, HaccpL
 import AuthView from './components/auth/AuthView';
 import KitchenInterface from './KitchenInterface';
 import { api } from './services/api';
+import { supabase } from './services/supabaseClient';
 import { Icon } from './components/common/Icon';
 import { LanguageProvider, useTranslation } from './i18n';
 
@@ -35,9 +36,10 @@ const AppContent: React.FC = () => {
   const [allChannels, setAllChannels] = useState<Channel[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDataAndSession = async () => {
       setIsLoading(true);
       try {
+        // Fetch all app data first (will return mock data if supabase is not configured)
         const data = await api.fetchAllData();
         setAllUsers(data.users || []);
         setAllTeams(data.teams || []);
@@ -58,18 +60,69 @@ const AppContent: React.FC = () => {
         setShifts(data.shifts || []);
         setShiftSchedules(data.shiftSchedules || []);
         setAllChannels(data.channels || []);
+        
+        // Then check for an active session if supabase is real
+        if (supabase) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              const foundUser = data.users.find(u => u.id === session.user.id);
+              if (foundUser) {
+                setCurrentUser(foundUser);
+                if (foundUser.memberships.length > 0) {
+                    const lastUsedTeam = localStorage.getItem('currentTeamId');
+                    const lastUsedTeamId = lastUsedTeam ? JSON.parse(lastUsedTeam) : null;
+                    if (lastUsedTeamId && foundUser.memberships.some(m => m.teamId === lastUsedTeamId)) {
+                        setCurrentTeamId(lastUsedTeamId);
+                    } else {
+                        setCurrentTeamId(foundUser.memberships[0].teamId);
+                    }
+                } else {
+                    setCurrentTeamId(null);
+                }
+              }
+            }
+        } else {
+            // If no supabase, we're using mock data. Auto-login the first mock user for a seamless experience.
+            const mockUser = data.users[0];
+            if (mockUser) {
+                setCurrentUser(mockUser);
+                setCurrentTeamId(mockUser.memberships[0]?.teamId || null);
+            }
+        }
       } catch (error) {
-        console.error("Failed to fetch initial data", error);
+        console.error("Failed to fetch initial data or session", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchData();
+    fetchDataAndSession();
   }, []);
 
-  const handleAuthSuccess = (email: string, pass: string): boolean => {
-    // Password check is ignored for this simulation
-    const foundUser = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const handleAuthSuccess = async (email: string, pass: string): Promise<boolean> => {
+    if (!supabase) {
+      // Mock login for offline/demo mode
+      const foundUser = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (foundUser) { // In a real app, you'd check the password
+        setCurrentUser(foundUser);
+        if (foundUser.memberships.length > 0) {
+          setCurrentTeamId(foundUser.memberships[0].teamId);
+        } else {
+          setCurrentTeamId(null);
+        }
+        return true;
+      }
+      return false;
+    }
+    
+    // Real Supabase login
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+
+    if (error || !data.user) {
+        console.error('Login failed:', error?.message);
+        return false;
+    }
+
+    const foundUser = allUsers.find(u => u.id === data.user.id);
     if (foundUser) {
       setCurrentUser(foundUser);
       if (foundUser.memberships.length > 0) {
@@ -91,10 +144,10 @@ const AppContent: React.FC = () => {
   const handleSignUp = async (name: string, email: string, pass: string): Promise<{ success: boolean; message: string }> => {
     try {
         const { user, team } = await api.signUp(name, email, pass);
-        // Update global state
+        // On signup, Supabase auth automatically signs the user in (or we simulate it).
+        // We manually update our local state for immediate feedback.
         setAllUsers(prev => [...prev, user]);
         setAllTeams(prev => [...prev, team]);
-        // Log the new user in
         setCurrentUser(user);
         setCurrentTeamId(team.id);
         return { success: true, message: t('signup_success') };
@@ -103,7 +156,11 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (supabase) {
+        await supabase.auth.signOut();
+    }
+    // Clear local state for both real and mock scenarios
     setCurrentUser(null);
     setCurrentTeamId(null);
   };

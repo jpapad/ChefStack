@@ -21,11 +21,12 @@ interface RecipeDetailProps {
   currentUserRole?: Role;
   rolePermissions: RolePermissions;
   language: Exclude<LanguageMode, 'both'>;
+  withApiKeyCheck: (action: () => void) => void;
 }
 
 type Tab = 'ingredients' | 'steps' | 'allergens' | 'costing';
 
-const RecipeDetail: React.FC<RecipeDetailProps> = ({ recipe, allRecipes, ingredientCosts, onBack, onEdit, onSaveRecipe, onDelete, onSelectRecipe, currentUserRole, rolePermissions, language }) => {
+const RecipeDetail: React.FC<RecipeDetailProps> = ({ recipe, allRecipes, ingredientCosts, onBack, onEdit, onSaveRecipe, onDelete, onSelectRecipe, currentUserRole, rolePermissions, language, withApiKeyCheck }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('ingredients');
   const [servings, setServings] = useState(recipe.servings);
@@ -251,10 +252,10 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({ recipe, allRecipes, ingredi
               </div>
                {canManage && (
                 <div className="mt-4 pt-4 border-t border-gray-200/80 dark:border-gray-700/80 flex items-center gap-2">
-                    <button onClick={() => handleAiAction('improve')} className="flex items-center gap-2 text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900 lift-on-hover">
+                    <button onClick={() => withApiKeyCheck(() => handleAiAction('improve'))} className="flex items-center gap-2 text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900 lift-on-hover">
                         <Icon name="sparkles" className="w-4 h-4"/> {t('ai_improve')}
                     </button>
-                    <button onClick={() => handleAiAction('translate')} className="flex items-center gap-2 text-sm font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900 lift-on-hover">
+                    <button onClick={() => withApiKeyCheck(() => handleAiAction('translate'))} className="flex items-center gap-2 text-sm font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900 lift-on-hover">
                         <Icon name="globe" className="w-4 h-4"/> {t('ai_translate')}
                     </button>
                 </div>

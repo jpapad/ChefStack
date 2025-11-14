@@ -26,6 +26,7 @@ interface RecipeListProps {
   onBookSelect: (id: string) => void;
   onBookCategorySelect: (category: RecipeCategoryKey | 'All', isSelected: boolean) => void;
   onGenerateBook: () => void;
+  withApiKeyCheck: (action: () => void) => void;
 }
 
 const RecipeList: React.FC<RecipeListProps> = ({
@@ -48,7 +49,8 @@ const RecipeList: React.FC<RecipeListProps> = ({
   bookSelectedIds,
   onBookSelect,
   onBookCategorySelect,
-  onGenerateBook
+  onGenerateBook,
+  withApiKeyCheck
 }) => {
     const { t } = useTranslation();
 
@@ -82,7 +84,7 @@ const RecipeList: React.FC<RecipeListProps> = ({
                 {canManage && (
                     <>
                     <button
-                        onClick={onStartImport}
+                        onClick={() => withApiKeyCheck(onStartImport)}
                         className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors lift-on-hover"
                     >
                         <Icon name="link" className="w-5 h-5" />

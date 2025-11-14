@@ -18,6 +18,7 @@ interface MenuViewProps {
   rolePermissions: RolePermissions;
   allTeams: Team[];
   currentTeamId: string;
+  withApiKeyCheck: (action: () => void) => void;
 }
 
 const MenuView: React.FC<MenuViewProps> = ({
@@ -29,7 +30,8 @@ const MenuView: React.FC<MenuViewProps> = ({
   workstations,
   currentUserRole,
   rolePermissions,
-  currentTeamId
+  currentTeamId,
+  withApiKeyCheck
 }) => {
   const [selectedMenuId, setSelectedMenuId] = useState<string | null>(menus[0]?.id || null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -144,6 +146,7 @@ const MenuView: React.FC<MenuViewProps> = ({
             onEdit={handleOpenForm}
             onDelete={setMenuToDelete}
             canManage={canManage}
+            withApiKeyCheck={withApiKeyCheck}
           />
         </div>
         <div className={`h-full ${!selectedMenuId ? 'hidden lg:flex' : 'lg:col-span-2'}`}>

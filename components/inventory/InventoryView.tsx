@@ -21,9 +21,10 @@ interface InventoryViewProps {
   rolePermissions: RolePermissions;
   onTransfer: (itemId: string, fromLocationId: string, toLocationId: string, quantity: number) => void;
   onImportInvoice: () => void;
+  withApiKeyCheck: (action: () => void) => void;
 }
 
-const InventoryView: React.FC<InventoryViewProps> = ({ inventory, setInventory, suppliers, ingredientCosts, selectedItemId, onSelectItem, onBack, currentUserRole, rolePermissions, inventoryLocations, onTransfer, onImportInvoice }) => {
+const InventoryView: React.FC<InventoryViewProps> = ({ inventory, setInventory, suppliers, ingredientCosts, selectedItemId, onSelectItem, onBack, currentUserRole, rolePermissions, inventoryLocations, onTransfer, onImportInvoice, withApiKeyCheck }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
@@ -99,6 +100,7 @@ const InventoryView: React.FC<InventoryViewProps> = ({ inventory, setInventory, 
                 onDelete={handleRequestDelete}
                 canManage={canManage}
                 onImportInvoice={onImportInvoice}
+                withApiKeyCheck={withApiKeyCheck}
             />
          </div>
          <div className={`h-full ${!selectedItemId ? 'hidden lg:flex' : 'lg:col-span-2'}`}>

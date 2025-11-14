@@ -11,9 +11,10 @@ interface MenuListProps {
   onEdit: (menu: Menu) => void;
   onDelete: (menu: Menu) => void;
   canManage: boolean;
+  withApiKeyCheck: (action: () => void) => void;
 }
 
-const MenuList: React.FC<MenuListProps> = ({ menus, selectedMenuId, onSelectMenu, onAdd, onStartAICreation, onEdit, onDelete, canManage }) => {
+const MenuList: React.FC<MenuListProps> = ({ menus, selectedMenuId, onSelectMenu, onAdd, onStartAICreation, onEdit, onDelete, canManage, withApiKeyCheck }) => {
   return (
     <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-xl h-full flex flex-col">
        <div className="pb-4 border-b border-gray-200/80 dark:border-gray-700/80">
@@ -24,7 +25,7 @@ const MenuList: React.FC<MenuListProps> = ({ menus, selectedMenuId, onSelectMenu
                         <Icon name="plus" className="w-5 h-5" />
                         <span className="font-semibold text-sm">Νέο Μενού</span>
                     </button>
-                    <button onClick={onStartAICreation} className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-opacity">
+                    <button onClick={() => withApiKeyCheck(onStartAICreation)} className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-opacity">
                         <Icon name="sparkles" className="w-5 h-5" />
                         <span className="font-semibold text-sm">Δημιουργία με AI</span>
                     </button>

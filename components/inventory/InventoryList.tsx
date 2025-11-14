@@ -12,9 +12,10 @@ interface InventoryListProps {
   onDelete: (item: InventoryItem) => void;
   canManage: boolean;
   onImportInvoice: () => void;
+  withApiKeyCheck: (action: () => void) => void;
 }
 
-const InventoryList: React.FC<InventoryListProps> = ({ inventory, selectedItemId, onSelectItem, onAdd, onEdit, onDelete, canManage, onImportInvoice }) => {
+const InventoryList: React.FC<InventoryListProps> = ({ inventory, selectedItemId, onSelectItem, onAdd, onEdit, onDelete, canManage, onImportInvoice, withApiKeyCheck }) => {
   const { t } = useTranslation();
   return (
     <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-xl h-full flex flex-col">
@@ -22,7 +23,7 @@ const InventoryList: React.FC<InventoryListProps> = ({ inventory, selectedItemId
         <h2 className="text-3xl font-extrabold font-heading">Απόθεμα</h2>
          {canManage && (
             <div className="flex items-center gap-2">
-                 <button onClick={onImportInvoice} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
+                 <button onClick={() => withApiKeyCheck(onImportInvoice)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
                     <Icon name="file-up" className="w-5 h-5" />
                     <span className="font-semibold text-sm">{t('invoice_import_button')}</span>
                 </button>
