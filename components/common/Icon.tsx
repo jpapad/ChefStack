@@ -107,7 +107,7 @@ const ICONS: Record<IconName, React.ReactNode> = {
     'phone-incoming': <><polyline points="16 2 16 8 22 8" /><line x1="22" y1="16.92" x2="22" y2="16.92"/><path d="M16.92 22a2 2 0 0 1-2-2.18 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 2.11 2H5a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v0Z"/></>,
     'mic': <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /></>,
     'mic-off': <><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M12 19v4"/><path d="M12 1a3 3 0 0 0-3 3v6.34"/><path d="M9 9a3 3 0 0 0 5.12 2.12"/></>,
-    'video': <path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/>,
+    'video': <><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></>,
     'video-off': <><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M22 8v8"/><path d="m2 2 20 20"/><path d="M14 8h2a2 2 0 0 1 2 2v2"/></>,
     'send': <><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>,
     'qr-code': <><rect x="3" y="3" width="7" height="7"/><path d="M7 17v-4h4"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M17 17v-4h4"/></>,
