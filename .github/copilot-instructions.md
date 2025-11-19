@@ -2,22 +2,27 @@
 
 ## Architecture Overview
 
-**ChefStack** is a React + TypeScript kitchen management system built with Vite, Supabase, and React. The app is bilingual (Greek/English) and manages recipes, inventory, HACCP compliance, menus, staffing, and waste tracking for commercial kitchens.
+**ChefStack** is a React + TypeScript kitchen management system (recipes, inventory, HACCP, menus, staffing, waste) built with Vite, Supabase, and bilingual support (Greek/English).
 
-### Core Data Flow
+### Data Flow & State Management
 
-1. **App.tsx** (root): Initializes app, manages auth session via Supabase, fetches all data via `api.fetchAllData()`
-2. **KitchenInterface.tsx** (main container): Props-drilled state for ~40+ entity types; renders views based on `currentView` state
-3. **Service layer** (`services/api.ts`): Abstracts Supabase calls; returns mock data if `SUPABASE_URL` not set
-4. **Mock data** (`data/mockData.ts`): Fallback dataset for development; deep-copied on fetch to prevent mutations
-5. **Component tree**: Feature views (RecipeList, InventoryView, etc.) read props, call setter functions to update state
+```
+App.tsx (auth, initial fetch) 
+  ↓ props-drilling
+KitchenInterface.tsx (global state hub: ~40+ entity types)
+  ↓ filtered by currentTeamId & currentView
+Feature Views (DashboardView, InventoryView, etc.)
+  ↓ mutations via setters passed as props
+api.ts (Supabase abstraction; falls back to mockData.ts if unconfigured)
+```
 
-### Key Design Decisions
+**Critical pattern**: All state is centralized in `KitchenInterface` props. No Context API, Redux, or local Context. This is intentional for simplicity and explicit data flow visibility.
 
-- **Prop drilling instead of context**: State lives in `App.tsx` and `KitchenInterface.tsx`, passed down explicitly. No Redux/Context API.
-- **Dual-mode operation**: App works offline with mock data if Supabase env vars missing; seamlessly switches when configured.
-- **Team isolation**: All data entities have `teamId` field; `currentTeamId` filters visible data.
-- **Bilingual support**: `i18n.ts` provides `useTranslation()` hook; UI components read `language` preference from `LanguageMode` state.
+### Environment Modes
+
+- **Mock mode** (development default): `Supabase` env vars missing → `api.useMockApi = true` → returns deep-copied `mockData.ts`
+- **Real mode**: Env vars set → Supabase queries executed; auth required
+- **Graceful fallback**: Service layer detects missing env and switches automatically; components never know the difference
 
 ## Build & Development
 
@@ -28,93 +33,238 @@ npm run build           # Production build (generates dist/)
 npm run preview         # Preview production build
 ```
 
-**Key env vars** (in `.env` or `.env.local`):
-- `SUPABASE_URL`: Supabase project URL
-- `SUPABASE_ANON_KEY`: Supabase anon key
-- `GEMINI_API_KEY`: For AI image generation features
+**Environment Setup** (`.env.local`):
+```
+VITE_SUPABASE_URL=<url>           # If missing: mock data mode
+VITE_SUPABASE_ANON_KEY=<key>      # If missing: mock data mode
+VITE_GEMINI_API_KEY=<key>         # For AI image generation (optional)
+```
+
+**Note**: Vite uses `VITE_` prefix for env vars exposed to frontend. Mock data works offline without any env configuration.
 
 ## Project Structure & Patterns
 
-### Type System (`types.ts`)
+### Type System (`types.ts` - 400+ lines)
 
-- Centralized type definitions; 400+ lines covering all domain entities
-- Key types: `Recipe`, `InventoryItem`, `Menu`, `HaccpLog`, `User`, `Team`, `Shift`
-- Allergens hardcoded as union type with translations in `ALLERGEN_TRANSLATIONS`
-- Units: `'g' | 'kg' | 'ml' | 'L' | 'τεμ' | 'κ.γ.' | 'κ.σ.'` (Greek abbreviations for items, teaspoons, tablespoons)
+- **Single source of truth**: All domain entities defined here (Recipe, InventoryItem, Menu, HaccpLog, User, Team, Shift, WasteLog, etc.)
+- **Discriminated unions** for variants: `Menu` is a union with `type: 'a_la_carte' | 'buffet'`; each branch has different required fields
+- **Allergen system**: `ALLERGENS_LIST` (union type, 14 items) + `ALLERGEN_TRANSLATIONS` (el/en for each)
+- **Units**: Mix of metric (`'g' | 'kg' | 'ml' | 'L'`) and Greek colloquial (`'τεμ'` for items, `'κ.γ.'`/`'κ.σ.'` for teaspoon/tablespoon)
+- **Bilingual fields**: Key entities have `name` (Greek) + `name_en` (English); e.g., `Recipe`, `SHIFT_TYPE_KEYS`, `WASTE_REASON_KEYS`
+- **Multi-team support**: All entities include `teamId` field; used to filter by `currentTeamId` in views
 
-### Component Patterns
+### Component Hierarchy
 
-**Feature components** (e.g., `RecipeCard.tsx`, `RecipeDetail.tsx`):
-- Accept data as props + callbacks for updates
-- Use `useTranslation()` for i18n
-- Destructure large prop sets; memoization rare
-- Example: `RecipeCard` shows recipe with allergen icons, prep/cook times
+**View Components** (e.g., `DashboardView.tsx`, `InventoryView.tsx`):
+- Accept **all** domain state + setters as individual props (no prop object destructuring for clarity)
+- Manage local UI state separately: filters, sort, search, modal open/close
+- Fetch data is pre-filtered by `currentTeamId` before being passed; views don't filter themselves
+- Often 300-600 lines; split complex sections into sub-components
 
-**Modals & dialogs** (e.g., `AIImageModal.tsx`, `ConfirmationModal.tsx`):
-- Controlled via parent state (`isOpen` boolean)
+**Form Components** (e.g., `RecipeForm.tsx`, `HaccpLogForm.tsx`):
+- Accept `toEdit?: Entity | null` + `onSave` callback + `onCancel` callback
+- Initialize with `recipeToEdit || initialRecipeState` to support both create and edit modes
+- Call `onSave()` with complete entity object; parent handles upsert logic
+- Pattern: `setRecipes(prev => prev.map(r => r.id === recipe.id ? recipe : r))` for updates
+
+**Card & List Components** (e.g., `RecipeCard.tsx`, `RecipeGridCard.tsx`):
+- Display read-only data; accept click callbacks for drill-down (e.g., `onViewRecipe`, `onEditRecipe`)
+- Render allergen icons using `AllergenIcon.tsx` component (passes allergen name, renders with translation)
+- Use translated labels from `useTranslation()` hook
+
+**Modal Components** (e.g., `ConfirmationModal.tsx`, `AIImageModal.tsx`, `QRScanner.tsx`):
+- Controlled via parent boolean state (`isOpen` prop)
 - Accept `onConfirm`/`onCancel` callbacks
-- Handle async operations (API calls)
-
-**View components** (e.g., `DashboardView.tsx`, `RecipeList.tsx`):
-- Large feature containers, often 300-600 lines
-- Manage local UI state (filters, sort, search) separately from global data state
-- May delegate to sub-components for complex sections
+- Handle async operations (file uploads, API calls) with try/catch; show loading state
+- Pattern: `{ isOpen && <Modal ... /> }` or `<Modal open={isOpen} ... />`
 
 ### Hooks
 
-**`useLocalStorage<T>(key, initialValue)`**: Persists state to `localStorage`, handles JSON serialization. Used for UI prefs (sidebar collapse, language choice).
+**`useLocalStorage<T>(key, initialValue)`**: 
+- Persists state to `localStorage`; returns `[value, setValue]` tuple like `useState`
+- Handles JSON serialization/parsing
+- Used for UI preferences (sidebar collapse, language choice, currentTeamId, currentUser)
+- **Note**: Removed cross-tab sync listener; app uses centralized state, not multi-tab sync
 
-**`useTranslation()`**: Returns `{ language, t }` where `t(key)` retrieves translated strings. Language toggled via state.
+**`useTranslation()`**: 
+- Returns `{ language, t }` where `language` is `'el' | 'en'` and `t(key: string): string` retrieves translated strings
+- Reads from `i18n.ts` context; language toggled via state, persisted to `localStorage`
+- Access translated UI constants: `t('nav_recipes')`, `t('confirm_delete_title')`
 
-### Service Layer
+### Service Layer (`services/api.ts` & `services/supabaseClient.ts`)
 
-**`api.ts` exports**:
-- `api.fetchAllData()`: Returns all entities; checks `useMockApi` flag (true if Supabase unconfigured)
-- Individual CRUD methods (not shown here) for creates/updates
-- Table names assume Supabase uses plural snake_case (e.g., `ingredient_costs`)
+**Flow**: `supabaseClient.ts` returns `null` if env vars missing → `api.ts` detects and sets `useMockApi = true` → all methods return deep-copied mock data
 
-**Supabase client** (`supabaseClient.ts`):
-- Returns `null` if env vars missing; `api.ts` gracefully falls back to mock data
-- Auth via Supabase session management
+**Key methods**:
+- `api.fetchAllData()`: Returns all entities (users, teams, recipes, inventory, etc.) as one Promise; checks `useMockApi` internally
+- Individual CRUD methods assume Supabase table names: plural snake_case (e.g., `ingredient_costs`, `haccp_logs`, `inventory_transactions`)
+- Always deep-copy mock data before returning: `JSON.parse(JSON.stringify(mockData))` prevents accidental state mutation
 
-### Icons & Assets
+**State initialization** (`App.tsx`):
+1. Fetch all data with `api.fetchAllData()`
+2. Check Supabase session if configured; otherwise auto-login first mock user
+3. Restore `currentTeamId` from localStorage if user is still member
+4. Pass all state and setters to `KitchenInterface.tsx`
 
-- `Icon.tsx` component wraps icon rendering (uses `name` prop, e.g., `<Icon name="clock" />`)
-- `assets.ts` likely contains reusable constants/icons
-- Dark mode support via CSS classes: `dark:bg-white/5`, `light-text-primary`, etc.
+### Icons & Styling
+
+- **`Icon.tsx`**: Custom component wrapping icon rendering; use `<Icon name="icon-name" />` (e.g., `"clock"`, `"trash"`, `"loader-2"`)
+- **Styling**: Tailwind CSS with dark mode support
+  - Light mode: `bg-light-bg`, `text-light-text-secondary`
+  - Dark mode: `dark:bg-dark-bg`, `dark:text-dark-text-secondary`
+  - Brand color: `bg-brand-yellow`, `text-brand-yellow`
+- **Allergen rendering**: Import `AllergenIcon` component; it handles icon + translation lookup internally
 
 ## Common Workflows
 
 ### Adding a New Feature View
 
-1. Create component in `components/<feature>/<FeatureName>View.tsx`
-2. Add new `View` type to `types.ts` discriminated union
-3. In `KitchenInterface.tsx`: import component, add case to render switch
-4. Pass required state/setters as props from `KitchenInterface` props
-5. Ensure component calls setter function for mutations (e.g., `setRecipes([...recipes, newRecipe])`)
+1. **Create view component**: `components/<feature>/<FeatureName>View.tsx` (300-600 lines typically)
+   ```tsx
+   interface FeatureViewProps {
+     data: Entity[];
+     setData: React.Dispatch<React.SetStateAction<Entity[]>>;
+     currentTeamId: string;
+     // ... all required state
+   }
+   ```
+
+2. **Add to View type**: `types.ts` → add case to `View` discriminated union:
+   ```tsx
+   export type View = '...' | 'my_new_feature';
+   ```
+
+3. **Route in KitchenInterface**: Add import + case to render switch:
+   ```tsx
+   case 'my_new_feature':
+     return <MyNewFeatureView data={data} setData={setData} currentTeamId={currentTeamId} />;
+   ```
+
+4. **Handle mutations**: Use setter functions pattern:
+   ```tsx
+   // CREATE: Generate unique ID, include teamId
+   const newEntity = { id: `${Date.now()}`, ...formData, teamId: currentTeamId };
+   setData(prev => [...prev, newEntity]);
+   
+   // UPDATE: Map and replace
+   setData(prev => prev.map(e => e.id === entity.id ? { ...e, ...changes } : e));
+   
+   // DELETE: Filter out
+   setData(prev => prev.filter(e => e.id !== entityId));
+   ```
 
 ### Editing a Recipe or Entity
 
-- Forms (e.g., `RecipeForm.tsx`) accept `recipeToEdit?: Recipe` and `onSave` callback
-- If editing, prefill form; if creating, use `initialState`
-- Call `onSave()` with complete entity (with id if editing, omitted if creating)
-- Parent component updates state: `setRecipes(prev => prev.map(r => r.id === recipe.id ? recipe : r))`
+**Pattern** (used in `RecipeForm.tsx`, `HaccpLogForm.tsx`, etc.):
+```tsx
+const initialState = { name: '', teamId: '' /* ... */ };
+
+interface FormProps {
+  toEdit?: Entity | null;
+  onSave: (entity: Entity | Omit<Entity, 'id'>) => void;
+  onCancel: () => void;
+}
+
+// In component:
+const [entity, setEntity] = useState(toEdit || initialState);
+
+useEffect(() => {
+  setEntity(toEdit || initialState);  // Sync on prop change
+}, [toEdit]);
+
+// On save: call parent setter and parent handles upsert
+onSave(entity);  // Parent decides if create or update
+```
+
+**Parent side** (`InventoryView.tsx` example):
+```tsx
+const handleSaveInventoryForm = (item: InventoryItem | Omit<InventoryItem, 'id'>) => {
+  if ('id' in item) {
+    // Update
+    setInventory(prev => prev.map(i => i.id === item.id ? item : i));
+  } else {
+    // Create
+    const newItem = { ...item, id: `${Date.now()}`, teamId: currentTeamId };
+    setInventory(prev => [...prev, newItem]);
+  }
+  setEditingItemId(null);
+};
+```
 
 ### Accessing Translations
 
 ```tsx
-const { t, language } = useTranslation();
-<div>{t('nav_recipes')}</div>  // Returns translated string
-if (language === 'en') { /* English-specific logic */ }
+import { useTranslation } from '../i18n';
+
+const MyComponent = () => {
+  const { t, language } = useTranslation();
+  
+  return (
+    <>
+      <h1>{t('nav_recipes')}</h1>  // English-agnostic key
+      {language === 'el' && <p>Ελληνικά</p>}
+      {language === 'en' && <p>English</p>}
+    </>
+  );
+};
 ```
 
 ### Handling Allergens
 
-Always import from `types.ts`:
 ```tsx
-import { ALLERGENS_LIST, ALLERGEN_TRANSLATIONS } from '../types';
-// Render checkbox for each allergen in ALLERGENS_LIST
-// Display translated name: ALLERGEN_TRANSLATIONS[allergen][language]
+import { ALLERGENS_LIST, ALLERGEN_TRANSLATIONS, Allergen } from '../types';
+import { AllergenIcon } from './common/AllergenIcon';
+
+// Render checkboxes:
+{ALLERGENS_LIST.map(allergen => (
+  <label key={allergen}>
+    <input
+      type="checkbox"
+      checked={selectedAllergens.includes(allergen)}
+      onChange={(e) => {
+        if (e.target.checked) {
+          setSelectedAllergens([...selectedAllergens, allergen]);
+        } else {
+          setSelectedAllergens(selectedAllergens.filter(a => a !== allergen));
+        }
+      }}
+    />
+    {ALLERGEN_TRANSLATIONS[allergen][language]}  // el/en translation
+  </label>
+))}
+
+// Display allergen icons:
+{selectedAllergens.map(allergen => (
+  <AllergenIcon key={allergen} allergen={allergen} />
+))}
+```
+
+### Handling Bilingual Fields
+
+```tsx
+// Types always pair name + name_en
+interface Recipe {
+  name: string;      // Greek
+  name_en: string;   // English
+  // ...
+}
+
+// In forms:
+<input 
+  name="name"
+  placeholder="Όνομα συνταγής (Ελληνικά)"
+  value={recipe.name}
+  onChange={(e) => setRecipe({...recipe, name: e.target.value})}
+/>
+<input
+  name="name_en"
+  placeholder="Recipe Name (English)"
+  value={recipe.name_en}
+  onChange={(e) => setRecipe({...recipe, name_en: e.target.value})}
+/>
+
+// Display: show appropriate language
+<h2>{language === 'el' ? recipe.name : recipe.name_en}</h2>
 ```
 
 ## Key Files Reference

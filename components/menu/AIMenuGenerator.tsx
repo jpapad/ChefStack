@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Recipe, Allergen, ALLERGENS_LIST, RECIPE_CATEGORY_KEYS } from '../../types';
 import { Icon } from '../common/Icon';
 import { useTranslation } from '../../i18n';
@@ -7,8 +7,14 @@ import { useTranslation } from '../../i18n';
 interface AIMenuGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (recipes: Omit<Recipe, 'id' | 'teamId'>[], menuDetails: { name: string, description: string, pax: number }) => void;
+  onSave: (
+    recipes: Omit<Recipe, 'id' | 'teamId'>[],
+    menuDetails: { name: string; description: string; pax: number }
+  ) => void;
 }
+
+// 👉 Βάλε εδώ το ID του μοντέλου από τη λίστα σου
+const MODEL_ID = 'gemini-flash-latest';
 
 const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSave }) => {
   const { t } = useTranslation();
@@ -22,118 +28,156 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
       setError('Please describe the menu you want to create.');
       return;
     }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+
+    if (!apiKey) {
+      setError(
+        'Σφάλμα διαμόρφωσης: Δεν έχει οριστεί το VITE_GEMINI_API_KEY στο .env. ' +
+          'Πρόσθεσε το κλειδί σου στο .env και κάνε επανεκκίνηση το dev server.'
+      );
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      if (!process.env.API_KEY) {
-        throw new Error("API_KEY is not configured.");
-      }
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-      
-      const fullPrompt = `Create a complete, themed buffet menu in Greek based on the following description: "${prompt}".
-The menu is for ${pax} people.
-Generate 1 appetizer, 2 salads, 2 main courses, and 1 dessert.
-For each recipe, provide a full professional recipe including name, description, category, prep time, cook time, servings (scaled appropriately for a buffet, so maybe for 10-20 people per batch), a complete list of ingredients with quantities and units, a full list of steps, and a list of any allergens.`;
-      
-      const response = await ai.models.generateContent({
-          model: "gemini-2.5-pro",
-          contents: fullPrompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    menuName: { type: Type.STRING, description: "A creative name for the menu in Greek" },
-                    menuDescription: { type: Type.STRING, description: "A short, appealing description for the menu in Greek" },
-                    recipes: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                name: { type: Type.STRING, description: "Recipe title in Greek" },
-                                name_en: { type: Type.STRING, description: "Recipe title in English" },
-                                description: { type: Type.STRING, description: "Short description in Greek" },
-                                category: { type: Type.STRING, description: `One of: ${RECIPE_CATEGORY_KEYS.join(', ')}` },
-                                prepTime: { type: Type.INTEGER, description: "Preparation time in minutes" },
-                                cookTime: { type: Type.INTEGER, description: "Cooking time in minutes" },
-                                servings: { type: Type.INTEGER, description: "Number of servings this batch produces" },
-                                ingredients: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            name: { type: Type.STRING, description: "Ingredient name in Greek" },
-                                            quantity: { type: Type.NUMBER },
-                                            unit: { type: Type.STRING, description: "e.g., g, kg, ml, L, τεμ, κ.σ." },
-                                        },
-                                        required: ['name', 'quantity', 'unit']
-                                    }
-                                },
-                                steps: {
-                                    type: Type.ARRAY,
-                                    items: { type: Type.STRING, description: "A single cooking step in Greek" }
-                                },
-                                allergens: {
-                                    type: Type.ARRAY,
-                                    items: { type: Type.STRING, description: `An allergen from the list: ${ALLERGENS_LIST.join(', ')}` }
-                                }
-                            },
-                            required: ['name', 'name_en', 'description', 'category', 'prepTime', 'cookTime', 'servings', 'ingredients', 'steps', 'allergens']
-                        }
-                    }
-                },
-                required: ['menuName', 'menuDescription', 'recipes']
-            }
-          }
-      });
-      
-      const resultJson = response.text;
-      const parsedData = JSON.parse(resultJson);
-      
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: MODEL_ID });
+
+      const fullPrompt = `
+Είσαι Executive Chef. Θέλω να δημιουργήσεις ΕΝΑ μενού μπουφέ στα Ελληνικά με βάση την παρακάτω περιγραφή:
+"${prompt}"
+
+Το μενού είναι για περίπου ${pax} άτομα.
+
+Θέλω:
+- 1 ορεκτικό
+- 2 σαλάτες
+- 2 κυρίως πιάτα
+- 1 επιδόρπιο
+
+Για κάθε συνταγή ΔΩΣΕ:
+- name: τίτλος στα Ελληνικά
+- name_en: τίτλος στα Αγγλικά
+- description: σύντομη περιγραφή στα Ελληνικά
+- category: ένα από τα εξής: ${RECIPE_CATEGORY_KEYS.join(', ')}
+- prepTime: χρόνος προετοιμασίας σε λεπτά (αριθμός)
+- cookTime: χρόνος μαγειρέματος σε λεπτά (αριθμός)
+- servings: πόσες μερίδες βγάζει η συνταγή
+- ingredients: λίστα αντικειμένων { name, quantity, unit }
+- steps: λίστα STRING με τα βήματα στα Ελληνικά
+- allergens: λίστα από αλλεργιογόνα, επιλέγοντας μόνο από: ${ALLERGENS_LIST.join(', ')}
+
+ΕΠΙΣΤΡΕΨΕ ΑΠΟΚΛΕΙΣΤΙΚΑ ΕΓΚΥΡΟ JSON (ΧΩΡΙΣ κείμενο απ' έξω, ΧΩΡΙΣ markdown), της μορφής:
+
+{
+  "menuName": "string",
+  "menuDescription": "string",
+  "recipes": [
+    {
+      "name": "string",
+      "name_en": "string",
+      "description": "string",
+      "category": "string",
+      "prepTime": number,
+      "cookTime": number,
+      "servings": number,
+      "ingredients": [
+        { "name": "string", "quantity": number, "unit": "string" }
+      ],
+      "steps": ["string", "string", ...],
+      "allergens": ["string", ...]
+    }
+  ]
+}
+`;
+
+      const result = await model.generateContent(fullPrompt);
+      let text = result.response.text();
+
+      // Αν τυχόν βάλει ```json ``` γύρω γύρω, τα αφαιρούμε
+      text = text.replace(/```json|```/g, '').trim();
+
+      const parsedData = JSON.parse(text);
+
       if (!parsedData.menuName || !parsedData.recipes || parsedData.recipes.length === 0) {
-        throw new Error("The AI response was missing required menu data.");
+        throw new Error('The AI response was missing required menu data.');
       }
-      
-      // Convert to the required type
-      const recipesToCreate: Omit<Recipe, 'id' | 'teamId'>[] = parsedData.recipes.map((r: any) => ({
+
+      const recipesToCreate: Omit<Recipe, 'id' | 'teamId'>[] = parsedData.recipes.map(
+        (r: any, idx: number) => ({
           name: r.name || '',
           name_en: r.name_en || '',
           description: r.description || '',
-          imageUrl: '', // Will be generated later
-          category: RECIPE_CATEGORY_KEYS.includes(r.category) ? r.category : 'other',
-          prepTime: r.prepTime || 0,
-          cookTime: r.cookTime || 0,
-          servings: r.servings || 10,
+          imageUrl: '',
+          category: (RECIPE_CATEGORY_KEYS as string[]).includes(r.category)
+            ? (r.category as Recipe['category'])
+            : 'other',
+          prepTime: Number(r.prepTime) || 0,
+          cookTime: Number(r.cookTime) || 0,
+          servings: Number(r.servings) || 10,
           ingredients: (r.ingredients || []).map((ing: any, i: number) => ({
-              id: `ing${Date.now()}${i}`,
-              name: ing.name || '',
-              quantity: ing.quantity || 0,
-              unit: ing.unit || 'g',
-              isSubRecipe: false,
+            id: `ing${Date.now()}_${idx}_${i}`,
+            name: ing.name || '',
+            quantity: Number(ing.quantity) || 0,
+            unit: ing.unit || 'g',
+            isSubRecipe: false,
           })),
           steps: (r.steps || []).map((step: string, i: number) => ({
-              id: `step${Date.now()}${i}`,
-              type: 'step',
-              content: step
+            id: `step${Date.now()}_${idx}_${i}`,
+            type: 'step' as const,
+            content: step,
           })),
-          allergens: (r.allergens || []).filter((a: string) => ALLERGENS_LIST.includes(a as Allergen)),
-      }));
-      
+          allergens: (r.allergens || []).filter((a: string) =>
+            ALLERGENS_LIST.includes(a as Allergen)
+          ) as Allergen[],
+        })
+      );
+
       const menuDetails = {
-          name: parsedData.menuName,
-          description: parsedData.menuDescription || '',
-          pax: pax,
+        name: parsedData.menuName as string,
+        description: (parsedData.menuDescription as string) || '',
+        pax,
       };
 
       onSave(recipesToCreate, menuDetails);
-
+      onClose();
     } catch (e: any) {
-      console.error("AI Menu Generation failed:", e);
-      const errorMessage = e.message.includes("API_KEY")
-          ? "Σφάλμα διαμόρφωσης: Το κλειδί API δεν έχει ρυθμιστεί."
-          : "Failed to generate menu. The AI may have returned an invalid format or an error occurred. Please try again with a clearer prompt.";
-      setError(errorMessage);
+      console.error('AI Menu Generation failed:', e);
+
+      const rawMessage =
+        e?.message ||
+        (e?.toString ? e.toString() : '') ||
+        'Άγνωστο σφάλμα από το Gemini API.';
+
+      if (rawMessage.includes('Unexpected token') || rawMessage.includes('JSON')) {
+        setError(
+          'Το AI επέστρεψε μη έγκυρο JSON. Δοκίμασε ξανά με πιο συγκεκριμένη περιγραφή ή ξαναπροσπάθησε.'
+        );
+        return;
+      }
+
+      if (
+        rawMessage.toLowerCase().includes('api key') ||
+        rawMessage.toLowerCase().includes('permission') ||
+        rawMessage.toLowerCase().includes('unauthorized') ||
+        rawMessage.includes('401') ||
+        rawMessage.includes('403')
+      ) {
+        setError(
+          'Σφάλμα αυθεντικοποίησης στο Gemini API. Έλεγξε ότι το VITE_GEMINI_API_KEY είναι σωστό, έχει πρόσβαση στο Gemini και ότι έχεις ενεργοποιήσει billing/usage.'
+        );
+        return;
+      }
+
+      if (rawMessage.includes('429')) {
+        setError('Το Gemini API έκανε rate limit (429). Δοκίμασε ξανά μετά από λίγο.');
+        return;
+      }
+
+      setError(`Σφάλμα από Gemini: ${rawMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -142,28 +186,47 @@ For each recipe, provide a full professional recipe including name, description,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-lg"
+        onClick={e => e.stopPropagation()}
+      >
         <header className="flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-700/80">
           <h3 className="text-xl font-semibold flex items-center gap-2">
-            <Icon name="sparkles" className="w-6 h-6 text-purple-500"/>
+            <Icon name="sparkles" className="w-6 h-6 text-purple-500" />
             Δημιουργία Μενού με AI
           </h3>
-          <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+          >
             <Icon name="x" className="w-6 h-6" />
           </button>
         </header>
+
         {isLoading ? (
-             <div className="p-10 flex flex-col items-center justify-center min-h-[250px]">
-                <Icon name="loader-2" className="w-16 h-16 text-brand-yellow animate-spin"/>
-                <p className="mt-4 text-lg font-semibold text-light-text-secondary dark:text-dark-text-secondary">Η AI δημιουργεί το μενού σας...</p>
-            </div>
+          <div className="p-10 flex flex-col items-center justify-center min-h-[250px]">
+            <Icon name="loader-2" className="w-16 h-16 text-brand-yellow animate-spin" />
+            <p className="mt-4 text-lg font-semibold text-light-text-secondary dark:text-dark-text-secondary">
+              Η AI δημιουργεί το μενού σας...
+            </p>
+          </div>
         ) : (
           <>
             <div className="p-6 space-y-4">
-              {error && <p className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm p-3 rounded-lg">{error}</p>}
+              {error && (
+                <p className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm p-3 rounded-lg">
+                  {error}
+                </p>
+              )}
               <div>
-                <label className="block text-sm font-medium mb-1">Περιγράψτε το θέμα ή το στυλ του μενού</label>
+                <label className="block text-sm font-medium mb-1">
+                  Περιγράψτε το θέμα ή το στυλ του μενού
+                </label>
                 <textarea
                   value={prompt}
                   onChange={e => setPrompt(e.target.value)}
@@ -183,9 +246,19 @@ For each recipe, provide a full professional recipe including name, description,
               </div>
             </div>
             <footer className="p-4 flex justify-end gap-4 bg-black/5 dark:bg-white/5 rounded-b-2xl">
-              <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold">{t('cancel')}</button>
-              <button type="button" onClick={handleGenerate} className="px-4 py-2 rounded-lg bg-brand-dark text-white hover:opacity-90 font-semibold flex items-center gap-2">
-                <Icon name="sparkles" className="w-5 h-5"/>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg bg-black/5 dark:bg:white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                className="px-4 py-2 rounded-lg bg-brand-dark text-white hover:opacity-90 font-semibold flex items-center gap-2"
+              >
+                <Icon name="sparkles" className="w-5 h-5" />
                 Δημιουργία
               </button>
             </footer>

@@ -1,13 +1,19 @@
-import { createClient } from '@supabase/supabase-js';
+// src/services/supabaseClient.ts
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-console.log('Supabase URL from env:', supabaseUrl);
-/**
- * Αν έχεις βάλει σωστά τα env, αυτό θα είναι ένα έγκυρο Supabase client.
- * Αν ΔΕΝ έχουν μπει env, θα είναι null και η app σου θα γυρίσει σε mock mode.
- */
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+// Αν λείπουν τα env, δεν φτιάχνουμε client και πέφτουμε σε mock mode
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+export const supabase: SupabaseClient | null = isSupabaseConfigured
+  ? createClient(supabaseUrl!, supabaseAnonKey!)
   : null;
+
+if (!isSupabaseConfigured) {
+  console.warn(
+    'Supabase is NOT configured. Using mock data. ' +
+    'Set VITE_SUPABASE_URL και VITE_SUPABASE_ANON_KEY στο .env.local.'
+  );
+}

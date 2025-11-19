@@ -1,182 +1,219 @@
-import React, { useState, useEffect } from 'react';
-import { GoogleGenAI, Modality } from '@google/genai';
+// components/common/AIImageModal.tsx
+import React, { useEffect, useState } from 'react';
+import { GoogleGenAI } from '@google/genai';
 import { Icon } from './Icon';
+
+interface BaseImageForEditing {
+  data: string;      // καθαρό base64, χωρίς "data:image/..,"
+  mimeType: string;  // π.χ. "image/png"
+}
 
 interface AIImageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (base64Image: string) => void;
-  initialPrompt: string;
-  baseImage?: {
-      data: string; // base64 encoded string without header
-      mimeType: string;
-  } | null;
+  onConfirm: (base64Image: string) => void; // ΜΟΝΟ το base64, χωρίς header
+  initialPrompt?: string;
+  baseImage?: BaseImageForEditing | null;
 }
 
-const AIImageModal: React.FC<AIImageModalProps> = ({ isOpen, onClose, onConfirm, initialPrompt, baseImage }) => {
-  const [prompt, setPrompt] = useState(initialPrompt);
+const AIImageModal: React.FC<AIImageModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  initialPrompt,
+  baseImage,
+}) => {
+  const [prompt, setPrompt] = useState(initialPrompt || '');
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  const isEditing = !!baseImage;
+  const [preview, setPreview] = useState<string | null>(null);
 
+  // Όταν ανοίγει το modal, φρεσκάρουμε το prompt
   useEffect(() => {
-      if (isOpen) {
-          setPrompt(isEditing ? '' : initialPrompt);
-          setGeneratedImage(null);
-          setError(null);
-      }
-  }, [isOpen, initialPrompt, isEditing]);
+    if (isOpen) {
+      setPrompt(initialPrompt || '');
+      setError(null);
+      setPreview(null);
+    }
+  }, [isOpen, initialPrompt]);
+
+  if (!isOpen) return null;
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) {
+      setError('Πληκτρολόγησε μια περιγραφή για την εικόνα.');
+      return;
+    }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+
+    if (!apiKey) {
+      setError(
+        'Σφάλμα ρυθμίσεων: Δεν βρέθηκε το VITE_GEMINI_API_KEY στο .env. ' +
+          'Πρόσθεσε το κλειδί σου και κάνε restart το dev server.'
+      );
+      return;
+    }
 
     setIsLoading(true);
-    setGeneratedImage(null);
     setError(null);
 
     try {
-      if (!process.env.API_KEY) {
-        throw new Error("API_KEY is not configured.");
-      }
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-      
-      const parts: any[] = [];
-      if (isEditing && baseImage) {
-          parts.push({
-              inlineData: {
-                  data: baseImage.data,
-                  mimeType: baseImage.mimeType,
-              },
-          });
-      }
-      parts.push({ text: prompt });
+      const ai = new GoogleGenAI({ apiKey });
 
-      // Fix: The 'contents' parameter for multimodal input must be an object with a 'parts' array.
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: { parts: parts },
+      // Για αρχή κάνουμε μόνο text→image.
+      // Αν αργότερα θέλεις πραγματικό "edit" πάνω σε baseImage,
+      // το επεκτείνουμε να στέλνει και την εικόνα σαν input.
+      const response = await ai.models.generateImages({
+        // από το list που έβγαλες: π.χ. "models/imagen-4.0-generate-001"
+        model: 'models/imagen-4.0-generate-001',
+        prompt,
         config: {
-            responseModalities: [Modality.IMAGE],
+          numberOfImages: 1,
+          outputMimeType: 'image/png',
         },
       });
 
-      for (const part of response.candidates?.[0]?.content?.parts || []) {
-        if (part.inlineData) {
-          setGeneratedImage(part.inlineData.data);
-          break;
-        }
+      const img = response.generatedImages?.[0]?.image;
+      const imageBytes = img?.imageBytes;
+
+      if (!imageBytes) {
+        throw new Error('Το AI δεν επέστρεψε δεδομένα εικόνας.');
       }
-    } catch (err: any) {
-      console.error("AI Image Generation failed:", err);
-      const errorMessage = err.message.includes("API_KEY")
-          ? "Σφάλμα διαμόρφωσης: Το κλειδί API δεν έχει ρυθμιστεί."
-          : "Αποτυχία δημιουργίας εικόνας. Παρακαλώ δοκιμάστε ξανά.";
-      setError(errorMessage);
+
+      // Δημιουργούμε data URL για προεπισκόπηση
+      const dataUrl = `data:image/png;base64,${imageBytes}`;
+      setPreview(dataUrl);
+
+      // Επιστρέφουμε ΜΟΝΟ το καθαρό base64, όπως περιμένει το RecipeForm
+      onConfirm(imageBytes);
+      // αν ΘΕΛΕΙΣ πρώτα προεπισκόπηση και μετά confirm με κουμπί,
+      // μπορείς να ΜΗΝ καλέσεις εδώ onConfirm και να βάλεις extra κουμπί.
+
+      onClose();
+    } catch (e: any) {
+      console.error('AI Image Generation failed:', e);
+      const raw = e?.message || e?.toString?.() || 'Άγνωστο σφάλμα από το Imagen/Gemini API.';
+
+      if (
+        raw.toLowerCase().includes('api key') ||
+        raw.toLowerCase().includes('unauthorized') ||
+        raw.toLowerCase().includes('permission') ||
+        raw.includes('401') ||
+        raw.includes('403')
+      ) {
+        setError(
+          'Σφάλμα αυθεντικοποίησης στο Google AI API. Έλεγξε ότι το VITE_GEMINI_API_KEY είναι σωστό ' +
+            'και ότι ο λογαριασμός σου έχει πρόσβαση στα Imagen models.'
+        );
+      } else if (raw.includes('429')) {
+        setError('Το API έκανε rate limit (429). Δοκίμασε ξανά μετά από λίγο.');
+      } else {
+        setError(`Σφάλμα από Google AI: ${raw}`);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleConfirm = () => {
-    if (generatedImage) {
-      onConfirm(generatedImage);
-    }
+  const handleBackdropClick = () => {
+    if (!isLoading) onClose();
   };
-
-
-  if (!isOpen) return null;
 
   return (
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4"
-      aria-modal="true"
-      role="dialog"
-      onClick={onClose}
+      onClick={handleBackdropClick}
     >
       <div
-        className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-2xl m-4 flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
+        className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-lg"
+        onClick={e => e.stopPropagation()}
       >
+        {/* Header */}
         <header className="flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-700/80">
           <h3 className="text-xl font-semibold flex items-center gap-2">
-            <Icon name="sparkles" className="w-6 h-6 text-purple-500"/>
-            {isEditing ? 'Επεξεργασία Εικόνας με AI' : 'Δημιουργία Εικόνας με AI'}
+            <Icon name="sparkles" className="w-6 h-6 text-purple-500" />
+            Δημιουργία Εικόνας με AI
           </h3>
-          <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-50"
+          >
             <Icon name="x" className="w-6 h-6" />
           </button>
         </header>
-        
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
-            {/* Left Column: Form */}
-            <div className="space-y-4">
-                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                    {isEditing 
-                        ? 'Περιγράψτε τις αλλαγές που θέλετε να κάνετε στην εικόνα.'
-                        : 'Περιγράψτε την εικόνα που θέλετε να δημιουργήσετε. Προσπαθήστε να είστε συγκεκριμένοι!'
-                    }
+
+        {/* Body */}
+        {isLoading ? (
+          <div className="p-10 flex flex-col items-center justify-center min-h-[250px]">
+            <Icon name="loader-2" className="w-16 h-16 text-brand-yellow animate-spin" />
+            <p className="mt-4 text-lg font-semibold text-light-text-secondary dark:text-dark-text-secondary">
+              Η AI δημιουργεί την εικόνα της συνταγής...
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="p-6 space-y-4">
+              {error && (
+                <p className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm p-3 rounded-lg">
+                  {error}
                 </p>
-                 <textarea
-                    value={prompt}
-                    onChange={e => setPrompt(e.target.value)}
-                    rows={5}
-                    className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
-                    placeholder={isEditing ? "π.χ. 'add a sprig of fresh basil on top'" : "π.χ. 'a rustic bowl of beef kokkinisto with orzo, garnished with parsley'"}
+              )}
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium mb-1">
+                  Περιγραφή εικόνας
+                </label>
+                <textarea
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  rows={3}
+                  className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                  placeholder="π.χ. «Ρεαλιστική φωτογραφία πιάτου με Μουσακά, σε ξύλινο τραπέζι, φυσικό φως»"
                 />
-                <button 
-                    onClick={handleGenerate} 
-                    disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-brand-dark text-white font-semibold hover:opacity-90 disabled:opacity-50"
-                >
-                    {isLoading ? <Icon name="loader-2" className="animate-spin w-5 h-5"/> : <Icon name="sparkles" className="w-5 h-5"/>}
-                    {isEditing ? 'Ενημέρωση Εικόνας' : 'Δημιουργία Εικόνας'}
-                </button>
+                {baseImage && (
+                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                    🔁 Υπάρχει ήδη βάση εικόνας, προς το παρόν δημιουργείται νέα εικόνα από την περιγραφή.
+                  </p>
+                )}
+              </div>
+
+              {preview && (
+                <div className="mt-4">
+                  <p className="text-sm mb-1 font-medium">Προεπισκόπηση τελευταίας εικόνας</p>
+                  <img
+                    src={preview}
+                    alt="AI preview"
+                    className="w-full h-60 object-contain rounded-lg border border-gray-200 dark:border-gray-700 bg-black/5"
+                  />
+                </div>
+              )}
             </div>
-            {/* Right Column: Image Preview */}
-            <div className="flex flex-col items-center justify-center bg-black/5 dark:bg-white/10 rounded-lg min-h-[250px] p-2">
-                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center text-center">
-                        <Icon name="loader-2" className="w-10 h-10 text-brand-yellow animate-spin"/>
-                        <p className="mt-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">Η AI δημιουργεί την εικόνα σας...</p>
-                    </div>
-                 ) : error ? (
-                    <div className="text-center text-red-500 p-4">
-                        <Icon name="warning" className="w-10 h-10 mx-auto mb-2"/>
-                        <p className="font-semibold">{error}</p>
-                    </div>
-                 ) : generatedImage ? (
-                    <img src={`data:image/png;base64,${generatedImage}`} alt="Generated by AI" className="max-w-full max-h-full object-contain rounded"/>
-                 ) : isEditing && baseImage ? (
-                    <img src={`data:${baseImage.mimeType};base64,${baseImage.data}`} alt="Current image" className="max-w-full max-h-full object-contain rounded"/>
-                 ) : (
-                    <div className="text-center text-light-text-secondary dark:text-dark-text-secondary">
-                        <Icon name="image" className="w-12 h-12 mx-auto mb-2"/>
-                        <p>Η εικόνα θα εμφανιστεί εδώ</p>
-                    </div>
-                 )}
-            </div>
-        </div>
-        
-        <footer className="p-4 border-t border-gray-200/80 dark:border-gray-700/80 flex justify-end gap-4">
-             <button
+
+            {/* Footer */}
+            <footer className="p-4 flex justify-end gap-4 bg-black/5 dark:bg-white/5 rounded-b-2xl">
+              <button
                 type="button"
-                className="px-5 py-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold transition-colors"
                 onClick={onClose}
+                disabled={isLoading}
+                className="px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold disabled:opacity-50"
               >
                 Άκυρο
               </button>
-             <button
+              <button
                 type="button"
-                className="px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
-                onClick={handleConfirm}
-                disabled={!generatedImage}
+                onClick={handleGenerate}
+                disabled={isLoading}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 font-semibold flex items-center gap-2 disabled:opacity-50"
               >
-                <Icon name="check" className="w-5 h-5"/>
-                Χρήση Εικόνας
+                <Icon name="sparkles" className="w-5 h-5" />
+                Δημιουργία εικόνας
               </button>
-        </footer>
+            </footer>
+          </>
+        )}
       </div>
     </div>
   );
