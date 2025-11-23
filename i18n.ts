@@ -53,6 +53,8 @@ const translations: Record<Language, Record<string, string>> = {
     nav_notifications: 'Ειδοποιήσεις & Chat',
     nav_user_manual: 'Οδηγός Χρήσης',
     nav_settings: 'Ρυθμίσεις',
+    nav_kitchen_service: 'Κουζίνα – Σέρβις',
+
     
     // Settings Sub-navigation
     nav_settings_profile: 'Το Προφίλ μου',
@@ -345,7 +347,8 @@ const translations: Record<Language, Record<string, string>> = {
     nav_notifications: 'Notifications & Chat',
     nav_user_manual: 'User Manual',
     nav_settings: 'Settings',
-
+    nav_kitchen_service: 'Kitchen & Service',
+    
     // Settings Sub-navigation
     nav_settings_profile: 'My Profile',
     nav_settings_teams: 'Team Management',

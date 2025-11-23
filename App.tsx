@@ -1,21 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { 
-  User, Team, View, Recipe, IngredientCost, Workstation, PrepTask, 
-  HaccpLog, Supplier, InventoryItem, Menu, Notification, Message, 
-  Role, LanguageMode, Shift, ShiftSchedule, Channel, InventoryLocation, 
-  InventoryTransaction, HaccpItem, WasteLog 
+import {
+  User,
+  Team,
+  Recipe,
+  IngredientCost,
+  Workstation,
+  PrepTask,
+  HaccpLog,
+  Supplier,
+  InventoryItem,
+  Menu,
+  Notification,
+  Message,
+  Shift,
+  ShiftSchedule,
+  Channel,
+  InventoryLocation,
+  InventoryTransaction,
+  HaccpItem,
+  WasteLog
 } from './types';
 import AuthView from './components/auth/AuthView';
-import KitchenInterface from './KitchenInterface';
+import KitchenInterface from './components/KitchenInterface';
 import { api } from './services/api';
 import { supabase } from './services/supabaseClient';
 import { Icon } from './components/common/Icon';
 import { LanguageProvider, useTranslation } from './i18n';
 
 const AppContent: React.FC = () => {
-  const [currentUser, setCurrentUser] = useLocalStorage<User | null>('currentUser', null);
-  const [currentTeamId, setCurrentTeamId] = useLocalStorage<string | null>('currentTeamId', null);
+  const [currentUser, setCurrentUser] = useLocalStorage<User | null>(
+    'currentUser',
+    null
+  );
+  const [currentTeamId, setCurrentTeamId] = useLocalStorage<string | null>(
+    'currentTeamId',
+    null
+  );
   const { t } = useTranslation();
 
   // --- Data State ---
@@ -30,8 +51,10 @@ const AppContent: React.FC = () => {
   const [haccpItems, setHaccpItems] = useState<HaccpItem[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [inventoryLocations, setInventoryLocations] = useState<InventoryLocation[]>([]);
-  const [inventoryTransactions, setInventoryTransactions] = useState<InventoryTransaction[]>([]);
+  const [inventoryLocations, setInventoryLocations] =
+    useState<InventoryLocation[]>([]);
+  const [inventoryTransactions, setInventoryTransactions] =
+    useState<InventoryTransaction[]>([]);
   const [wasteLogs, setWasteLogs] = useState<WasteLog[]>([]);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -41,15 +64,16 @@ const AppContent: React.FC = () => {
   const [allChannels, setAllChannels] = useState<Channel[]>([]);
 
   // Derived team-scoped data
-  const teamRecipes = recipes.filter(r => r.teamId === currentTeamId);
-  const teamMenus = menus.filter(m => m.teamId === currentTeamId);
+  const teamRecipes = recipes.filter((r) => r.teamId === currentTeamId);
+  const teamMenus = menus.filter((m) => m.teamId === currentTeamId);
 
+  // 🔁 Φορτώνει ΟΛΑ τα δεδομένα + session ΜΟΝΟ στην αρχική φόρτωση
   useEffect(() => {
     const fetchDataAndSession = async () => {
       setIsLoading(true);
       try {
-        // 1. Φέρε όλα τα δεδομένα της εφαρμογής
         const data = await api.fetchAllData();
+
         setAllUsers(data.users || []);
         setAllTeams(data.teams || []);
         setRecipes(data.recipes || []);
@@ -69,21 +93,29 @@ const AppContent: React.FC = () => {
         setShifts(data.shifts || []);
         setShiftSchedules(data.shiftSchedules || []);
         setAllChannels(data.channels || []);
-        
+
         // 2. Έλεγξε αν υπάρχει ενεργό session
         if (supabase) {
           const sessionInfo = await api.getCurrentUserAndTeams();
           if (sessionInfo) {
-            // Προσπάθησε να βρεις τον user μέσα στα ήδη φορτωμένα data.users
-            const foundUser = data.users.find(u => u.id === sessionInfo.user.id) || sessionInfo.user;
+            const foundUser =
+              data.users.find((u) => u.id === sessionInfo.user.id) ||
+              sessionInfo.user;
 
             setCurrentUser(foundUser);
 
             if (foundUser.memberships.length > 0) {
               const lastUsedTeam = localStorage.getItem('currentTeamId');
-              const lastUsedTeamId = lastUsedTeam ? JSON.parse(lastUsedTeam) : null;
+              const lastUsedTeamId = lastUsedTeam
+                ? JSON.parse(lastUsedTeam)
+                : null;
 
-              if (lastUsedTeamId && foundUser.memberships.some(m => m.teamId === lastUsedTeamId)) {
+              if (
+                lastUsedTeamId &&
+                foundUser.memberships.some(
+                  (m) => m.teamId === lastUsedTeamId
+                )
+              ) {
                 setCurrentTeamId(lastUsedTeamId);
               } else {
                 setCurrentTeamId(foundUser.memberships[0].teamId);
@@ -92,11 +124,11 @@ const AppContent: React.FC = () => {
               setCurrentTeamId(null);
             }
 
-            // Φρόντισε να ενημερώσεις και τις ομάδες αν λείπει καμία
-            setAllTeams(prev => {
+            // Συγχρονισμός ομάδων από το session
+            setAllTeams((prev) => {
               const merged = [...prev];
-              sessionInfo.teams.forEach(team => {
-                const idx = merged.findIndex(t => t.id === team.id);
+              sessionInfo.teams.forEach((team) => {
+                const idx = merged.findIndex((t) => t.id === team.id);
                 if (idx === -1) merged.push(team);
                 else merged[idx] = team;
               });
@@ -104,7 +136,7 @@ const AppContent: React.FC = () => {
             });
           }
         } else {
-          // Mock mode: auto-login τον πρώτο mock user
+          // Mock mode: auto-login πρώτο mock user
           const mockUser = data.users[0];
           if (mockUser) {
             setCurrentUser(mockUser);
@@ -112,31 +144,35 @@ const AppContent: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error("Failed to fetch initial data or session", error);
+        console.error('Failed to fetch initial data or session', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchDataAndSession();
-  }, []);
 
-  const handleAuthSuccess = async (email: string, pass: string): Promise<boolean> => {
-    // Χρησιμοποιούμε το api.login, που από μόνο του κάνει mock ή supabase ανάλογα
+    fetchDataAndSession();
+  }, []); // 👈 ΜΟΝΟ ΑΥΤΟ — ΚΕΝΟ array
+
+  const handleAuthSuccess = async (
+    email: string,
+    pass: string
+  ): Promise<boolean> => {
     try {
       const { user, teams } = await api.login(email, pass);
 
       setCurrentUser(user);
 
-      // Ενημέρωση allUsers / allTeams για να είναι σίγουρα μέσα ο user & οι ομάδες του
-      setAllUsers(prev => {
-        const exists = prev.some(u => u.id === user.id);
-        return exists ? prev.map(u => (u.id === user.id ? user : u)) : [...prev, user];
+      setAllUsers((prev) => {
+        const exists = prev.some((u) => u.id === user.id);
+        return exists
+          ? prev.map((u) => (u.id === user.id ? user : u))
+          : [...prev, user];
       });
 
-      setAllTeams(prev => {
+      setAllTeams((prev) => {
         const merged = [...prev];
-        teams.forEach(team => {
-          const idx = merged.findIndex(t => t.id === team.id);
+        teams.forEach((team) => {
+          const idx = merged.findIndex((t) => t.id === team.id);
           if (idx === -1) merged.push(team);
           else merged[idx] = team;
         });
@@ -145,9 +181,14 @@ const AppContent: React.FC = () => {
 
       if (user.memberships.length > 0) {
         const lastUsedTeam = localStorage.getItem('currentTeamId');
-        const lastUsedTeamId = lastUsedTeam ? JSON.parse(lastUsedTeam) : null;
+        const lastUsedTeamId = lastUsedTeam
+          ? JSON.parse(lastUsedTeam)
+          : null;
 
-        if (lastUsedTeamId && user.memberships.some(m => m.teamId === lastUsedTeamId)) {
+        if (
+          lastUsedTeamId &&
+          user.memberships.some((m) => m.teamId === lastUsedTeamId)
+        ) {
           setCurrentTeamId(lastUsedTeamId);
         } else {
           setCurrentTeamId(user.memberships[0].teamId);
@@ -162,13 +203,16 @@ const AppContent: React.FC = () => {
       return false;
     }
   };
-  
-  const handleSignUp = async (name: string, email: string, pass: string): Promise<{ success: boolean; message: string }> => {
+
+  const handleSignUp = async (
+    name: string,
+    email: string,
+    pass: string
+  ): Promise<{ success: boolean; message: string }> => {
     try {
       const { user, team } = await api.signUp(name, email, pass);
-      // Προσθήκη user & team στα state
-      setAllUsers(prev => [...prev, user]);
-      setAllTeams(prev => [...prev, team]);
+      setAllUsers((prev) => [...prev, user]);
+      setAllTeams((prev) => [...prev, team]);
       setCurrentUser(user);
       setCurrentTeamId(team.id);
       return { success: true, message: t('signup_success') };
@@ -189,7 +233,9 @@ const AppContent: React.FC = () => {
   };
 
   const handleSetCurrentTeam = (teamId: string) => {
-    const userIsMember = currentUser?.memberships.some(m => m.teamId === teamId);
+    const userIsMember = currentUser?.memberships.some(
+      (m) => m.teamId === teamId
+    );
     if (userIsMember) {
       setCurrentTeamId(teamId);
     }
@@ -197,8 +243,11 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg">
-        <Icon name="loader-2" className="w-16 h-16 text-brand-yellow animate-spin mb-4" />
+      <div className="min-h-screen.flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg">
+        <Icon
+          name="loader-2"
+          className="w-16 h-16 text-brand-yellow animate-spin mb-4"
+        />
         <p className="text-lg font-semibold text-light-text-secondary dark:text-dark-text-secondary">
           {t('loading_kitchen')}
         </p>
@@ -207,55 +256,56 @@ const AppContent: React.FC = () => {
   }
 
   if (!currentUser || !currentTeamId) {
-    return <AuthView onAuthSuccess={handleAuthSuccess} onSignUp={handleSignUp} />;
+    return (
+      <AuthView onAuthSuccess={handleAuthSuccess} onSignUp={handleSignUp} />
+    );
   }
 
   return (
-    <KitchenInterface 
-      user={currentUser} 
+    <KitchenInterface
+      user={currentUser}
       onLogout={handleLogout}
       currentTeamId={currentTeamId}
       onSetCurrentTeam={handleSetCurrentTeam}
-      // Pass all state and setters
       allUsers={allUsers}
+      setAllUsers={setAllUsers}
       allTeams={allTeams}
+      setAllTeams={setAllTeams}
       recipes={recipes}
       teamRecipes={teamRecipes}
+      setRecipes={setRecipes}
       ingredientCosts={ingredientCosts}
+      setIngredientCosts={setIngredientCosts}
       workstations={workstations}
+      setWorkstations={setWorkstations}
       tasks={tasks}
+      setTasks={setTasks}
       haccpLogs={haccpLogs}
+      setHaccpLogs={setHaccpLogs}
       haccpItems={haccpItems}
+      setHaccpItems={setHaccpItems}
       suppliers={suppliers}
+      setSuppliers={setSuppliers}
       inventory={inventory}
+      setInventory={setInventory}
       inventoryLocations={inventoryLocations}
+      setInventoryLocations={setInventoryLocations}
       inventoryTransactions={inventoryTransactions}
+      setInventoryTransactions={setInventoryTransactions}
       wasteLogs={wasteLogs}
+      setWasteLogs={setWasteLogs}
       menus={menus}
       teamMenus={teamMenus}
-      notifications={notifications}
-      messages={messages}
-      shifts={shifts}
-      shiftSchedules={shiftSchedules}
-      allChannels={allChannels}
-      setAllUsers={setAllUsers}
-      setAllTeams={setAllTeams}
-      setRecipes={setRecipes}
-      setIngredientCosts={setIngredientCosts}
-      setWorkstations={setWorkstations}
-      setTasks={setTasks}
-      setHaccpLogs={setHaccpLogs}
-      setHaccpItems={setHaccpItems}
-      setSuppliers={setSuppliers}
-      setInventory={setInventory}
-      setInventoryLocations={setInventoryLocations}
-      setInventoryTransactions={setInventoryTransactions}
-      setWasteLogs={setWasteLogs}
       setMenus={setMenus}
+      notifications={notifications}
       setNotifications={setNotifications}
+      messages={messages}
       setMessages={setMessages}
+      shifts={shifts}
       setShifts={setShifts}
+      shiftSchedules={shiftSchedules}
       setShiftSchedules={setShiftSchedules}
+      allChannels={allChannels}
       setAllChannels={setAllChannels}
     />
   );

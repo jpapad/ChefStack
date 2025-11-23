@@ -1,16 +1,15 @@
-// components/dashboard/DashboardView.tsx
 import React, { useMemo } from 'react';
-import {
+import type {
+  View,
   Recipe,
   PrepTask,
   HaccpLog,
   InventoryItem,
   WasteLog,
-  IngredientCost,
-  View,
-  InventoryTransaction,
-  WasteReasonKey
+  Message,
+  Channel
 } from '../../types';
+import { Icon } from '../common/Icon';
 
 interface DashboardViewProps {
   recipes: Recipe[];
@@ -18,12 +17,11 @@ interface DashboardViewProps {
   haccpLogs: HaccpLog[];
   inventory: InventoryItem[];
   wasteLogs: WasteLog[];
-  ingredientCosts: IngredientCost[];
-  inventoryTransactions?: InventoryTransaction[]; // reserved για μελλοντικά analytics
+  messages?: Message[];
+  channels?: Channel[];
   onViewChange: (view: View) => void;
+  withApiKeyCheck: (action: () => void | Promise<void>) => void;
 }
-
-type WasteLogWithCost = WasteLog & { cost: number | null };
 
 const DashboardView: React.FC<DashboardViewProps> = ({
   recipes,
@@ -31,429 +29,386 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   haccpLogs,
   inventory,
   wasteLogs,
-  ingredientCosts,
-  onViewChange
+  messages,
+  channels,
+  onViewChange,
+  withApiKeyCheck
 }) => {
-  // ---------- Waste με κόστος ----------
-  const wasteLogsWithCost: WasteLogWithCost[] = useMemo(() => {
-    return wasteLogs.map((log) => {
-      const item = inventory.find((i) => i.id === log.inventoryItemId);
-      if (!item || !item.ingredientCostId) {
-        return { ...log, cost: null };
-      }
-
-      const costRow = ingredientCosts.find((c) => c.id === item.ingredientCostId);
-      if (!costRow) {
-        return { ...log, cost: null };
-      }
-
-      // Υποθέτουμε ότι purchaseUnit == unit φθοράς
-      if (costRow.purchaseUnit !== log.unit) {
-        return { ...log, cost: null };
-      }
-
-      return {
-        ...log,
-        cost: log.quantity * costRow.cost
-      };
-    });
-  }, [wasteLogs, inventory, ingredientCosts]);
-
-  const wasteStats = useMemo(() => {
-    const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
-    const nowTime = now.getTime();
-    const sevenDaysAgo = nowTime - 6 * 24 * 60 * 60 * 1000; // last 7 days
-    const year = now.getFullYear();
-    const month = now.getMonth();
-
-    let qtyToday = 0;
-    let costToday = 0;
-
-    let qtyWeek = 0;
-    let costWeek = 0;
-
-    let qtyMonth = 0;
-    let costMonth = 0;
-
-    const byItem: Record<
-      string,
-      { quantity: number; cost: number; name: string }
-    > = {};
-
-    const byReason: Record<
-      WasteReasonKey,
-      { quantity: number; cost: number }
-    > = {} as any;
-
-    wasteLogsWithCost.forEach((log) => {
-      const ts = log.timestamp instanceof Date ? log.timestamp : new Date(log.timestamp);
-      const logStr = ts.toISOString().slice(0, 10);
-      const t = ts.getTime();
-
-      const qty = log.quantity;
-      const cost = log.cost ?? 0;
-
-      // Today
-      if (logStr === todayStr) {
-        qtyToday += qty;
-        costToday += cost;
-      }
-
-      // Last 7 days
-      if (t >= sevenDaysAgo && t <= nowTime) {
-        qtyWeek += qty;
-        costWeek += cost;
-      }
-
-      // This month
-      if (ts.getFullYear() === year && ts.getMonth() === month) {
-        qtyMonth += qty;
-        costMonth += cost;
-      }
-
-      // By item
-      const item = inventory.find((i) => i.id === log.inventoryItemId);
-      const name = item?.name ?? 'Άγνωστο είδος';
-      if (!byItem[log.inventoryItemId]) {
-        byItem[log.inventoryItemId] = { quantity: 0, cost: 0, name };
-      }
-      byItem[log.inventoryItemId].quantity += qty;
-      byItem[log.inventoryItemId].cost += cost;
-
-      // By reason
-      if (!byReason[log.reason]) {
-        byReason[log.reason] = { quantity: 0, cost: 0 };
-      }
-      byReason[log.reason].quantity += qty;
-      byReason[log.reason].cost += cost;
-    });
-
-    const topItemsByQuantity = Object.values(byItem)
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5);
-
-    const topReasons = Object.entries(byReason)
-      .map(([reason, data]) => ({
-        reason: reason as WasteReasonKey,
-        quantity: data.quantity,
-        cost: data.cost
-      }))
-      .sort((a, b) => b.cost - a.cost || b.quantity - a.quantity)
-      .slice(0, 5);
-
-    return {
-      qtyToday,
-      costToday,
-      qtyWeek,
-      costWeek,
-      qtyMonth,
-      costMonth,
-      topItemsByQuantity,
-      topReasons
-    };
-  }, [wasteLogsWithCost, inventory]);
-
-  // ---------- Inventory Analytics ----------
-  const inventoryStats = useMemo(() => {
-    let totalValue = 0;
-
-    const lowStockItems: {
-      id: string;
-      name: string;
-      totalQty: number;
-      reorderPoint: number;
-      value: number;
-    }[] = [];
-
-    inventory.forEach((item) => {
-      const totalQty = item.locations.reduce(
-        (sum, loc) => sum + loc.quantity,
-        0
-      );
-
-      let value = 0;
-      if (item.ingredientCostId) {
-        const costRow = ingredientCosts.find(
-          (c) => c.id === item.ingredientCostId
-        );
-        if (costRow && costRow.purchaseUnit === item.unit) {
-          value = totalQty * costRow.cost;
-          totalValue += value;
-        }
-      }
-
-      if (item.reorderPoint > 0 && totalQty < item.reorderPoint) {
-        lowStockItems.push({
-          id: item.id,
-          name: item.name,
-          totalQty,
-          reorderPoint: item.reorderPoint,
-          value
-        });
-      }
-    });
-
-    const lowStockSorted = lowStockItems.sort((a, b) => {
-      const aRatio = a.totalQty / a.reorderPoint;
-      const bRatio = b.totalQty / b.reorderPoint;
-      return aRatio - bRatio; // μικρότερο ratio = πιο “επικίνδυνο”
-    });
-
-    return {
-      totalValue,
-      lowStockCount: lowStockItems.length,
-      lowStockItems: lowStockSorted.slice(0, 5)
-    };
-  }, [inventory, ingredientCosts]);
-
-  const openWasteLog = () => onViewChange('waste_log');
-  const openInventory = () => onViewChange('inventory');
-
-  const pendingTasks = tasks.filter((t) => t.status !== 'done');
+  // --- Στατιστικά ---
   const totalRecipes = recipes.length;
-  const todayLogs = haccpLogs.filter((l) => {
-    const d = l.timestamp;
-    return d.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10);
-  });
+
+  const lowStockItems = useMemo(() => {
+    return inventory
+      .filter((item) => {
+        if (!item.reorderPoint || item.reorderPoint <= 0) return false;
+        const totalQty = (item.locations || []).reduce(
+          (sum, l) => sum + (l.quantity || 0),
+          0
+        );
+        return totalQty <= item.reorderPoint;
+      })
+      .slice(0, 3);
+  }, [inventory]);
+
+  const recentWasteLogs = useMemo(() => {
+    const sorted = [...wasteLogs].sort((a, b) => {
+      const ta =
+        a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp as any).getTime();
+      const tb =
+        b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp as any).getTime();
+      return tb - ta;
+    });
+    return sorted.slice(0, 3);
+  }, [wasteLogs]);
+
+  const recentHaccpLogs = useMemo(() => {
+    const sorted = [...haccpLogs].sort((a, b) => {
+      const ta =
+        a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp as any).getTime();
+      const tb =
+        b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp as any).getTime();
+      return tb - ta;
+    });
+    return sorted.slice(0, 3);
+  }, [haccpLogs]);
+
+  const pendingTasks = useMemo(() => {
+    return tasks.slice(0, 5);
+  }, [tasks]);
+
+  // --- Live Walkie Feed ---
+  const liveMessages = useMemo(() => {
+    if (!messages || messages.length === 0) return [];
+    const sorted = [...messages].sort((a: any, b: any) => {
+      const ta =
+        (a as any).createdAt instanceof Date
+          ? (a as any).createdAt.getTime()
+          : new Date((a as any).createdAt).getTime();
+      const tb =
+        (b as any).createdAt instanceof Date
+          ? (b as any).createdAt.getTime()
+          : new Date((b as any).createdAt).getTime();
+      return ta - tb;
+    });
+    return sorted.slice(-8);
+  }, [messages]);
+
+  const channelNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    (channels || []).forEach((ch) => {
+      map[(ch as any).id] = (ch as any).name;
+    });
+    return map;
+  }, [channels]);
+
+  const handleAIDailyBriefing = () => {
+    withApiKeyCheck(() => {
+      // προς το παρόν ανοίγουμε τη Λίστα Αγορών ως “AI βοηθό αγορών”
+      onViewChange('shopping_list');
+    });
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Πάνω σειρά με βασικά KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <button
-          onClick={openWasteLog}
-          className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col items-start"
-        >
-          <span className="text-xs font-medium uppercase text-slate-400 mb-1">
-            ΣΗΜΕΡΙΝΗ ΦΘΟΡΑ (ποσότητα)
-          </span>
-          <span className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
-            {wasteStats.qtyToday.toFixed(2)}
-          </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Συνολική ποσότητα (όλες οι μονάδες)
-          </span>
-        </button>
-
-        <button
-          onClick={openWasteLog}
-          className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col items-start"
-        >
-          <span className="text-xs font-medium uppercase text-slate-400 mb-1">
-            ΣΗΜΕΡΙΝΗ ΦΘΟΡΑ (€)
-          </span>
-          <span className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
-            € {wasteStats.costToday.toFixed(2)}
-          </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Μόνο όπου υπάρχει καταχωρημένο κόστος
-          </span>
-        </button>
-
-        <button
-          onClick={openInventory}
-          className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col items-start"
-        >
-          <span className="text-xs font-medium uppercase text-slate-400 mb-1">
-            ΣΥΝΤΑΓΕΣ
-          </span>
-          <span className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
-            {totalRecipes}
-          </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Σύνολο ενεργών συνταγών
-          </span>
-        </button>
-
-        <button
-          onClick={() => onViewChange('workstations')}
-          className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col items-start"
-        >
-          <span className="text-xs font-medium uppercase text-slate-400 mb-1">
-            ΕΚΚΡΕΜΕΙΣ ΕΡΓΑΣΙΕΣ
-          </span>
-          <span className="text-2xl font-semibold text-amber-600 dark:text-amber-400">
-            {pendingTasks.length}
-          </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Tasks που δεν είναι ολοκληρωμένα
-          </span>
-        </button>
-      </div>
-
-      {/* Νέα σειρά: Inventory Analytics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Αξία αποθέματος */}
-        <div className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-              Συνολική αξία αποθέματος
-            </h2>
-            <button
-              onClick={openInventory}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
-            >
-              Προβολή αποθήκης
-            </button>
-          </div>
-          <p className="text-3xl font-semibold text-slate-900 dark:text-slate-50 mb-1">
-            € {inventoryStats.totalValue.toFixed(2)}
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Υπολογισμένο μόνο όπου υπάρχει τιμή & ταιριάζει η μονάδα (kg / L / τεμ).
-          </p>
-        </div>
-
-        {/* Είδη υπό όριο */}
-        <div className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-              Είδη υπό όριο (reorder point)
-            </h2>
-            <span className="inline-flex items-center justify-center px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-xs">
-              {inventoryStats.lowStockCount} είδη
+    <div className="h-full grid grid-cols-1 xl:grid-cols-4 gap-6">
+      {/* Αριστερά: Quick actions + Live Walkie */}
+      <div className="xl:col-span-3 flex flex-col gap-6">
+        {/* Quick actions row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button
+            type="button"
+            onClick={() => onViewChange('recipes')}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
+          >
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-brand-yellow/10 text-brand-yellow">
+              <Icon name="book-open" className="w-4 h-4" />
             </span>
+            <div className="flex flex-col text-left">
+              <span className="font-semibold text-xs">Συνταγές</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Δες ή δημιούργησε συνταγές
+              </span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onViewChange('inventory')}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
+          >
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500">
+              <Icon name="package" className="w-4 h-4" />
+            </span>
+            <div className="flex flex-col text-left">
+              <span className="font-semibold text-xs">Απόθεμα</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Έλεγχος και κινήσεις stock
+              </span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onViewChange('waste_log')}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
+          >
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500">
+              <Icon name="trash-2" className="w-4 h-4" />
+            </span>
+            <div className="flex flex-col text-left">
+              <span className="font-semibold text-xs">Φθορές</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Καταχώρησε απώλειες
+              </span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onViewChange('notifications')}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
+          >
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500">
+              <Icon name="mic" className="w-4 h-4" />
+            </span>
+            <div className="flex flex-col text-left">
+              <span className="font-semibold text-xs">Walkie</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Άνοιξε τα κανάλια επικοινωνίας
+              </span>
+            </div>
+          </button>
+        </div>
+
+        {/* Live Walkie Feed */}
+        <div className="flex-1 rounded-3xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-800/70 shadow-sm p-4 md:p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/10 text-amber-500">
+                <Icon name="radio" className="w-4 h-4" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold">Live Walkie Feed</h2>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Τελευταία μηνύματα από τα κανάλια υπηρεσίας.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onViewChange('notifications')}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 text-white text-[11px] font-medium hover:brightness-105"
+            >
+              <Icon name="headphones" className="w-3.5 h-3.5" />
+              Άνοιγμα Walkie
+            </button>
           </div>
-          {inventoryStats.lowStockItems.length === 0 ? (
-            <p className="text-xs text-slate-400">
-              Δεν υπάρχουν ακόμη προϊόντα κάτω από το όριο.
-            </p>
-          ) : (
-            <ul className="space-y-1 text-xs sm:text-sm">
-              {inventoryStats.lowStockItems.map((item) => (
-                <li key={item.id} className="flex justify-between items-center">
-                  <div className="truncate">
-                    <div className="font-medium text-slate-800 dark:text-slate-100 truncate">
-                      {item.name}
+
+          <div className="flex-1 overflow-y-auto space-y-2 text-xs">
+            {liveMessages && liveMessages.length > 0 ? (
+              liveMessages.map((m: any) => {
+                const ts =
+                  m.createdAt instanceof Date
+                    ? m.createdAt
+                    : new Date(m.createdAt);
+                const timeLabel = ts.toLocaleTimeString('el-GR', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+                const channelName =
+                  channelNameById[m.channelId] || 'Κανάλι';
+
+                return (
+                  <div
+                    key={m.id}
+                    className="flex items-start gap-2 p-2 rounded-2xl bg-slate-50/80 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60"
+                  >
+                    <div className="mt-0.5">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-semibold">
+                        {channelName.slice(0, 2).toUpperCase()}
+                      </span>
                     </div>
-                    <div className="text-slate-500 dark:text-slate-400">
-                      Απόθεμα: {item.totalQty.toFixed(2)} / Όριο:{' '}
-                      {item.reorderPoint.toFixed(2)}
-                    </div>
-                  </div>
-                  <div className="text-right text-xs">
-                    {item.value > 0 && (
-                      <div className="text-emerald-600 dark:text-emerald-400">
-                        € {item.value.toFixed(2)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <span className="text-[11px] font-semibold truncate">
+                          {channelName}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {timeLabel}
+                        </span>
                       </div>
-                    )}
+                      <p className="text-[11px] text-slate-700 dark:text-slate-100 line-clamp-2">
+                        {m.content}
+                      </p>
+                    </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                );
+              })
+            ) : (
+              <div className="h-full flex items-center justify-center text-[11px] text-slate-400">
+                Δεν υπάρχουν ακόμα μηνύματα. Στείλε το πρώτο από την καρτέλα
+                “Ειδοποιήσεις”.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Σειρά με Waste Analytics & HACCP */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Waste ανά περίοδο */}
-        <div className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-              Φθορά ανά περίοδο
-            </h2>
-            <button
-              onClick={openWasteLog}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
-            >
-              Άνοιγμα καταγραφών
-            </button>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">
-                Σήμερα:
-              </span>
-              <span className="font-medium text-slate-800 dark:text-slate-100">
-                {wasteStats.qtyToday.toFixed(2)} (qty) — €{' '}
-                {wasteStats.costToday.toFixed(2)}
-              </span>
+      {/* Δεξιά στήλη: KPIs + Activity + AI card */}
+      <div className="xl:col-span-1 flex flex-col gap-4">
+        {/* KPIs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
+          <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-1">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Συνταγές
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-semibold">{totalRecipes}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">
-                Τελευταίες 7 ημέρες:
-              </span>
-              <span className="font-medium text-slate-800 dark:text-slate-100">
-                {wasteStats.qtyWeek.toFixed(2)} (qty) — €{' '}
-                {wasteStats.costWeek.toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">
-                Τρέχων μήνας:
-              </span>
-              <span className="font-medium text-slate-800 dark:text-slate-100">
-                {wasteStats.qtyMonth.toFixed(2)} (qty) — €{' '}
-                {wasteStats.costMonth.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Top προϊόντα με μεγαλύτερη φθορά */}
-        <div className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-              Top προϊόντα με φθορά
-            </h2>
-            <button
-              onClick={openInventory}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
-            >
-              Αποθήκη
-            </button>
-          </div>
-          {wasteStats.topItemsByQuantity.length === 0 ? (
-            <p className="text-xs text-slate-400">
-              Δεν υπάρχουν ακόμη καταγραφές φθοράς.
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Δες, επεξεργάσου ή δημιούργησε νέες συνταγές.
             </p>
-          ) : (
-            <ul className="space-y-1 text-sm">
-              {wasteStats.topItemsByQuantity.map((item) => (
-                <li
-                  key={item.name}
-                  className="flex justify-between items-center"
-                >
-                  <div className="truncate">
-                    <span className="font-medium text-slate-800 dark:text-slate-100">
-                      {item.name}
+          </div>
+
+          <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-1">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <Icon name="alert-triangle" className="w-3.5 h-3.5 text-amber-500" />
+              Χαμηλό απόθεμα
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-semibold">
+                {lowStockItems.length}
+              </span>
+            </div>
+            <ul className="mt-1 space-y-1 text-[11px] text-slate-600 dark:text-slate-300">
+              {lowStockItems.map((item) => {
+                const totalQty = (item.locations || []).reduce(
+                  (sum, l) => sum + (l.quantity || 0),
+                  0
+                );
+                return (
+                  <li key={item.id} className="flex justify-between gap-2">
+                    <span className="truncate">{item.name}</span>
+                    <span className="font-medium">
+                      {totalQty} {item.unit}
                     </span>
-                  </div>
-                  <div className="text-right text-xs">
-                    <div className="text-slate-500 dark:text-slate-400">
-                      qty: {item.quantity.toFixed(2)}
-                    </div>
-                    <div className="text-emerald-600 dark:text-emerald-400">
-                      € {item.cost.toFixed(2)}
-                    </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
+              {lowStockItems.length === 0 && (
+                <li className="text-slate-400">Όλα οκ προς το παρόν.</li>
+              )}
             </ul>
-          )}
+          </div>
+
+          <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-1">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <Icon name="droplets" className="w-3.5 h-3.5 text-rose-500" />
+              Πρόσφατες φθορές
+            </span>
+            <ul className="mt-1 space-y-1 text-[11px] text-slate-600 dark:text-slate-300">
+              {recentWasteLogs.length > 0 ? (
+                recentWasteLogs.map((log) => {
+                  const ts =
+                    log.timestamp instanceof Date
+                      ? log.timestamp
+                      : new Date(log.timestamp as any);
+                  return (
+                    <li key={log.id} className="flex flex-col">
+                      <div className="flex justify-between gap-2">
+                        <span className="truncate">{log.reason}</span>
+                        <span className="font-medium">
+                          {log.quantity} {log.unit}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">
+                        {ts.toLocaleDateString('el-GR')}{' '}
+                        {ts.toLocaleTimeString('el-GR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </li>
+                  );
+                })
+              ) : (
+                <li className="text-slate-400">Δεν υπάρχουν καταχωρήσεις.</li>
+              )}
+            </ul>
+          </div>
         </div>
 
-        {/* HACCP / today logs */}
-        <div className="bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-4 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-              HACCP Σήμερα
-            </h2>
+        {/* Activity feed */}
+        <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold flex items-center gap-1">
+              <Icon name="activity" className="w-3.5 h-3.5 text-violet-500" />
+              Κίνηση κουζίνας
+            </span>
             <button
-              onClick={() => onViewChange('haccp')}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+              type="button"
+              onClick={() => onViewChange('inventory_history')}
+              className="text-[11px] text-violet-500 hover:underline"
             >
-              Προβολή HACCP
+              Ιστορικό
             </button>
           </div>
-          <p className="text-3xl font-semibold text-slate-900 dark:text-slate-50 mb-1">
-            {todayLogs.length}
+
+          <div className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300 max-h-44 overflow-y-auto">
+            {recentHaccpLogs.map((log) => {
+              const ts =
+                log.timestamp instanceof Date
+                  ? log.timestamp
+                  : new Date(log.timestamp as any);
+              return (
+                <div key={log.id} className="flex flex-col">
+                  <span className="font-medium">HACCP: {log.type}</span>
+                  <span className="text-[10px] text-slate-400">
+                    {ts.toLocaleDateString('el-GR')}{' '}
+                    {ts.toLocaleTimeString('el-GR', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+              );
+            })}
+            {pendingTasks.map((task) => (
+              <div key={task.id} className="flex flex-col">
+                <span className="font-medium">Task: {task.title}</span>
+                {task.workstationId && (
+                  <span className="text-[10px] text-slate-400">
+                    Πόστο: {task.workstationId}
+                  </span>
+                )}
+              </div>
+            ))}
+            {recentHaccpLogs.length === 0 && pendingTasks.length === 0 && (
+              <div className="text-slate-400">Καμία πρόσφατη δραστηριότητα.</div>
+            )}
+          </div>
+        </div>
+
+        {/* AI Daily Briefing */}
+        <div className="rounded-3xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200/70 dark:border-violet-700/70 shadow-sm p-4 flex flex-col gap-2">
+          <span className="text-xs font-semibold flex items-center gap-2 text-violet-700 dark:text-violet-200">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-2xl bg-white/80 dark:bg-violet-900 text-violet-600 dark:text-violet-100 shadow-sm">
+              <Icon name="sparkles" className="w-4 h-4" />
+            </span>
+            AI Daily Briefing
+          </span>
+          <p className="text-[11px] text-violet-900/80 dark:text-violet-100">
+            Σύνοψη ημέρας για stock, waste, οργάνωση. Άφησέ το στον ψηφιακό
+            βοηθό σου.
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Συνολικές καταγραφές HACCP για σήμερα
-          </p>
+          <button
+            type="button"
+            onClick={handleAIDailyBriefing}
+            className="mt-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-600 text-white text-[11px] font-medium hover:brightness-110"
+          >
+            <Icon name="wand-2" className="w-3.5 h-3.5" />
+            Άνοιγμα Kitchen AI
+          </button>
         </div>
       </div>
     </div>

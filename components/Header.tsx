@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
-import { Icon } from './common/Icon';
-import { useDarkMode } from '../hooks/useDarkMode';
-import { View, User, Team, Notification } from '../types';
+// components/Header.tsx
+import React, { useMemo, useState } from 'react';
+import {
+  User,
+  Team,
+  Notification,
+  View
+} from '../types';
 import { useTranslation } from '../i18n';
+import { Icon } from './common/Icon';
+import KitchenAICoachModal from './common/KitchenAICoachModal';
 
 interface HeaderProps {
   currentViewTitleKey: string;
@@ -11,85 +17,132 @@ interface HeaderProps {
   currentTeamId: string;
   onSetCurrentTeam: (teamId: string) => void;
   notifications: Notification[];
-  onViewChange: (view: View) => void; // For notification bell click
+  onViewChange: (view: View) => void;
+  withApiKeyCheck: (action: () => void | Promise<void>) => void;
+  aiGlobalContext?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentViewTitleKey, user, allTeams, currentTeamId, onSetCurrentTeam, notifications, onViewChange }) => {
-    const { language, setLanguage, t } = useTranslation();
-    const [isDarkMode, toggleDarkMode] = useDarkMode();
-    const [isTeamMenuOpen, setIsTeamMenuOpen] = useState(false);
-    const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+const Header: React.FC<HeaderProps> = ({
+  currentViewTitleKey,
+  user,
+  allTeams,
+  currentTeamId,
+  onSetCurrentTeam,
+  notifications,
+  onViewChange,
+  withApiKeyCheck,
+  aiGlobalContext
+}) => {
+  const { t } = useTranslation();
+  const [isCoachOpen, setIsCoachOpen] = useState(false);
 
-    const currentTeam = allTeams.find(t => t.id === currentTeamId);
-    const unreadCount = notifications.filter(n => !n.read).length;
-    
-    return (
-        <header className="flex-shrink-0 px-4 sm:px-6 py-3 bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border-b border-white/20 dark:border-slate-800/40 print:hidden z-20">
-            <div className="flex justify-between items-center">
-                {/* Left Side: View Title */}
-                <h1 className="text-2xl font-bold font-heading text-light-text-primary dark:text-dark-text-primary">
-                    {t(currentViewTitleKey)}
-                </h1>
+  const currentTeam = useMemo(
+    () => allTeams.find((t) => t.id === currentTeamId),
+    [allTeams, currentTeamId]
+  );
 
-                {/* Right Side: Actions */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                    {/* Language Switcher */}
-                    <div className="relative">
-                        <button onClick={() => setIsLangMenuOpen(p => !p)} className="p-2 rounded-full text-light-text-secondary dark:text-dark-text-secondary hover:bg-black/5 dark:hover:bg-white/5" title="Change Language">
-                            <Icon name="globe" className="w-5 h-5"/>
-                        </button>
-                        {isLangMenuOpen && (
-                        <div className="absolute right-0 mt-2 w-40 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-lg shadow-lg py-1 z-40">
-                            <button onClick={() => { setLanguage('el'); setIsLangMenuOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === 'el' ? 'font-bold text-brand-yellow' : ''}`}>Ελληνικά</button>
-                            <button onClick={() => { setLanguage('en'); setIsLangMenuOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === 'en' ? 'font-bold text-brand-yellow' : ''}`}>English</button>
-                       </div>
-                        )}
-                    </div>
-                    
-                    <button onClick={toggleDarkMode} className="p-2 rounded-full text-light-text-secondary dark:text-dark-text-secondary hover:bg-black/5 dark:hover:bg-white/5">
-                        <Icon name={isDarkMode ? 'sun' : 'moon'} className="w-5 h-5"/>
-                    </button>
-                    {/* Notification Bell */}
-                    <button 
-                        onClick={() => onViewChange('notifications')} 
-                        className="relative p-2 rounded-full text-light-text-secondary dark:text-dark-text-secondary hover:bg-black/5 dark:hover:bg-white/5"
-                        title={t('nav_notifications')}
-                    >
-                        <Icon name="bell" className="w-5 h-5"/>
-                        {unreadCount > 0 && (
-                            <span className="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"/>
-                        )}
-                    </button>
-                    {/* Team Switcher */}
-                    {user.memberships.length > 1 && (
-                        <div className="relative">
-                            <button onClick={() => setIsTeamMenuOpen(p => !p)} className="flex items-center gap-2 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
-                                <Icon name="users" className="w-5 h-5" />
-                                <span className="hidden md:inline">{currentTeam?.name}</span>
-                            </button>
-                            {isTeamMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-56 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-lg shadow-lg py-1 z-40">
-                                {user.memberships.map(membership => {
-                                    const team = allTeams.find(t => t.id === membership.teamId);
-                                    if (!team) return null;
-                                    return (
-                                        <button 
-                                            key={team.id} 
-                                            onClick={() => { onSetCurrentTeam(team.id); setIsTeamMenuOpen(false); }} 
-                                            className={`w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-light-text-primary dark:text-dark-text-primary hover:bg-black/5 dark:hover:bg-white/10 ${team.id === currentTeamId ? 'font-bold' : ''}`}
-                                        >
-                                            {team.name}
-                                        </button>
-                                    )
-                                })}
-                           </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications]
+  );
+
+  const handleOpenNotifications = () => {
+    onViewChange('notifications');
+  };
+
+  const currentViewTitle = t(currentViewTitleKey);
+
+  return (
+    <>
+      <header className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border-b border-white/20 dark:border-slate-800/60">
+        {/* Left: View title & team selector */}
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-lg sm:text-xl font-heading font-semibold">
+              {currentViewTitle}
+            </h1>
+            <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+              {currentTeam?.name || 'Χωρίς ομάδα'}
+            </p>
+          </div>
+
+          {/* Team selector (αν έχεις πολλές ομάδες) */}
+          {allTeams.length > 1 && (
+            <select
+              value={currentTeamId}
+              onChange={(e) => onSetCurrentTeam(e.target.value)}
+              className="text-xs border rounded px-2 py-1 bg-white dark:bg-slate-900"
+            >
+              {allTeams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Right: AI button, notifications, user */}
+        <div className="flex items-center gap-3">
+          {/* Kitchen AI button */}
+          <button
+            type="button"
+            onClick={() => setIsCoachOpen(true)}
+            className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full border border-purple-400 text-purple-700 text-xs font-semibold hover:bg-purple-50 dark:border-purple-500 dark:text-purple-200 dark:hover:bg-purple-500/10 transition-colors"
+          >
+            <Icon
+              name="sparkles"
+              className="w-4 h-4 text-purple-500 dark:text-purple-300"
+            />
+            <span>Kitchen AI</span>
+          </button>
+
+          {/* Notifications */}
+          <button
+            type="button"
+            onClick={handleOpenNotifications}
+            className="relative p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            title="Ειδοποιήσεις"
+          >
+            <Icon name="bell" className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* User avatar / info */}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-sm font-semibold">
+                {user.name || user.email}
+              </span>
+              <span className="text-[11px] text-light-text-secondary dark:text-dark-text-secondary">
+                {user.email}
+              </span>
             </div>
-        </header>
-    );
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-yellow to-amber-500 flex items-center justify-center text-sm font-bold text-black shadow-md">
+              {user.name?.[0]?.toUpperCase() ||
+                user.email?.[0]?.toUpperCase() ||
+                '?'}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Kitchen AI Coach Modal */}
+      <KitchenAICoachModal
+        isOpen={isCoachOpen}
+        onClose={() => setIsCoachOpen(false)}
+        withApiKeyCheck={withApiKeyCheck}
+        aiGlobalContext={aiGlobalContext}
+        currentViewTitle={currentViewTitle}
+        userName={user.name || user.email}
+        teamName={currentTeam?.name}
+      />
+    </>
+  );
 };
 
 export default Header;

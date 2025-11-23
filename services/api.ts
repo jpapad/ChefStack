@@ -1,4 +1,3 @@
-// services/api.ts
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import {
   Recipe,
@@ -19,7 +18,9 @@ import {
   Channel,
   InventoryLocation,
   InventoryTransaction,
-  WasteLog
+  WasteLog,
+  KitchenServiceOrder,
+  KitchenOrderItem
 } from '../types';
 import * as mockData from '../data/mockData';
 
@@ -116,7 +117,9 @@ const mapIngredientCostFromDb = (row: any): IngredientCost => ({
   teamId: row.team_id ?? ''
 });
 
-const mapIngredientCostToDb = (cost: Omit<IngredientCost, 'id'> | IngredientCost) => {
+const mapIngredientCostToDb = (
+  cost: Omit<IngredientCost, 'id'> | IngredientCost
+) => {
   const base = {
     name: cost.name,
     cost: cost.cost,
@@ -142,7 +145,9 @@ const mapInventoryItemFromDb = (row: any): InventoryItem => ({
   teamId: row.team_id ?? ''
 });
 
-const mapInventoryItemToDb = (item: Omit<InventoryItem, 'id'> | InventoryItem) => {
+const mapInventoryItemToDb = (
+  item: Omit<InventoryItem, 'id'> | InventoryItem
+) => {
   const base = {
     name: item.name,
     unit: item.unit,
@@ -166,7 +171,7 @@ const mapWasteLogFromDb = (row: any): WasteLog => ({
   teamId: row.team_id,
   userId: row.user_id,
   inventoryItemId: row.inventory_item_id,
-  quantity: row.quantity,
+  quantity: Number(row.quantity),
   unit: row.unit,
   reason: row.reason,
   notes: row.notes ?? '',
@@ -174,26 +179,100 @@ const mapWasteLogFromDb = (row: any): WasteLog => ({
 });
 
 const mapWasteLogToDb = (log: Omit<WasteLog, 'id'> | WasteLog) => {
+  const timestamp =
+    log.timestamp instanceof Date
+      ? log.timestamp
+      : new Date(log.timestamp as any);
+
   const base = {
-    team_id: log.teamId,
-    user_id: log.userId,
+    team_id: (log as any).teamId,
+    user_id: (log as any).userId,
     inventory_item_id: log.inventoryItemId,
     quantity: log.quantity,
     unit: log.unit,
     reason: log.reason,
     notes: log.notes ?? '',
-    timestamp: log.timestamp.toISOString()
+    timestamp: timestamp.toISOString()
   };
 
-  if ('id' in log && log.id) {
-    return { id: log.id, ...base };
+  if ('id' in log && (log as any).id) {
+    return { id: (log as any).id, ...base };
   }
 
   return { id: generateId('waste'), ...base };
 };
 
+// ---------- Helpers για Messages & Channels ----------
+const mapMessageFromDb = (row: any): Message => {
+  const createdAt = row.created_at ? new Date(row.created_at) : new Date();
+
+  const msg: any = {
+    id: row.id,
+    teamId: row.team_id,
+    channelId: row.channel_id,
+    userId: row.user_id,
+    content: row.content,
+    text: row.content,
+    createdAt,
+    timestamp: createdAt
+  };
+
+  return msg as Message;
+};
+
+const mapChannelFromDb = (row: any): Channel => {
+  const createdAt = row.created_at ? new Date(row.created_at) : new Date();
+
+  const ch: any = {
+    id: row.id,
+    teamId: row.team_id,
+    name: row.name,
+    createdAt,
+    type: row.type ?? undefined,
+    relatedOrderId: row.related_order_id ?? undefined
+  };
+
+  return ch as Channel;
+};
+
+// ---------- Helpers για Kitchen–Service Orders ----------
+const mapKitchenOrderItemFromDb = (row: any): KitchenOrderItem => ({
+  id: row.id,
+  recipeId: row.recipe_id ?? undefined,
+  customName: row.custom_name,
+  quantity: row.quantity,
+  status: row.status,
+  workstationId: row.workstation_id ?? undefined,
+  notes: row.notes ?? undefined,
+  tags: row.tags ?? []
+});
+
+const mapKitchenOrderFromDb = (
+  row: any,
+  items: any[]
+): KitchenServiceOrder => ({
+  id: row.id,
+  teamId: row.team_id,
+  channelId: row.channel_id ?? undefined,
+  tableNumber: row.table_number ?? undefined,
+  externalRef: row.external_ref ?? undefined,
+  status: row.status,
+  items: items.map(mapKitchenOrderItemFromDb),
+  notes: row.notes ?? undefined,
+  createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+  updatedAt: row.updated_at ? new Date(row.updated_at) : new Date(),
+  createdByUserId: row.created_by_user_id ?? undefined,
+  servedByUserId: row.served_by_user_id ?? undefined
+});
+
+// Input type για create/update
+type KitchenServiceOrderInput = Omit<KitchenServiceOrder, 'createdAt' | 'updatedAt'> & {
+  id?: string;
+};
+
 // ---------- API SERVICE ----------
 export const api = {
+  // -------- Fetch all initial data --------
   fetchAllData: async (): Promise<{
     recipes: Recipe[];
     ingredientCosts: IngredientCost[];
@@ -295,8 +374,14 @@ export const api = {
     };
 
     const recipeRows = safeData<any>(recipesRes, 'recipes');
-    const ingredientCostRows = safeData<any>(ingredientCostsRes, 'ingredient_costs');
-    const workstationRows = safeData<Workstation>(workstationsRes, 'workstations');
+    const ingredientCostRows = safeData<any>(
+      ingredientCostsRes,
+      'ingredient_costs'
+    );
+    const workstationRows = safeData<Workstation>(
+      workstationsRes,
+      'workstations'
+    );
     const taskRows = safeData<PrepTask>(tasksRes, 'tasks');
     const haccpLogRows = safeData<any>(haccpLogsRes, 'haccp_logs');
     const haccpItemRows = safeData<HaccpItem>(haccpItemsRes, 'haccp_items');
@@ -311,6 +396,7 @@ export const api = {
       'inventory_transactions'
     );
     const wasteLogRows = safeData<any>(wasteLogsRes, 'waste_logs');
+    console.log('[api.fetchAllData] wasteLogRows from DB:', wasteLogRows);
     const menuRows = safeData<any>(menusRes, 'chef_menus');
     const userRows = safeData<User>(usersRes, 'users');
     const teamRows = safeData<Team>(teamsRes, 'teams');
@@ -321,7 +407,7 @@ export const api = {
       shiftSchedulesRes,
       'shift_schedules'
     );
-    const channelRows = safeData<Channel>(channelsRes, 'channels');
+    const channelRows = safeData<any>(channelsRes, 'channels');
 
     const menus: Menu[] = menuRows.map((row: any) => {
       const stored = row.data as Menu | undefined;
@@ -371,13 +457,10 @@ export const api = {
         ...n,
         timestamp: new Date(n.timestamp)
       })),
-      messages: messageRows.map((m) => ({
-        ...m,
-        timestamp: new Date(m.timestamp)
-      })),
+      messages: messageRows.map(mapMessageFromDb),
       shifts: shiftRows,
       shiftSchedules: shiftScheduleRows,
-      channels: channelRows
+      channels: channelRows.map(mapChannelFromDb)
     };
 
     return results;
@@ -438,7 +521,10 @@ export const api = {
   },
 
   // --- Auth (login / logout / current user) ---
-  login: async (email: string, pass: string): Promise<{ user: User; teams: Team[] }> => {
+  login: async (
+    email: string,
+    pass: string
+  ): Promise<{ user: User; teams: Team[] }> => {
     if (useMockApi) {
       const mockUser = mockData.mockUsers[0];
       const userTeams = mockData.mockTeams.filter((t) =>
@@ -715,36 +801,250 @@ export const api = {
     if (error) throw error;
   },
 
-  // --- Channels ---
+  // --- Channels & Messages (Walkie-Talkie) ---
+  fetchChannels: async (teamId: string): Promise<Channel[]> => {
+    // Αν δεν υπάρχει Supabase, μπορείς προαιρετικά να γυρνάς mock κανάλια
+    if (!supabase || !isSupabaseConfigured) {
+      console.warn(
+        '[api.fetchChannels] Supabase not configured – returning mock or empty channels.'
+      );
+      return useMockApi
+        ? mockData.mockChannels.filter((c) => c.teamId === teamId)
+        : [];
+    }
+
+    const { data, error } = await supabase
+      .from('channels')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('[api.fetchChannels] error', error);
+      throw error;
+    }
+
+    const rows = data ?? [];
+
+    return rows.map(mapChannelFromDb);
+  },
+
+  fetchMessages: async (teamId: string): Promise<Message[]> => {
+    if (!supabase || !isSupabaseConfigured) {
+      console.warn(
+        '[api.fetchMessages] Supabase not configured – returning mock or empty messages.'
+      );
+      if (useMockApi) {
+        return mockData.mockMessages
+          .filter((m) => (m as any).teamId === teamId)
+          .map((m) => ({
+            ...(m as any),
+            createdAt:
+              (m as any).createdAt instanceof Date
+                ? (m as any).createdAt
+                : new Date((m as any).createdAt),
+            timestamp:
+              (m as any).timestamp instanceof Date
+                ? (m as any).timestamp
+                : new Date((m as any).timestamp)
+          })) as Message[];
+      }
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('[api.fetchMessages] error', error);
+      throw error;
+    }
+
+    const rows = data ?? [];
+
+    return rows.map(mapMessageFromDb);
+  },
+
+  subscribeToMessages: (
+    teamId: string,
+    handler: (message: Message) => void
+  ): () => void => {
+    if (!supabase || !isSupabaseConfigured) {
+      console.warn(
+        '[api.subscribeToMessages] Supabase not configured – realtime walkie talkie disabled.'
+      );
+      return () => {};
+    }
+
+    const realtimeChannel = supabase
+      .channel(`messages-team-${teamId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `team_id=eq.${teamId}`
+        },
+        (payload) => {
+          const row: any = payload.new;
+          const msg = mapMessageFromDb(row);
+
+          console.log('[api.subscribeToMessages] incoming row', row);
+          console.log('[api.subscribeToMessages] mapped message', msg);
+
+          handler(msg);
+        }
+      )
+      .subscribe((status) => {
+        console.log('[api.subscribeToMessages] status', status);
+      });
+
+    return () => {
+      supabase.removeChannel(realtimeChannel);
+    };
+  },
+
+  subscribeToChannels: (
+    teamId: string,
+    handler: (channel: Channel) => void
+  ): () => void => {
+    if (!supabase || !isSupabaseConfigured) {
+      console.warn(
+        '[api.subscribeToChannels] Supabase not configured – realtime channels disabled.'
+      );
+      return () => {};
+    }
+
+    const realtimeChannel = supabase
+      .channel(`channels-team-${teamId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'channels',
+          filter: `team_id=eq.${teamId}`
+        },
+        (payload) => {
+          const row: any = payload.new;
+          const ch = mapChannelFromDb(row);
+
+          console.log('[api.subscribeToChannels] incoming row', row);
+          console.log('[api.subscribeToChannels] mapped channel', ch);
+
+          handler(ch);
+        }
+      )
+      .subscribe((status) => {
+        console.log('[api.subscribeToChannels] status', status);
+      });
+
+    return () => {
+      supabase.removeChannel(realtimeChannel);
+    };
+  },
+
   saveChannel: async (
     channelData: Omit<Channel, 'id'> | Channel
   ): Promise<Channel> => {
-    if (useMockApi) {
-      if ('id' in channelData) return Promise.resolve(channelData as Channel);
-      const newChannel = {
-        ...channelData,
-        id: `channel${Date.now()}`
-      } as Channel;
-      return Promise.resolve(newChannel);
+    if (!supabase || !isSupabaseConfigured) {
+      if (useMockApi) {
+        const isExisting = 'id' in channelData && !!(channelData as any).id;
+        if (isExisting) return Promise.resolve(channelData as Channel);
+        const newChannel: Channel = {
+          ...(channelData as any),
+          id: generateId('channel')
+        } as Channel;
+        return Promise.resolve(newChannel);
+      }
+      throwConfigError();
     }
-    if (!supabase) throwConfigError();
+
+    const base = channelData as any;
+    const payload: any = {
+      team_id: base.teamId,
+      name: base.name,
+      type: base.type ?? null,
+      related_order_id: base.relatedOrderId ?? null
+    };
+
+    if (base.id) {
+      payload.id = base.id;
+    }
+
     const { data, error } = await supabase
       .from('channels')
-      .upsert(channelData)
-      .select()
+      .upsert(payload)
+      .select('*')
       .single();
-    if (error) throw error;
-    return data as Channel;
+
+    if (error) {
+      console.error('[api.saveChannel] error', error);
+      throw error;
+    }
+
+    const row: any = data;
+
+    return mapChannelFromDb(row);
   },
 
   deleteChannel: async (channelId: string): Promise<void> => {
-    if (useMockApi) return Promise.resolve();
-    if (!supabase) throwConfigError();
+    if (!supabase || !isSupabaseConfigured) {
+      if (useMockApi) return Promise.resolve();
+      throwConfigError();
+    }
+
     const { error } = await supabase
       .from('channels')
       .delete()
       .eq('id', channelId);
-    if (error) throw error;
+
+    if (error) {
+      console.error('[api.deleteChannel] error', error);
+      throw error;
+    }
+  },
+
+  saveMessage: async (data: Omit<Message, 'id'>): Promise<Message> => {
+    if (!supabase || !isSupabaseConfigured) {
+      if (useMockApi) {
+        const now = new Date();
+        const newMsg: any = {
+          ...(data as any),
+          id: generateId('msg'),
+          createdAt: now,
+          timestamp: now
+        };
+        return Promise.resolve(newMsg as Message);
+      }
+      throwConfigError();
+    }
+
+    const payload: any = {
+      team_id: (data as any).teamId,
+      channel_id: (data as any).channelId,
+      user_id: (data as any).userId,
+      content: (data as any).content ?? (data as any).text
+    };
+
+    const { data: rows, error } = await supabase
+      .from('messages')
+      .insert([payload])
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('[api.saveMessage] error', error);
+      throw error;
+    }
+
+    const row: any = rows;
+
+    return mapMessageFromDb(row);
   },
 
   // --- Suppliers ---
@@ -927,10 +1227,8 @@ export const api = {
     if (error) throw error;
   },
 
-  // --- Waste Logs ---
-  saveWasteLog: async (
-    logData: Omit<WasteLog, 'id'>
-  ): Promise<WasteLog> => {
+    // --- Waste Logs ---
+  saveWasteLog: async (logData: Omit<WasteLog, 'id'>): Promise<WasteLog> => {
     if (useMockApi) {
       const newLog: WasteLog = {
         ...(logData as any),
@@ -942,13 +1240,20 @@ export const api = {
     if (!supabase) throwConfigError();
 
     const payload = mapWasteLogToDb(logData);
+    console.log('[api.saveWasteLog] payload to insert into waste_logs:', payload);
+
     const { data, error } = await supabase
       .from('waste_logs')
-      .upsert(payload)
+      .insert([payload])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[api.saveWasteLog] Supabase error:', error);
+      throw new Error(error.message || 'Supabase error while saving waste log');
+    }
+
+    console.log('[api.saveWasteLog] inserted row from DB:', data);
     return mapWasteLogFromDb(data);
   },
 
@@ -960,6 +1265,189 @@ export const api = {
       .from('waste_logs')
       .delete()
       .eq('id', logId);
+
     if (error) throw error;
+  },
+
+  // --- Kitchen–Service Orders (κουζίνα–σέρβις) ---
+  fetchKitchenServiceOrders: async (
+    teamId: string
+  ): Promise<KitchenServiceOrder[]> => {
+    if (useMockApi) {
+      console.warn(
+        '[api.fetchKitchenServiceOrders] Supabase not configured – returning empty list.'
+      );
+      return [];
+    }
+    if (!supabase) throwConfigError();
+
+    const { data: orderRows, error: ordersError } = await supabase
+      .from('kitchen_service_orders')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('created_at', { ascending: false });
+
+    if (ordersError) {
+      console.error(
+        '[api.fetchKitchenServiceOrders] error loading orders',
+        ordersError
+      );
+      throw ordersError;
+    }
+
+    const orders = orderRows || [];
+    if (orders.length === 0) return [];
+
+    const orderIds = orders.map((o: any) => o.id);
+
+    const { data: itemRows, error: itemsError } = await supabase
+      .from('kitchen_order_items')
+      .select('*')
+      .in('order_id', orderIds);
+
+    if (itemsError) {
+      console.error(
+        '[api.fetchKitchenServiceOrders] error loading items',
+        itemsError
+      );
+      throw itemsError;
+    }
+
+    const byOrderId: Record<string, any[]> = {};
+    (itemRows || []).forEach((row: any) => {
+      if (!byOrderId[row.order_id]) byOrderId[row.order_id] = [];
+      byOrderId[row.order_id].push(row);
+    });
+
+    return orders.map((row: any) =>
+      mapKitchenOrderFromDb(row, byOrderId[row.id] || [])
+    );
+  },
+
+  saveKitchenServiceOrder: async (
+    order: KitchenServiceOrder
+  ): Promise<KitchenServiceOrder> => {
+    if (useMockApi) {
+      console.warn(
+        '[api.saveKitchenServiceOrder] Supabase not configured – returning input order.'
+      );
+      return Promise.resolve(order);
+    }
+    if (!supabase) throwConfigError();
+
+    const createdAt =
+      order.createdAt instanceof Date
+        ? order.createdAt
+        : new Date((order as any).createdAt);
+    const updatedAt =
+      order.updatedAt instanceof Date
+        ? order.updatedAt
+        : new Date((order as any).updatedAt);
+
+    // Αν το id είναι "τυχαίο" client-side (π.χ. order_123), αφήνουμε τη βάση να βάλει δικό της uuid
+    const isNew =
+      !order.id || String(order.id).startsWith('order_');
+
+    const orderPayload: any = {
+      team_id: order.teamId,
+      channel_id: order.channelId ?? null,
+      table_number: order.tableNumber ?? null,
+      external_ref: order.externalRef ?? null,
+      status: order.status,
+      notes: order.notes ?? null,
+      created_by_user_id: order.createdByUserId ?? null,
+      served_by_user_id: order.servedByUserId ?? null,
+      created_at: createdAt.toISOString(),
+      updated_at: updatedAt.toISOString()
+    };
+
+    if (!isNew && order.id) {
+      orderPayload.id = order.id;
+    }
+
+    // 1️⃣ Αποθήκευση / ενημέρωση order
+    const { data: savedOrderRow, error: orderError } = await supabase
+      .from('kitchen_service_orders')
+      .upsert(orderPayload)
+      .select()
+      .single();
+
+    if (orderError || !savedOrderRow) {
+      console.error('[api.saveKitchenServiceOrder] orderError', orderError);
+      throw orderError || new Error('Failed to save kitchen-service order');
+    }
+
+    const orderId: string = savedOrderRow.id;
+
+    // 2️⃣ Σβήνουμε παλιά items αυτού του order (ON DELETE CASCADE θα καθάριζε αν σβήναμε το order,
+    //    αλλά εδώ θέλουμε "replace items")
+    const { error: delError } = await supabase
+      .from('kitchen_order_items')
+      .delete()
+      .eq('order_id', orderId);
+
+    if (delError) {
+      console.error(
+        '[api.saveKitchenServiceOrder] delete items error',
+        delError
+      );
+      // δεν κάνουμε throw για να μην σπάσουμε απαραίτητα το flow
+    }
+
+    // 3️⃣ Εισαγωγή των τωρινών items
+        let savedItemRows: any[] = [];
+    if (order.items && order.items.length > 0) {
+      const itemsPayload = order.items.map((item) => ({
+        // ✅ ΔΙΝΟΥΜΕ ΠΑΝΤΑ id για να μην είναι NULL
+        id: generateId('koi'),
+        order_id: orderId,
+        recipe_id: item.recipeId ?? null,
+        custom_name: item.customName,
+        quantity: item.quantity,
+        status: item.status,
+        workstation_id: item.workstationId ?? null,
+        notes: item.notes ?? null,
+        tags: item.tags ?? []
+      }));
+
+      const { data: insertedItems, error: itemsError } = await supabase
+        .from('kitchen_order_items')
+        .insert(itemsPayload)
+        .select();
+
+      if (itemsError) {
+        console.error(
+          '[api.saveKitchenServiceOrder] itemsError',
+          itemsError
+        );
+        throw itemsError;
+      }
+
+      savedItemRows = insertedItems || [];
+    }
+
+
+    // 4️⃣ Mapping πίσω στο domain model
+    return mapKitchenOrderFromDb(savedOrderRow, savedItemRows);
+  },
+
+  deleteKitchenServiceOrder: async (orderId: string): Promise<void> => {
+    if (useMockApi) {
+      console.warn(
+        '[api.deleteKitchenServiceOrder] Supabase not configured – no-op.'
+      );
+      return;
+    }
+    if (!supabase) throwConfigError();
+
+    const { error } = await supabase
+      .from('kitchen_service_orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('[api.deleteKitchenServiceOrder] error', error);
+      throw error;
+    }
   }
 };

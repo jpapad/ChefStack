@@ -4,10 +4,9 @@ import {
   Ingredient,
   Allergen,
   ALLERGENS_LIST,
-  RecipeCategoryKey,
   RECIPE_CATEGORY_KEYS,
   Unit,
-  RecipeStep,
+  RecipeStep
 } from '../types';
 import { Icon } from './common/Icon';
 import AIImageModal from './common/AIImageModal';
@@ -31,12 +30,12 @@ const initialRecipeState: Omit<Recipe, 'id'> = {
   servings: 1,
   price: 0,
   ingredients: [
-    { id: `ing${Date.now()}`, name: '', quantity: 0, unit: 'g', isSubRecipe: false },
+    { id: `ing${Date.now()}`, name: '', quantity: 0, unit: 'g', isSubRecipe: false }
   ],
   steps: [{ id: `step${Date.now()}`, type: 'step', content: '' }],
   allergens: [],
   teamId: '',
-  yield: { quantity: 1, unit: 'kg' },
+  yield: { quantity: 1, unit: 'kg' }
 };
 
 const RecipeForm: React.FC<RecipeFormProps> = ({
@@ -44,15 +43,15 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
   onCancel,
   recipeToEdit,
   allRecipes,
-  withApiKeyCheck,
+  withApiKeyCheck
 }) => {
-  // αρχικο state μόνο στο mount
+  // αρχικό state μόνο στο mount
   const [recipe, setRecipe] = useState<Omit<Recipe, 'id'> | Recipe>(() => {
     if (recipeToEdit) {
       return {
         ...initialRecipeState,
         ...recipeToEdit,
-        name_en: recipeToEdit.name_en || '',
+        name_en: recipeToEdit.name_en || ''
       };
     }
     return initialRecipeState;
@@ -73,13 +72,13 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
         ...prev,
         yield: {
           ...prev.yield!,
-          [field]: field === 'quantity' ? parseFloat(value) || 0 : value,
-        },
+          [field]: field === 'quantity' ? parseFloat(value) || 0 : value
+        }
       }));
     } else {
       setRecipe((prev) => ({
         ...prev,
-        [name]: numericFields.includes(name) ? parseFloat(value) || 0 : value,
+        [name]: numericFields.includes(name) ? parseFloat(value) || 0 : value
       }));
     }
   };
@@ -172,7 +171,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
       newIngredients[index] = {
         ...newIngredients[index],
         name: selectedRecipe.name,
-        recipeId: selectedRecipe.id,
+        recipeId: selectedRecipe.id
       };
       setRecipe((prev) => ({ ...prev, ingredients: newIngredients }));
     }
@@ -183,8 +182,14 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
       ...prev,
       ingredients: [
         ...prev.ingredients,
-        { id: `ing${Date.now()}`, name: '', quantity: 0, unit: 'g', isSubRecipe: false },
-      ],
+        {
+          id: `ing${Date.now()}`,
+          name: '',
+          quantity: 0,
+          unit: 'g',
+          isSubRecipe: false
+        }
+      ]
     }));
   };
 
@@ -192,7 +197,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
     if (recipe.ingredients.length > 1) {
       setRecipe((prev) => ({
         ...prev,
-        ingredients: prev.ingredients.filter((_, i) => i !== index),
+        ingredients: prev.ingredients.filter((_, i) => i !== index)
       }));
     }
   };
@@ -213,7 +218,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
     if (recipe.steps.length > 1) {
       setRecipe((prev) => ({
         ...prev,
-        steps: prev.steps.filter((_, i) => i !== index),
+        steps: prev.steps.filter((_, i) => i !== index)
       }));
     }
   };
@@ -230,49 +235,71 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipe.name || recipe.ingredients.some((i) => !i.name) || recipe.steps.some((s) => !s.content)) {
-      alert('Please fill in all required fields (Recipe Name, Ingredient Names, and Steps).');
+    if (
+      !recipe.name ||
+      recipe.ingredients.some((i) => !i.name) ||
+      recipe.steps.some((s) => !s.content)
+    ) {
+      alert(
+        'Συμπλήρωσε όλα τα απαραίτητα πεδία: Όνομα συνταγής, ονόματα υλικών και βήματα εκτέλεσης.'
+      );
       return;
     }
     onSave(recipe);
   };
 
+  // Για σωστή αρίθμηση βημάτων (αγνοεί τις ενότητες)
+  let visibleStepCounter = 0;
+
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto bg-light-card dark:bg-dark-card">
+      <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
+          {/* Header */}
           <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-4">
-            <h2 className="text-3xl font-extrabold">
-              {recipeToEdit ? 'Επεξεργασία Συνταγής' : 'Δημιουργία Νέας Συνταγής'}
-            </h2>
-            <div className="flex gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold flex items-center gap-2">
+                <Icon name="book-open" className="w-6 h-6 text-brand-yellow" />
+                {recipeToEdit ? 'Επεξεργασία Συνταγής' : 'Δημιουργία Νέας Συνταγής'}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Συμπλήρωσε τα στοιχεία της συνταγής, τα υλικά και τα βήματα εκτέλεσης.
+              </p>
+            </div>
+            <div className="flex gap-3 flex-shrink-0">
               <button
                 type="button"
                 onClick={onCancel}
-                className="py-2 px-4 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 font-semibold"
+                className="py-2 px-4 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 font-semibold text-sm"
               >
                 Άκυρο
               </button>
               <button
                 type="submit"
-                className="py-2 px-6 rounded-lg bg-brand-primary text-white hover:bg-brand-secondary font-semibold"
+                className="py-2 px-6 rounded-lg bg-brand-yellow text-brand-dark hover:brightness-105 font-semibold text-sm shadow-md"
               >
                 Αποθήκευση
               </button>
             </div>
           </div>
 
-          {/* Basic Info */}
+          {/* Βασικές Πληροφορίες */}
           <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-semibold mb-4">Βασικές Πληροφορίες</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <Icon name="info" className="w-5 h-5 text-brand-yellow" />
+                Βασικές Πληροφορίες
+              </h3>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Τα πεδία με * είναι υποχρεωτικά
+              </span>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Όνομα Συνταγής (Ελληνικά) */}
               <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Όνομα Συνταγής (Ελληνικά)
+                <label htmlFor="name" className="block text-sm font-medium mb-1">
+                  Όνομα Συνταγής (Ελληνικά) *
                 </label>
                 <input
                   type="text"
@@ -288,10 +315,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
 
               {/* Όνομα Συνταγής (Αγγλικά) */}
               <div>
-                <label
-                  htmlFor="name_en"
-                  className="block text-sm font-medium mb-1"
-                >
+                <label htmlFor="name_en" className="block text-sm font-medium mb-1">
                   Όνομα Συνταγής (Αγγλικά)
                 </label>
                 <input
@@ -307,10 +331,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
 
               {/* Κατηγορία */}
               <div className="col-span-1 md:col-span-2">
-                <label
-                  htmlFor="category"
-                  className="block text-sm font-medium mb-1"
-                >
+                <label htmlFor="category" className="block text-sm font-medium mb-1">
                   Κατηγορία
                 </label>
                 <select
@@ -331,7 +352,10 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               {/* Εικόνα Συνταγής */}
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-sm font-medium mb-1">Εικόνα Συνταγής</label>
-                <div className="mt-1 flex justify-center items-center w-full h-48 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-2 relative text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  PNG / JPG / GIF έως 10MB ή δημιουργία με AI.
+                </p>
+                <div className="mt-1 flex justify-center items-center w-full h-48 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-2 relative text-center bg-black/5 dark:bg-white/5">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -346,11 +370,11 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                         alt="Προεπισκόπηση"
                         className="w-full h-full object-contain rounded-md"
                       />
-                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
                         <button
                           type="button"
                           onClick={openAiImageModal}
-                          title="Edit with AI"
+                          title="Επεξεργασία με AI"
                           className="text-white p-2 rounded-full bg-purple-600 hover:bg-purple-700 transition-colors"
                         >
                           <Icon name="sparkles" className="w-6 h-6" />
@@ -358,7 +382,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                         <button
                           type="button"
                           onClick={handleRemoveImage}
-                          title="Remove image"
+                          title="Αφαίρεση εικόνας"
                           className="text-white p-2 rounded-full bg-red-600 hover:bg-red-700 transition-colors"
                         >
                           <Icon name="trash-2" className="w-6 h-6" />
@@ -388,8 +412,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                         onClick={openAiImageModal}
                         className="mt-2 flex items-center gap-2 text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900 lift-on-hover"
                       >
-                        <Icon name="sparkles" className="w-4 h-4" /> Δημιουργία
-                        με AI
+                        <Icon name="sparkles" className="w-4 h-4" /> Δημιουργία με AI
                       </button>
                     </div>
                   )}
@@ -398,10 +421,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
 
               {/* Περιγραφή */}
               <div className="col-span-1 md:col-span-2">
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium mb-1"
-                >
+                <label htmlFor="description" className="block text-sm font-medium mb-1">
                   Περιγραφή
                 </label>
                 <textarea
@@ -410,22 +430,21 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                   value={recipe.description}
                   onChange={handleChange}
                   rows={3}
+                  placeholder="Λίγα λόγια για το πιάτο, τεχνικές, tips σερβιρίσματος..."
                   className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
                 ></textarea>
               </div>
 
               {/* Χρόνοι */}
               <div>
-                <label
-                  htmlFor="prepTime"
-                  className="block text-sm font-medium mb-1"
-                >
+                <label htmlFor="prepTime" className="block text-sm font-medium mb-1">
                   Χρόνος Προετοιμασίας (λεπτά)
                 </label>
                 <input
                   type="number"
                   id="prepTime"
                   name="prepTime"
+                  min={0}
                   value={recipe.prepTime}
                   onChange={handleChange}
                   className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
@@ -433,16 +452,14 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               </div>
 
               <div>
-                <label
-                  htmlFor="cookTime"
-                  className="block text-sm font-medium mb-1"
-                >
+                <label htmlFor="cookTime" className="block text-sm font-medium mb-1">
                   Χρόνος Μαγειρέματος (λεπτά)
                 </label>
                 <input
                   type="number"
                   id="cookTime"
                   name="cookTime"
+                  min={0}
                   value={recipe.cookTime}
                   onChange={handleChange}
                   className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
@@ -459,10 +476,14 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                     <input
                       type="number"
                       name="yield_quantity"
+                      min={0}
                       value={recipe.yield?.quantity || 1}
                       onChange={handleChange}
                       className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Συνολική ποσότητα που παράγει η υποπαρασκευή.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">
@@ -485,26 +506,21 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               ) : (
                 <>
                   <div>
-                    <label
-                      htmlFor="servings"
-                      className="block text-sm font-medium mb-1"
-                    >
+                    <label htmlFor="servings" className="block text-sm font-medium mb-1">
                       Μερίδες
                     </label>
                     <input
                       type="number"
                       id="servings"
                       name="servings"
+                      min={1}
                       value={recipe.servings}
                       onChange={handleChange}
                       className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="price"
-                      className="block text-sm font-medium mb-1"
-                    >
+                    <label htmlFor="price" className="block text-sm font-medium mb-1">
                       Τιμή Πώλησης (€)
                     </label>
                     <input
@@ -512,6 +528,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                       id="price"
                       name="price"
                       step="0.01"
+                      min={0}
                       value={recipe.price || ''}
                       onChange={handleChange}
                       className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
@@ -522,20 +539,39 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
             </div>
           </div>
 
-          {/* Ingredients */}
+          {/* Συστατικά */}
           <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-semibold mb-4">Συστατικά</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <Icon name="list" className="w-5 h-5 text-brand-yellow" />
+                Συστατικά
+              </h3>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Μπορείς να δηλώσεις και υποπαρασκευές (βάσεις, σάλτσες κ.λπ.)
+              </span>
+            </div>
+
+            {/* Header row για desktop */}
+            <div className="hidden md:grid grid-cols-12 gap-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1">
+              <div className="col-span-6">Όνομα / Υποπαρασκευή</div>
+              <div className="col-span-2 text-right">Ποσότητα</div>
+              <div className="col-span-2">Μονάδα</div>
+              <div className="col-span-1 text-center">Υποπαρ.</div>
+              <div className="col-span-1 text-center">Διαγραφή</div>
+            </div>
+
             <div className="space-y-3">
               {recipe.ingredients.map((ing, index) => (
-                <div key={ing.id} className="grid grid-cols-12 gap-2 items-center">
-                  <div className="col-span-6">
+                <div
+                  key={ing.id}
+                  className="grid grid-cols-12 gap-2 items-center bg-black/5 dark:bg:white/5 rounded-md px-2 py-1.5"
+                >
+                  <div className="col-span-12 md:col-span-6">
                     {ing.isSubRecipe ? (
                       <select
                         value={ing.recipeId || ''}
-                        onChange={(e) =>
-                          handleSubRecipeSelect(index, e.target.value)
-                        }
-                        className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                        onChange={(e) => handleSubRecipeSelect(index, e.target.value)}
+                        className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 text-sm"
                         required
                       >
                         <option value="" disabled>
@@ -550,34 +586,33 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                     ) : (
                       <input
                         type="text"
-                        placeholder="Όνομα"
+                        placeholder="Όνομα υλικού"
                         value={ing.name}
-                        onChange={(e) =>
-                          handleIngredientChange(index, 'name', e.target.value)
-                        }
-                        className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                        onChange={(e) => handleIngredientChange(index, 'name', e.target.value)}
+                        className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 text-sm"
                         required
                       />
                     )}
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-4 md:col-span-2">
                     <input
                       type="number"
                       placeholder="Ποσότητα"
                       value={ing.quantity}
+                      min={0}
                       onChange={(e) =>
                         handleIngredientChange(index, 'quantity', e.target.value)
                       }
-                      className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                      className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 text-sm text-right"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-4 md:col-span-2">
                     <select
                       value={ing.unit}
                       onChange={(e) =>
                         handleIngredientChange(index, 'unit', e.target.value)
                       }
-                      className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                      className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 text-sm"
                     >
                       <option value="g">g</option>
                       <option value="kg">kg</option>
@@ -588,29 +623,28 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                       <option value="κ.σ.">κ.σ.</option>
                     </select>
                   </div>
-                  <div className="col-span-1 flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={ing.isSubRecipe}
-                      onChange={(e) =>
-                        handleIngredientChange(
-                          index,
-                          'isSubRecipe',
-                          e.target.checked
-                        )
-                      }
-                      className="h-5 w-5 rounded border-gray-300 text-brand-secondary focus:ring-brand-primary"
-                      title="Είναι Υποπαρασκευή;"
-                    />
+                  <div className="col-span-2 md:col-span-1 flex items-center justify-center">
+                    <label className="inline-flex items-center gap-1 text-[11px] text-gray-600 dark:text-gray-400">
+                      <input
+                        type="checkbox"
+                        checked={ing.isSubRecipe}
+                        onChange={(e) =>
+                          handleIngredientChange(index, 'isSubRecipe', e.target.checked)
+                        }
+                        className="h-4 w-4 rounded border-gray-300 text-brand-secondary focus:ring-brand-primary"
+                        title="Είναι Υποπαρασκευή;"
+                      />
+                      <span className="hidden lg:inline">Υποπαρ.</span>
+                    </label>
                   </div>
-                  <div className="col-span-1">
+                  <div className="col-span-2 md:col-span-1 flex items-center justify-center">
                     <button
                       type="button"
                       onClick={() => removeIngredient(index)}
-                      className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-50"
+                      className="p-1.5 text-gray-400 hover:text-red-500 disabled:opacity-50"
                       disabled={recipe.ingredients.length <= 1}
                     >
-                      <Icon name="trash-2" className="w-5 h-5" />
+                      <Icon name="trash-2" className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -625,49 +659,70 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
             </button>
           </div>
 
-          {/* Steps */}
-          <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-semibold mb-4">Εκτέλεση</h3>
+          {/* Εκτέλεση */}
+          <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg	border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <Icon name="list-ordered" className="w-5 h-5 text-brand-yellow" />
+                Εκτέλεση
+              </h3>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Χρησιμοποίησε ενότητες για μεγάλα παρασκευάσματα (π.χ. &quot;Κιμάς&quot;,
+                &quot;Σάλτσα&quot;).
+              </span>
+            </div>
+
             <div className="space-y-4">
-              {recipe.steps.map((step, index) => (
-                <div key={step.id} className="flex items-start gap-2">
-                  {step.type === 'step' && (
-                    <span className="font-bold text-lg text-gray-400 pt-2">
-                      {index + 1}.
-                    </span>
-                  )}
-                  {step.type === 'heading' ? (
-                    <input
-                      type="text"
-                      value={step.content}
-                      onChange={(e) =>
-                        handleStepChange(index, e.target.value)
-                      }
-                      placeholder="Όνομα Ενότητας (π.χ. Κιμάς)"
-                      className="flex-1 p-2 rounded bg-light-bg dark:bg-dark-bg border-0 border-b-2 border-gray-300 dark:border-gray-600 font-bold text-lg focus:ring-0 focus:border-brand-primary"
-                      required
-                    />
-                  ) : (
-                    <textarea
-                      value={step.content}
-                      onChange={(e) =>
-                        handleStepChange(index, e.target.value)
-                      }
-                      rows={2}
-                      className="flex-1 p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
-                      required
-                    />
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeStep(index)}
-                    className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-50"
-                    disabled={recipe.steps.length <= 1}
-                  >
-                    <Icon name="trash-2" className="w-5 h-5" />
-                  </button>
-                </div>
-              ))}
+              {recipe.steps.map((step, index) => {
+                let displayNumber: number | null = null;
+                if (step.type === 'step') {
+                  visibleStepCounter += 1;
+                  displayNumber = visibleStepCounter;
+                }
+
+                return (
+                  <div key={step.id} className="flex items-start gap-2">
+                    {step.type === 'step' && (
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-brand-yellow text-brand-dark font-bold text-xs mt-1 flex-shrink-0">
+                        {displayNumber}.
+                      </span>
+                    )}
+                    {step.type === 'heading' ? (
+                      <div className="flex-1 flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          <Icon name="bookmark" className="w-3 h-3" />
+                          Ενότητα συνταγής
+                        </div>
+                        <input
+                          type="text"
+                          value={step.content}
+                          onChange={(e) => handleStepChange(index, e.target.value)}
+                          placeholder="Όνομα Ενότητας (π.χ. Κιμάς, Σάλτσα, Γαρνιτούρα)"
+                          className="flex-1 p-2 rounded bg-light-bg dark:bg-dark-bg border-0 border-b-2 border-gray-300 dark:border-gray-600 font-bold text-lg focus:ring-0 focus:border-brand-primary"
+                          required
+                        />
+                      </div>
+                    ) : (
+                      <textarea
+                        value={step.content}
+                        onChange={(e) => handleStepChange(index, e.target.value)}
+                        rows={2}
+                        placeholder="Περιέγραψε αναλυτικά το βήμα εκτέλεσης..."
+                        className="flex-1 p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                        required
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeStep(index)}
+                      className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-50"
+                      disabled={recipe.steps.length <= 1}
+                    >
+                      <Icon name="trash-2" className="w-5 h-5" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
             <div className="mt-4 flex items-center gap-4">
               <button
@@ -687,28 +742,44 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
             </div>
           </div>
 
-          {/* Allergens */}
-          <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-semibold mb-4">Αλλεργιογόνα</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {ALLERGENS_LIST.map((allergen) => (
-                <label
-                  key={allergen}
-                  className="flex items-center space-x-2 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={recipe.allergens.includes(allergen)}
-                    onChange={() => handleAllergenChange(allergen)}
-                    className="h-5 w-5 rounded border-gray-300 text-brand-secondary focus:ring-brand-primary"
-                  />
-                  <span>{allergen}</span>
-                </label>
-              ))}
+          {/* Αλλεργιογόνα */}
+          <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg border border-gray-200 dark:border-gray-700 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <Icon name="alert-circle" className="w-5 h-5 text-brand-yellow" />
+                Αλλεργιογόνα
+              </h3>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Εμφανίζονται στις ετικέτες και στην πληροφόρηση πελατών.
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {ALLERGENS_LIST.map((allergen) => {
+                const selected = recipe.allergens.includes(allergen);
+                return (
+                  <label
+                    key={allergen}
+                    className={`flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border text-sm ${
+                      selected
+                        ? 'border-brand-yellow bg-brand-yellow/10 text-brand-dark'
+                        : 'border-gray-300 dark:border-gray-600 bg-black/5 dark:bg-white/5 text-gray-800 dark:text-gray-100'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => handleAllergenChange(allergen)}
+                      className="h-4 w-4 rounded border-gray-300 text-brand-secondary focus:ring-brand-primary"
+                    />
+                    <span className="truncate">{allergen}</span>
+                  </label>
+                );
+              })}
             </div>
           </div>
         </form>
       </div>
+
       <AIImageModal
         isOpen={isAiImageModalOpen}
         onClose={() => setIsAiImageModalOpen(false)}

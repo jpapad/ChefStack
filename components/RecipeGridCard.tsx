@@ -1,6 +1,7 @@
 import React from 'react';
 import { Recipe } from '../types';
 import { Icon } from './common/Icon';
+import { useTranslation } from '../i18n';
 
 interface RecipeGridCardProps {
   recipe: Recipe;
@@ -11,39 +12,140 @@ interface RecipeGridCardProps {
   onBookSelect: (id: string) => void;
 }
 
-const RecipeGridCard: React.FC<RecipeGridCardProps> = ({ recipe, isSelected, onClick, isBookMode, isBookSelected, onBookSelect }) => {
+const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
+  recipe,
+  isSelected,
+  onClick,
+  isBookMode,
+  isBookSelected,
+  onBookSelect
+}) => {
+  const { t } = useTranslation();
+
+  const handleBookToggle = (e: React.MouseEvent | React.ChangeEvent) => {
+    e.stopPropagation();
+    onBookSelect(recipe.id);
+  };
+
+  const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+  const hasImage = !!recipe.imageUrl;
+
+  const allergens = Array.isArray(recipe.allergens) ? recipe.allergens : [];
+  const visibleAllergens = allergens.slice(0, 2);
+  const extraAllergens = allergens.length - visibleAllergens.length;
+
   return (
     <div
-      onClick={() => isBookMode ? onBookSelect(recipe.id) : onClick()}
-      className={`relative rounded-xl cursor-pointer transition-all duration-200 group overflow-hidden border-2 ${
-        isSelected && !isBookMode
-          ? 'border-brand-yellow'
-          : 'border-transparent hover:border-brand-yellow/50'
-      } ${isBookSelected ? 'border-brand-yellow shadow-lg ring-2 ring-brand-yellow/50' : ''}`}
+      className={`relative group rounded-2xl overflow-hidden border shadow-sm transition-all cursor-pointer
+      ${
+        isSelected
+          ? 'border-brand-yellow ring-2 ring-brand-yellow/40'
+          : 'border-slate-100 dark:border-slate-800 hover:border-brand-yellow/70 hover:shadow-md'
+      }`}
+      onClick={onClick}
     >
-       {isBookMode && (
-             <div className="absolute top-2 right-2 z-10 bg-black/30 rounded-full">
-                <Icon name={isBookSelected ? 'check-square' : 'square'} className={`w-6 h-6 ${isBookSelected ? 'text-brand-yellow' : 'text-white/80'}`} />
-            </div>
+      {/* Εικόνα */}
+      <div className="relative h-28 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+        {hasImage ? (
+          <img
+            src={recipe.imageUrl}
+            alt={recipe.name}
+            className="w-full h-full object-cover transform group-hover:scale-[1.03] transition-transform"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Icon name="utensils" className="w-6 h-6 text-slate-400" />
+          </div>
         )}
-      <img
-        src={recipe.imageUrl}
-        alt={recipe.name}
-        className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-        <h3 className="font-bold text-md leading-tight">{recipe.name}</h3>
-        <div className="flex items-center text-xs opacity-80 mt-1 space-x-3">
-            <div className="flex items-center">
-                <Icon name="clock" className="w-3 h-3 mr-1"/> 
-                <span>{recipe.prepTime + recipe.cookTime}'</span>
-            </div>
-            <div className="flex items-center">
-                <Icon name="servings" className="w-3 h-3 mr-1"/> 
-                <span>{recipe.servings}</span>
-            </div>
+
+        {/* Book mode checkbox επάνω αριστερά */}
+        {isBookMode && (
+          <button
+            type="button"
+            onClick={handleBookToggle}
+            className="absolute top-2 left-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-black/60 text-white border border-white/40"
+          >
+            {isBookSelected ? (
+              <Icon name="check" className="w-3 h-3" />
+            ) : (
+              <Icon name="plus" className="w-3 h-3" />
+            )}
+          </button>
+        )}
+
+        {/* Κατηγορία επάνω δεξιά */}
+        {recipe.category && (
+          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-[10px] text-white flex items-center gap-1">
+            <Icon name="tag" className="w-3 h-3" />
+            {t(`recipe_category_${recipe.category}`)}
+          </div>
+        )}
+      </div>
+
+      {/* Περιεχόμενο */}
+      <div className="p-2.5 flex flex-col gap-1.5 bg-white dark:bg-slate-900">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="font-semibold text-[13px] leading-tight truncate">
+              {recipe.name}
+            </p>
+            {recipe.name_en && (
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                {recipe.name_en}
+              </p>
+            )}
+          </div>
+
+          {/* Price badge */}
+          {typeof recipe.price === 'number' && recipe.price > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-200 flex-shrink-0">
+              <Icon name="euro" className="w-3 h-3" />
+              {recipe.price.toFixed(2)}
+            </span>
+          )}
         </div>
+
+        {/* Meta: χρόνοι + μερίδες */}
+        <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-600 dark:text-slate-300">
+          {totalTime > 0 && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10">
+              <Icon name="timer" className="w-3 h-3" />
+              {totalTime}′
+            </span>
+          )}
+          {recipe.servings && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10">
+              <Icon name="users" className="w-3 h-3" />
+              {recipe.servings}
+            </span>
+          )}
+          {recipe.yield && typeof recipe.yield.quantity === 'number' && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10">
+              <Icon name="scale" className="w-3 h-3" />
+              {recipe.yield.quantity}
+              {recipe.yield.unit}
+            </span>
+          )}
+        </div>
+
+        {/* Allergens */}
+        {allergens.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1 mt-0.5">
+            {visibleAllergens.map((a) => (
+              <span
+                key={a}
+                className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-900/40 text-[9px] text-red-700 dark:text-red-200"
+              >
+                {a}
+              </span>
+            ))}
+            {extraAllergens > 0 && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-900/40 text-[9px] text-red-700 dark:text-red-200">
+                +{extraAllergens}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
