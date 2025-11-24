@@ -54,6 +54,8 @@ const translations: Record<Language, Record<string, string>> = {
     nav_user_manual: 'Οδηγός Χρήσης',
     nav_settings: 'Ρυθμίσεις',
     nav_kitchen_service: 'Κουζίνα – Σέρβις',
+    nav_copilot: 'Chef Copilot',
+
 
     
     // Settings Sub-navigation
@@ -348,6 +350,8 @@ const translations: Record<Language, Record<string, string>> = {
     nav_user_manual: 'User Manual',
     nav_settings: 'Settings',
     nav_kitchen_service: 'Kitchen & Service',
+    nav_copilot: 'Chef Copilot',
+
     
     // Settings Sub-navigation
     nav_settings_profile: 'My Profile',

@@ -10,7 +10,12 @@ export const ALL_NAV_ITEMS: { view: View; labelKey: string; icon: IconName; role
   { view: 'menus', labelKey: 'nav_menus', icon: 'list' },
 
   // 🆕 Kitchen–Service (κουζίνα–σέρβις) – μόνο Admin & Sous Chef
-  { view: 'kitchen_service', labelKey: 'nav_kitchen_service', icon: 'servings', roles: ['Admin', 'Sous Chef'] },
+  {
+    view: 'kitchen_service',
+    labelKey: 'nav_kitchen_service',
+    icon: 'servings',
+    roles: ['Admin', 'Sous Chef']
+  },
 
   { view: 'shopping_list', labelKey: 'nav_shopping_list', icon: 'shopping-cart' },
   { view: 'labels', labelKey: 'nav_labels', icon: 'printer' },
@@ -23,6 +28,10 @@ export const ALL_NAV_ITEMS: { view: View; labelKey: string; icon: IconName; role
   { view: 'costing', labelKey: 'nav_costing', icon: 'scale' },
   { view: 'suppliers', labelKey: 'nav_suppliers', icon: 'truck' },
   { view: 'haccp', labelKey: 'nav_haccp', icon: 'thermometer' },
+
+  // 🧠 Chef Copilot – διαθέσιμο σε όλους τους ρόλους
+  { view: 'copilot', labelKey: 'nav_copilot', icon: 'sparkles' },
+
   { view: 'notifications', labelKey: 'nav_notifications', icon: 'bell' },
   { view: 'user_manual', labelKey: 'nav_user_manual', icon: 'help-circle' },
   { view: 'settings', labelKey: 'nav_settings', icon: 'settings', roles: ['Admin'] }
@@ -50,14 +59,13 @@ const NavItem: React.FC<{
 }> = ({ item, isActive, isCollapsed, onClick, walkieUnreadCount = 0 }) => {
   const { t } = useTranslation();
   const isKitchenService = item.view === 'kitchen_service';
-const hasUnread = isKitchenService && walkieUnreadCount > 0;
-
+  const hasUnread = isKitchenService && walkieUnreadCount > 0;
 
   return (
     <button
       onClick={onClick}
       title={isCollapsed ? t(item.labelKey) : ''}
-      className={`relative w-full flex items-center text-sm font-semibold rounded-lg transition-colors duration-200 ${
+      className={`relative w-full flex items-center text-sm font-semibold rounded-lg transition-colors.duration-200 ${
         isActive
           ? 'bg-brand-yellow text-brand-dark'
           : 'text-dark-text-secondary hover:bg-black/5 dark:text-dark-text-secondary dark:hover:bg-white/5 dark:hover:text-dark-text-primary'
@@ -68,7 +76,7 @@ const hasUnread = isKitchenService && walkieUnreadCount > 0;
         <>
           <span className="ml-3">{t(item.labelKey)}</span>
           {hasUnread && (
-            <span className="ml-auto inline-flex items-center justify-center min-w-[18px] px-1 h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold">
+            <span className="ml-auto inline-flex.items-center justify-center min-w-[18px] px-1 h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold">
               {walkieUnreadCount}
             </span>
           )}
@@ -101,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`flex flex-col bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border-r border-white/20 dark:border-slate-800/40 print:hidden transition-all duration-300 ease-in-out
+      className={`flex flex-col bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border-r border-white/20 dark:border-slate-800/40 print:hidden transition-all duration-300.ease-in-out
             ${isCollapsed ? 'w-20' : 'w-64'}`}
     >
       <div
@@ -117,12 +125,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
         ) : (
           <div
-            className={`flex items-center ${
+            className={`flex.items-center ${
               isCollapsed ? 'justify-center' : 'justify-start w-full'
             }`}
           >
             <div
-              className={`transition-all.duration-300 flex-shrink-0 h-10 w-10`}
+              className={`transition-all duration-300 flex-shrink-0 h-10 w-10`}
               dangerouslySetInnerHTML={{ __html: chefStackLogo }}
             />
             {!isCollapsed && (
@@ -134,17 +142,16 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
         {visibleNavItems.map((item) => (
-  <NavItem
-    key={item.view}
-    item={item}
-    isActive={currentView === item.view}
-    isCollapsed={isCollapsed}
-    onClick={() => onViewChange(item.view)}
-    // Τώρα το badge χρησιμοποιείται για το Kitchen–Service
-    walkieUnreadCount={item.view === 'kitchen_service' ? walkieUnreadCount : 0}
-  />
-))}
-
+          <NavItem
+            key={item.view}
+            item={item}
+            isActive={currentView === item.view}
+            isCollapsed={isCollapsed}
+            onClick={() => onViewChange(item.view)}
+            // Τώρα το badge χρησιμοποιείται για το Kitchen–Service
+            walkieUnreadCount={item.view === 'kitchen_service' ? walkieUnreadCount : 0}
+          />
+        ))}
       </nav>
 
       <div className="px-4 py-3 border-t border-white/20 dark:border-slate-800/40">
@@ -166,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             className="w-10 h-10 rounded-full"
           />
           {!isCollapsed && (
-            <div className="ml-3.flex-1">
+            <div className="ml-3 flex-1">
               <p className="font-semibold text-sm truncate">{user.name}</p>
               <button
                 onClick={onLogout}

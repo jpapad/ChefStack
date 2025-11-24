@@ -60,6 +60,7 @@ import InvoiceImportModal from './inventory/InvoiceImportModal';
 import InvoiceConfirmationModal from './inventory/InvoiceConfirmationModal';
 import InventoryHistoryView from './inventory/InventoryHistoryView';
 import UserManualView from './manual/UserManualView';
+import ChefCopilot from './ai/ChefCopilot';
 import ApiKeyPromptModal from './common/ApiKeyPromptModal';
 
 // 🆕 Kitchen–Service view
@@ -213,7 +214,6 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
   const [actionToResume, setActionToResume] =
     useState<(() => Promise<void> | void) | null>(null);
   const [kitchenServiceOpenCount, setKitchenServiceOpenCount] = useState(0);
-
 
   // ✅ withApiKeyCheck που συνεργάζεται με ApiKeyPromptModal & aistudio helper
   const withApiKeyCheck = (action: () => void | Promise<void>) => {
@@ -1059,19 +1059,32 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
           />
         );
 
-      // 🆕 Kitchen–Service view
-                case 'kitchen_service':
-      return (
-        <KitchenServiceView
-          teamId={currentTeamId}
-          currentUser={user}
-          workstations={teamWorkstations}
-          currentUserRole={currentUserRole}
-          rolePermissions={rolePermissions}
-          onOpenOrdersCountChange={setKitchenServiceOpenCount}
-        />
-      );
+      case 'copilot':
+        return (
+          <ChefCopilot
+            recipes={teamRecipesFiltered}
+            menus={teamMenusFiltered}
+            inventory={teamInventory}
+            wasteLogs={teamWasteLogs}
+            haccpLogs={teamHaccpLogs}
+            tasks={teamTasks}
+            workstations={teamWorkstations}
+            withApiKeyCheck={withApiKeyCheck}
+          />
+        );
 
+      // 🆕 Kitchen–Service view
+      case 'kitchen_service':
+        return (
+          <KitchenServiceView
+            teamId={currentTeamId}
+            currentUser={user}
+            workstations={teamWorkstations}
+            currentUserRole={currentUserRole}
+            rolePermissions={rolePermissions}
+            onOpenOrdersCountChange={setKitchenServiceOpenCount}
+          />
+        );
 
       case 'workstations':
         return (
@@ -1116,16 +1129,15 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
       case 'costing':
         return (
           <CostingView
-  ingredientCosts={ingredientCosts}
-  setIngredientCosts={setIngredientCosts}
-  selectedCostId={selectedCostId}
-  onSelectCost={setSelectedCostId}
-  onBack={() => setSelectedCostId(null)}
-  currentUserRole={currentUserRole}
-  rolePermissions={rolePermissions}
-  currentTeamId={currentTeamId}
-  withApiKeyCheck={withApiKeyCheck}
-/>
+            ingredientCosts={teamIngredientCosts}
+            setIngredientCosts={setIngredientCosts}
+            selectedCostId={selectedCostId}
+            onSelectCost={setSelectedCostId}
+            onBack={() => setSelectedCostId(null)}
+            currentUserRole={currentUserRole}
+            rolePermissions={rolePermissions}
+            currentTeamId={currentTeamId}
+          />
         );
       case 'inventory':
         return (
@@ -1158,18 +1170,18 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
         );
       case 'waste_log':
         return (
-          <ShoppingListView
-  menus={menus}
-  recipes={recipes}
-  inventory={inventory}
-  suppliers={suppliers}
-  withApiKeyCheck={withApiKeyCheck}
-  wasteLogs={wasteLogs}
-  onOpenInventoryItem={(itemId) => {
-    setSelectedInventoryId(itemId);
-    // Αν έχεις κάποιο view setter τύπου setView('inventory'), βάλε το εδώ
-  }}
-/>
+          <WasteLogView
+            wasteLogs={teamWasteLogs}
+            setWasteLogs={setWasteLogs}
+            inventory={teamInventory}
+            users={allUsers}
+            ingredientCosts={teamIngredientCosts}
+            onSave={handleSaveWasteLog}
+            onDelete={handleDeleteWasteLog}
+            currentUserRole={currentUserRole}
+            rolePermissions={rolePermissions}
+            withApiKeyCheck={withApiKeyCheck}
+          />
         );
       case 'suppliers':
         return (
@@ -1224,17 +1236,17 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
       case 'shopping_list':
         return (
           <ShoppingListView
-  menus={menus}
-  recipes={recipes}
-  inventory={inventory}
-  suppliers={suppliers}
-  withApiKeyCheck={withApiKeyCheck}
-  wasteLogs={wasteLogs}
-  onOpenInventoryItem={(itemId) => {
-    setSelectedInventoryId(itemId);
-    // Αν θέλεις να αλλάζει και view, βάλε εδώ το δικό σου setter π.χ. setView('inventory')
-  }}
-/>
+            menus={teamMenusFiltered}
+            recipes={teamRecipesFiltered}
+            inventory={teamInventory}
+            suppliers={teamSuppliers}
+            withApiKeyCheck={withApiKeyCheck}
+            wasteLogs={teamWasteLogs}
+            onOpenInventoryItem={(itemId) => {
+              setSelectedInventoryId(itemId);
+              setCurrentView('inventory');
+            }}
+          />
         );
       case 'stock_take':
         return (
@@ -1273,16 +1285,16 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
   return (
     <div className="flex h-screen bg-light-bg dark:bg-dark-bg text-light-text-primary dark:text-dark-text-primary">
       <Sidebar
-  currentView={currentView}
-  onViewChange={handleViewChange}
-  user={user}
-  onLogout={onLogout}
-  currentTeam={currentTeam}
-  currentUserRole={currentUserRole}
-  isCollapsed={isSidebarCollapsed}
-  onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
-  walkieUnreadCount={kitchenServiceOpenCount}
-/>
+        currentView={currentView}
+        onViewChange={handleViewChange}
+        user={user}
+        onLogout={onLogout}
+        currentTeam={currentTeam}
+        currentUserRole={currentUserRole}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        walkieUnreadCount={kitchenServiceOpenCount}
+      />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
           currentViewTitleKey={currentViewTitleKey}

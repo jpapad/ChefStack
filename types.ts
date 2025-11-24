@@ -246,7 +246,8 @@ export type View =
   | 'shifts'
   | 'inventory_history'
   | 'waste_log'
-  | 'user_manual';
+  | 'user_manual'
+  | 'copilot';
 
 export type LogoPosition = 'top' | 'bottom' | 'left' | 'right';
 
