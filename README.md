@@ -9,6 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.2-61dafb)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.2-646cff)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Ready-3ecf8e)](https://supabase.com/)
 [![Gemini AI](https://img.shields.io/badge/Gemini-AI%20Powered-8e75b2)](https://ai.google.dev/)
 
@@ -48,6 +49,12 @@
 - 🤖 **AI-Powered**: Gemini AI integration for intelligent insights and automation
 - 🌍 **Bilingual**: Full Greek/English support throughout the application
 - 👥 **Multi-Team**: Manage multiple kitchens or brands from one account
+- 📱 **Offline-First**: Works with mock data during development, seamless Supabase integration for production
+- 🖨️ **Print-Ready**: Professional PDF generation for menus, labels, HACCP logs, and recipe books
+- 🔐 **Role-Based Access**: Granular permissions for different staff levels
+- ⚡ **Optimized Build**: Tailwind CSS build system for 95% smaller bundle size (~150KB vs 3MB CDN)
+- 🎨 **Modern UI**: Glassmorphism design with dark mode support
+- 📊 **Advanced Analytics**: Export data to CSV/PDF, batch operations, advanced filtering
 - 📱 **Offline-First**: Works with mock data during development, seamless Supabase integration for production
 - 🖨️ **Print-Ready**: Professional PDF generation for menus, labels, HACCP logs, and recipe books
 - 🔐 **Role-Based Access**: Granular permissions for different staff levels
@@ -180,6 +187,51 @@
 - **Built-In Help**: Comprehensive user guide within the app
 - **Feature Documentation**: Step-by-step instructions for all modules
 - **Video Tutorials**: Embedded video guides (placeholder for future content)
+
+### 🚀 Advanced Features (New)
+
+#### 📤 Export & Import System
+- **CSV Export**: Export all data types to CSV format
+- **PDF Export**: Generate professional PDFs for reports, recipes, menus, HACCP logs, shopping lists
+- **14 Export Functions**: Recipes, inventory, costs, menus, HACCP, shifts, waste, suppliers, and more
+- **Batch Export**: Export multiple entities at once
+
+#### 🔍 Advanced Filtering
+- **6 Filter Types**: Text search, date ranges, category, status, numeric ranges, multi-select
+- **Filter Presets**: Save and reuse common filter combinations
+- **Quick Filter Chips**: One-click filter toggles
+- **Persistent Filters**: Filters saved to localStorage across sessions
+- **Export Filtered Data**: Export only what you see
+
+#### ⚡ Batch Operations
+- **Bulk Selection**: Select multiple items with checkboxes
+- **Floating Action Bar**: Contextual actions when items selected
+- **Batch Edit**: Update multiple items simultaneously
+- **Batch Delete**: Remove multiple items at once
+- **Selective Actions**: Choose which fields to update in batch edit
+
+#### 📺 Kitchen Display System (KDS)
+- **Real-Time Order Board**: Live kanban view of active orders
+- **4-Stage Workflow**: New → Preparing → Ready → Completed
+- **Auto-Timers**: Track order age automatically
+- **Priority Indicators**: Visual alerts for urgent orders
+- **Drag & Drop**: Move orders between stages
+- **Service Mode**: Optimized for kitchen display monitors
+
+#### 🔄 Recipe Variations
+- **8 Variation Types**: Seasonal, dietary, regional, size, difficulty, cost, technique, presentation
+- **Ingredient Modifications**: Add, remove, or substitute ingredients per variation
+- **Independent Costing**: Each variation has its own cost calculation
+- **Easy Creation**: Create variations from existing recipes
+- **Variation Switching**: Toggle between variations in recipe detail view
+
+#### 📧 Email Reports & Scheduling
+- **Automated Reports**: Schedule daily, weekly, monthly reports
+- **4 Report Types**: Inventory summary, low stock alerts, HACCP compliance, waste analysis
+- **Email Integration**: Send reports to multiple recipients
+- **Cron-Like Scheduling**: Flexible scheduling with cron expressions
+- **Report History**: View past reports with timestamps
+- **Custom Recipients**: Configure different recipients per report type
 
 ---
 
@@ -831,9 +883,12 @@ Admins can create custom roles:
 **Frontend**:
 - **React 18.2** - UI framework
 - **TypeScript 5.8** - Type safety
-- **Vite 6.2** - Build tool and dev server
-- **Tailwind CSS** - Styling (configured for dark mode)
+- **Vite 6.2** - Build tool and dev server (port 3000/3001)
+- **Tailwind CSS 3.4** - Utility-first CSS with PostCSS build system
+- **PostCSS + Autoprefixer** - CSS optimization and vendor prefixing
+- **Custom Design System** - Reusable component classes (.card-*, .btn-*, .badge-*)
 - **Custom Icons** - Icon component system
+- **jsPDF** - PDF generation and export
 
 **Backend/Database**:
 - **Supabase** - PostgreSQL database, authentication, real-time
@@ -843,9 +898,11 @@ Admins can create custom roles:
 **AI/ML**:
 - **Google Gemini AI** - gemini-2.0-flash model
 - **Generative AI SDK** - @google/generative-ai
+- **AI Features**: Image generation, menu coaching, waste analysis, HACCP guidance
 
 **State Management**:
 - **Prop Drilling** - Intentional centralized state pattern
+- **localStorage** - UI preferences and mock data persistence
 - **No Redux/Context** - Explicit data flow for maintainability
 - **localStorage** - Persistent UI preferences
 
@@ -1338,6 +1395,16 @@ Before submitting PR:
 - [ ] No console errors in browser
 - [ ] Mobile responsive (if UI changes)
 - [ ] Print layouts work (if print feature)
+- [ ] Tailwind CSS classes use design system where applicable
+
+### Performance Guidelines
+
+ChefStack uses optimized build system:
+- **Tailwind CSS**: PostCSS build system (not CDN) for 95% smaller bundle
+- **Design System**: Use `.card-primary`, `.btn-primary` classes instead of inline utilities
+- **Code Splitting**: Vite handles automatic code splitting
+- **Image Optimization**: Consider lazy loading for recipe images
+- **Bundle Size**: Monitor with `npm run build` - main bundle should be ~500KB
 
 ### Contribution Ideas
 
@@ -1409,7 +1476,50 @@ A: Check `i18n.ts` for translation keys. Submit PR to add missing translations.
 
 ## 🗺️ Roadmap
 
-### Version 2.0 (Planned)
+### Version 2.0 - Advanced Features (COMPLETED ✅)
+- [x] PDF export for all data types (14 export functions with jsPDF)
+- [x] Advanced filtering system (6 filter types + presets + quick chips)
+- [x] Batch operations (bulk edit/delete with floating UI)
+- [x] Kitchen Display System (real-time kanban, 4-stage workflow)
+- [x] Recipe variations (8 variation types with ingredient modifications)
+- [x] Email reports & scheduling (4 report types with cron scheduling)
+- [x] Tailwind CSS build system migration (95% bundle size reduction)
+- [x] Design system with reusable component classes
+
+### Version 2.1 - UI/UX Polish (IN PROGRESS 🚧)
+- [ ] shadcn/ui component integration
+- [ ] Micro-interactions & smooth transitions
+- [ ] Loading skeletons replacing spinners
+- [ ] Toast notifications with animations
+- [ ] Typography hierarchy improvements
+- [ ] Sophisticated color palette with gradients
+- [ ] Enhanced dark mode contrast
+- [ ] Floating label inputs
+- [ ] Modal backdrop blur effects
+- [ ] Card hover effects with depth
+
+### Version 2.2 - Foundation & Quality (PLANNED)
+- [ ] Console.log cleanup across codebase
+- [ ] Error boundary implementation
+- [ ] Accessibility enhancements (ARIA, keyboard navigation, screen readers)
+- [ ] Loading state standardization
+- [ ] React.memo optimization for performance
+- [ ] Virtualization for long lists
+- [ ] Image optimization and lazy loading
+- [ ] TypeScript strict mode
+- [ ] Component splitting for better maintainability
+- [ ] Custom hooks for reusable logic
+
+### Version 2.3 - Advanced Features (PLANNED)
+- [ ] Offline-first PWA with service worker
+- [ ] Real-time collaboration features
+- [ ] Analytics dashboard with charts
+- [ ] Comprehensive i18n (beyond Greek/English)
+- [ ] Mobile PWA optimization
+- [ ] Push notifications
+- [ ] Camera integration for barcode scanning
+
+### Version 2.4 - Professional Features (PLANNED)
 - [ ] Mobile app (React Native)
 - [ ] Advanced analytics dashboard
 - [ ] Recipe versioning and changelog

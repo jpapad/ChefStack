@@ -9,6 +9,7 @@ import {
   PrepTask,
   HaccpLog,
   HaccpItem,
+  HaccpReminder,
   Supplier,
   InventoryItem,
   Menu,
@@ -61,8 +62,10 @@ import InvoiceConfirmationModal from './components/inventory/InvoiceConfirmation
 import InventoryHistoryView from './components/inventory/InventoryHistoryView';
 import UserManualView from './components/manual/UserManualView';
 import ApiKeyPromptModal from './components/common/ApiKeyPromptModal';
+import QuickSearchModal from './components/common/QuickSearchModal';
 
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTranslation } from './i18n';
 import { api } from './services/api';
 
@@ -88,6 +91,8 @@ interface KitchenInterfaceProps {
   setHaccpLogs: React.Dispatch<React.SetStateAction<HaccpLog[]>>;
   haccpItems: HaccpItem[];
   setHaccpItems: React.Dispatch<React.SetStateAction<HaccpItem[]>>;
+  haccpReminders: HaccpReminder[];
+  setHaccpReminders: React.Dispatch<React.SetStateAction<HaccpReminder[]>>;
   suppliers: Supplier[];
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   inventory: InventoryItem[];
@@ -136,6 +141,8 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     setHaccpLogs,
     haccpItems,
     setHaccpItems,
+    haccpReminders,
+    setHaccpReminders,
     suppliers,
     setSuppliers,
     inventory,
@@ -209,6 +216,9 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
   const [isApiKeyPromptOpen, setIsApiKeyPromptOpen] = useState(false);
   const [actionToResume, setActionToResume] =
     useState<(() => Promise<void> | void) | null>(null);
+  
+  // Quick Search Modal
+  const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
 
   const withApiKeyCheck = (action: () => void) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
@@ -247,6 +257,52 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     () => user.memberships.find((m) => m.teamId === currentTeamId)?.role,
     [user, currentTeamId]
   );
+  
+  // Keyboard Shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'k',
+      ctrlKey: true,
+      description: 'Open quick search',
+      callback: () => setIsQuickSearchOpen(true)
+    },
+    {
+      key: 'n',
+      ctrlKey: true,
+      description: 'New recipe',
+      callback: () => {
+        if (currentView === 'recipes') {
+          setIsCreatingRecipe(true);
+          setRecipeToEdit(null);
+          setSelectedRecipeId(null);
+        } else {
+          setCurrentView('recipes');
+          setTimeout(() => {
+            setIsCreatingRecipe(true);
+            setRecipeToEdit(null);
+            setSelectedRecipeId(null);
+          }, 100);
+        }
+      }
+    },
+    {
+      key: 'Escape',
+      description: 'Close modals',
+      callback: () => {
+        if (isQuickSearchOpen) {
+          setIsQuickSearchOpen(false);
+        } else if (isCreatingRecipe || recipeToEdit) {
+          setIsCreatingRecipe(false);
+          setRecipeToEdit(null);
+        } else if (isScannerOpen) {
+          setIsScannerOpen(false);
+        } else if (isImportModalOpen) {
+          setIsImportModalOpen(false);
+        }
+      },
+      preventDefault: false
+    }
+  ], true);
 
   const handleSaveRecipe = async (recipeData: Omit<Recipe, 'id'> | Recipe) => {
     try {
@@ -723,6 +779,9 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     const teamHaccpItems = haccpItems.filter(
       (i) => i.teamId === currentTeamId
     );
+    const teamHaccpReminders = haccpReminders.filter(
+      (r) => r.teamId === currentTeamId
+    );
     const teamSuppliers = suppliers.filter(
       (s) => s.teamId === currentTeamId
     );
@@ -819,6 +878,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
               onGenerateBook={handleGenerateBook}
               rolePermissions={rolePermissions}
               withApiKeyCheck={withApiKeyCheck}
+              onUpdateRecipes={setRecipes}
             />
           </div>
           <div
@@ -865,10 +925,14 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             recipes={teamRecipesForTeam}
             tasks={teamTasks}
             haccpLogs={teamHaccpLogs}
+            haccpItems={teamHaccpItems}
+            haccpReminders={teamHaccpReminders}
             inventory={teamInventory}
             wasteLogs={teamWasteLogs}
-            ingredientCosts={teamIngredientCosts}
+            messages={teamMessages}
+            channels={teamChannels}
             onViewChange={handleViewChange}
+            withApiKeyCheck={withApiKeyCheck}
           />
         );
       case 'workstations':
@@ -903,9 +967,11 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             logs={teamHaccpLogs}
             setLogs={setHaccpLogs}
             haccpItems={teamHaccpItems}
+            haccpReminders={teamHaccpReminders}
             onNavigateToPrint={() => handleViewChange('haccp_print')}
             currentUserRole={currentUserRole}
             rolePermissions={rolePermissions}
+            withApiKeyCheck={withApiKeyCheck}
           />
         );
       case 'haccp_print':
@@ -939,6 +1005,11 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             rolePermissions={rolePermissions}
             withApiKeyCheck={withApiKeyCheck}
             currentTeamId={currentTeamId}
+            wasteLogs={teamWasteLogs}
+            onViewChange={handleViewChange}
+            menus={teamMenusForTeam}
+            recipes={teamRecipesForTeam}
+            inventoryTransactions={teamInventoryTransactions}
           />
         );
       case 'inventory_history':
@@ -988,6 +1059,9 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             currentTeamId={currentTeamId}
             rolePermissions={rolePermissions}
             withApiKeyCheck={withApiKeyCheck}
+            inventory={teamInventory}
+            wasteLogs={teamWasteLogs}
+            ingredientCosts={teamIngredientCosts}
           />
         );
       case 'labels':
@@ -1136,6 +1210,15 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
           setActionToResume(null);
         }}
         onConfirm={handleApiKeyConfirm}
+      />
+      
+      <QuickSearchModal
+        isOpen={isQuickSearchOpen}
+        onClose={() => setIsQuickSearchOpen(false)}
+        onSearch={(query) => {
+          setRecipeSearchTerm(query);
+          setCurrentView('recipes');
+        }}
       />
     </div>
   );

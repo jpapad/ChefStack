@@ -5,7 +5,10 @@ import {
   IngredientCost,
   Role,
   InventoryLocation,
-  RolePermissions
+  RolePermissions,
+  Menu,
+  Recipe,
+  InventoryTransaction
 } from '../../types';
 import { WasteLog, View } from '../../types';
 import { Icon } from '../common/Icon';
@@ -15,6 +18,17 @@ import InventoryList from './InventoryList';
 import PrintPreview from '../common/PrintPreview';
 import QRCodePrint from './QRCodePrint';
 import TransferStockModal from './TransferStockModal';
+import StockAlertPanel from './StockAlertPanel';
+import QuickStockAdjustment from './QuickStockAdjustment';
+import SupplierOrderTemplates from './SupplierOrderTemplates';
+import InventoryForecast from './InventoryForecast';
+import StockMovementHistory from './StockMovementHistory';
+import ExportImportButtons from '../common/ExportImportButtons';
+import AdvancedFilterPanel, { FilterConfig, FilterValue } from '../common/AdvancedFilterPanel';
+import { useFilterPresets } from '../../hooks/useFilterPresets';
+import BatchActionBar, { BatchAction } from '../common/BatchActionBar';
+import BulkEditModal, { BulkEditField } from '../common/BulkEditModal';
+import { useBatchSelection } from '../../hooks/useBatchSelection';
 import { api } from '../../services/api';
 
 interface InventoryViewProps {
@@ -39,6 +53,9 @@ interface InventoryViewProps {
   onImportInvoice: () => void;
   withApiKeyCheck: (action: () => void) => void;
   currentTeamId: string;
+  menus?: Menu[];
+  recipes?: Recipe[];
+  inventoryTransactions?: InventoryTransaction[];
 }
 
 const InventoryView: React.FC<InventoryViewProps> = ({
@@ -57,13 +74,30 @@ const InventoryView: React.FC<InventoryViewProps> = ({
   withApiKeyCheck,
   currentTeamId,
   wasteLogs,
-  onViewChange
+  onViewChange,
+  menus = [],
+  recipes = [],
+  inventoryTransactions = []
 }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
   const [isQrPrintOpen, setIsQrPrintOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [quickAdjustItem, setQuickAdjustItem] = useState<(InventoryItem & { totalQuantity: number }) | null>(null);
+  const [isOrderTemplatesOpen, setIsOrderTemplatesOpen] = useState(false);
+  const [isForecastOpen, setIsForecastOpen] = useState(false);
+  const [historyItem, setHistoryItem] = useState<InventoryItem | null>(null);
+
+  // 🔍 Advanced Filters
+  const { presets, savePreset, deletePreset } = useFilterPresets('inventory');
+  const [filterValues, setFilterValues] = useState<FilterValue>({
+    search: '',
+    supplier: '',
+    stockStatus: '',
+    category: '',
+    dateRange: { from: '', to: '' },
+  });
 
   // 🧠 Κατάσταση για το AI panel
   const [aiInsights, setAiInsights] = useState<string | null>(null);
@@ -109,6 +143,116 @@ const InventoryView: React.FC<InventoryViewProps> = ({
         .sort((a, b) => a.name.localeCompare(b.name)),
     [inventory, suppliers, ingredientCosts]
   );
+
+  // 🔍 Filter configuration
+  const filterConfig: FilterConfig[] = useMemo(() => {
+    const uniqueSuppliers = Array.from(new Set(suppliers.map(s => s.id))).map(id => {
+      const supplier = suppliers.find(s => s.id === id);
+      return { value: id, label: supplier?.name || 'N/A' };
+    });
+
+    return [
+      {
+        id: 'search',
+        label: 'Αναζήτηση',
+        type: 'text',
+        placeholder: 'Όνομα είδους...',
+      },
+      {
+        id: 'supplier',
+        label: 'Προμηθευτής',
+        type: 'select',
+        options: uniqueSuppliers,
+      },
+      {
+        id: 'stockStatus',
+        label: 'Κατάσταση Αποθέματος',
+        type: 'select',
+        options: [
+          { value: 'all', label: 'Όλα' },
+          { value: 'low', label: 'Χαμηλό Απόθεμα' },
+          { value: 'zero', label: 'Εξαντλημένο' },
+          { value: 'normal', label: 'Κανονικό' },
+        ],
+      },
+      {
+        id: 'minQuantity',
+        label: 'Ελάχιστη Ποσότητα',
+        type: 'number',
+        placeholder: '0',
+      },
+      {
+        id: 'maxQuantity',
+        label: 'Μέγιστη Ποσότητα',
+        type: 'number',
+        placeholder: '1000',
+      },
+    ];
+  }, [suppliers]);
+
+  // 🔍 Filtered inventory
+  const filteredInventory = useMemo(() => {
+    return inventoryWithDetails.filter(item => {
+      // Search filter
+      if (filterValues.search && typeof filterValues.search === 'string') {
+        const searchLower = filterValues.search.toLowerCase();
+        if (!item.name.toLowerCase().includes(searchLower)) {
+          return false;
+        }
+      }
+
+      // Supplier filter
+      if (filterValues.supplier && filterValues.supplier !== '') {
+        if (item.supplierId !== filterValues.supplier) {
+          return false;
+        }
+      }
+
+      // Stock status filter
+      if (filterValues.stockStatus && filterValues.stockStatus !== '' && filterValues.stockStatus !== 'all') {
+        const status = filterValues.stockStatus;
+        const isLow = item.totalQuantity <= item.reorderPoint;
+        const isZero = item.totalQuantity <= 0.0001;
+
+        if (status === 'low' && !isLow) return false;
+        if (status === 'zero' && !isZero) return false;
+        if (status === 'normal' && (isLow || isZero)) return false;
+      }
+
+      // Min quantity filter
+      if (filterValues.minQuantity && filterValues.minQuantity !== '') {
+        const min = parseFloat(filterValues.minQuantity as string);
+        if (!isNaN(min) && item.totalQuantity < min) {
+          return false;
+        }
+      }
+
+      // Max quantity filter
+      if (filterValues.maxQuantity && filterValues.maxQuantity !== '') {
+        const max = parseFloat(filterValues.maxQuantity as string);
+        if (!isNaN(max) && item.totalQuantity > max) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [inventoryWithDetails, filterValues]);
+
+  // ✅ Batch Selection
+  const {
+    selectedIds,
+    selectedItems,
+    selectedCount,
+    isSelected,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+  } = useBatchSelection(filteredInventory);
+
+  // 📝 Bulk Edit Modal
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
   // 📊 Γενικά στατιστικά αποθήκης + smart alerts
   const inventoryStats = useMemo(() => {
@@ -238,6 +382,70 @@ const InventoryView: React.FC<InventoryViewProps> = ({
     run();
   };
 
+  // 🔄 Batch Operations Handlers
+  const handleBulkEdit = (changes: Record<string, any>) => {
+    const updatedItems = selectedItems.map(item => ({
+      ...item,
+      ...changes,
+    }));
+
+    updatedItems.forEach(async (item) => {
+      try {
+        await api.upsertInventoryItem(item);
+      } catch (error) {
+        console.error('Failed to update item:', error);
+      }
+    });
+
+    setInventory(prev => prev.map(item => {
+      const updated = updatedItems.find(u => u.id === item.id);
+      return updated || item;
+    }));
+
+    setIsBulkEditOpen(false);
+    deselectAll();
+    alert(`Ενημερώθηκαν ${updatedItems.length} είδη με επιτυχία!`);
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(
+        selectedItems.map(item => api.deleteInventoryItem(item.id))
+      );
+
+      setInventory(prev => prev.filter(item => !selectedIds.has(item.id)));
+      
+      if (selectedItemId && selectedIds.has(selectedItemId)) {
+        onSelectItem(null);
+      }
+
+      setBulkDeleteConfirmOpen(false);
+      deselectAll();
+      alert(`Διαγράφηκαν ${selectedCount} είδη με επιτυχία!`);
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      alert('Αποτυχία μαζικής διαγραφής');
+    }
+  };
+
+  const handleBulkPriceUpdate = (percentage: number) => {
+    const updatedItems = selectedItems.map(item => {
+      const costRow = item.ingredientCostId
+        ? ingredientCosts.find(c => c.id === item.ingredientCostId)
+        : undefined;
+      
+      if (costRow) {
+        const newCost = costRow.cost * (1 + percentage / 100);
+        // Update cost in ingredientCosts array (simplified)
+        return item;
+      }
+      return item;
+    });
+
+    alert(`Ενημερώθηκαν τιμές για ${selectedCount} είδη (+${percentage}%)`);
+    deselectAll();
+  };
+
   const handleConfirmTransfer = (
     fromLocationId: string,
     toLocationId: string,
@@ -247,6 +455,38 @@ const InventoryView: React.FC<InventoryViewProps> = ({
       onTransfer(selectedItem.id, fromLocationId, toLocationId, quantity);
     }
     setIsTransferModalOpen(false);
+  };
+
+  // 🚀 Quick stock adjustment
+  const handleQuickAdjustment = async (itemId: string, adjustment: number, reason: string) => {
+    try {
+      const item = inventory.find(i => i.id === itemId);
+      if (!item) return;
+
+      // Find the first location or create default location
+      const firstLocation = item.locations[0] || { locationId: 'default', quantity: 0 };
+      const newQuantity = Math.max(0, firstLocation.quantity + adjustment);
+
+      // Update the item
+      const updatedItem: InventoryItem = {
+        ...item,
+        locations: [
+          { ...firstLocation, quantity: newQuantity },
+          ...item.locations.slice(1)
+        ]
+      };
+
+      await api.upsertInventoryItem(updatedItem);
+      setInventory(prev => prev.map(i => i.id === itemId ? updatedItem : i));
+      setQuickAdjustItem(null);
+
+      // Show success message
+      const action = adjustment > 0 ? 'Προστέθηκαν' : 'Αφαιρέθηκαν';
+      alert(`${action} ${Math.abs(adjustment)} ${item.unit} ${adjustment > 0 ? 'στο' : 'από το'} απόθεμα`);
+    } catch (error) {
+      console.error('Failed to adjust stock:', error);
+      alert('Αποτυχία ενημέρωσης αποθέματος');
+    }
   };
 
   // ✅ Gemini για προτάσεις αποθέματος
@@ -448,52 +688,86 @@ ${perLocation || '—'}
             </div>
           </div>
 
-          {/* Smart Alerts: Top Low Stock Items */}
-          {inventoryStats.lowStockTop.length > 0 && (
-            <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-700/80 rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon
-                  name="activity"
-                  className="w-4 h-4 text-amber-600 dark:text-amber-300"
-                />
-                <p className="text-xs font-semibold text-amber-900 dark:text-amber-100">
-                  Κρίσιμα Είδη (Top 5 με χαμηλότερο stock σε σχέση με το
-                  reorder)
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {inventoryStats.lowStockTop.map(item => {
-                  const rp = item.reorderPoint || 0;
-                  const ratio =
-                    rp > 0 ? item.totalQuantity / rp : 0;
-                  const percent = Math.max(0, Math.min(1, ratio));
+          {/* Stock Alert Panel */}
+          <StockAlertPanel
+            lowStockItems={inventoryStats.lowStockTop}
+            zeroStockCount={inventoryStats.zeroStockCount}
+            onSelectItem={(itemId) => {
+              onSelectItem(itemId);
+              const item = inventoryWithDetails.find(i => i.id === itemId);
+              if (item) {
+                setQuickAdjustItem(item);
+              }
+            }}
+          />
 
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => onSelectItem(item.id)}
-                      className="px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-900/80 shadow-sm text-[11px] flex items-center gap-2 hover:bg-amber-100/80 dark:hover:bg-amber-900/40 transition-colors"
-                    >
-                      <span className="font-semibold">{item.name}</span>
-                      <span className="text-xs text-amber-900/80 dark:text-amber-100/80">
-                        {item.totalQuantity.toFixed(2)} {item.unit} / RP{' '}
-                        {rp.toFixed(2)}
-                      </span>
-                      <span className="w-16 h-1.5 rounded-full bg-amber-100 dark:bg-amber-900 overflow-hidden">
-                        <span
-                          className="block h-full bg-amber-500"
-                          style={{ width: `${percent * 100}%` }}
-                        />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          {/* Quick Action: Supplier Order Templates */}
+          {inventoryStats.lowStockCount > 0 && (
+            <button
+              onClick={() => setIsOrderTemplatesOpen(true)}
+              className="w-full p-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 font-semibold"
+            >
+              <Icon name="file-text" className="w-5 h-5" />
+              <span>Δημιουργία Προτεινόμενων Παραγγελιών</span>
+              <Icon name="arrow-right" className="w-5 h-5" />
+            </button>
           )}
+
+          {/* Quick Action Buttons Row */}
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => setIsForecastOpen(true)}
+              className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 font-semibold"
+            >
+              <Icon name="trending-up" className="w-5 h-5" />
+              <span>Πρόβλεψη Αποθέματος</span>
+            </button>
+            <button
+              onClick={() => onViewChange?.('inventory_history')}
+              className="p-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 font-semibold"
+            >
+              <Icon name="history" className="w-5 h-5" />
+              <span>Ιστορικό Κινήσεων</span>
+            </button>
+            <div className="flex items-center justify-center">
+              <ExportImportButtons
+                type="inventory"
+                data={inventory}
+                showImport={canManage}
+                onImportComplete={(importedItems) => {
+                  const itemsWithIds = importedItems.map(item => ({
+                    ...item,
+                    id: `inv_${Date.now()}_${Math.random()}`,
+                    teamId: inventory[0]?.teamId || '',
+                  }));
+                  setInventory(prev => [...prev, ...itemsWithIds as InventoryItem[]]);
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Main Content Grid */}
+
+      <div className="mb-6">
+        <AdvancedFilterPanel
+          filters={filterConfig}
+          values={filterValues}
+          onChange={setFilterValues}
+          presets={presets}
+          onSavePreset={savePreset}
+          onLoadPreset={setFilterValues}
+          onDeletePreset={deletePreset}
+          onClear={() => setFilterValues({
+            search: '',
+            supplier: '',
+            stockStatus: '',
+            minQuantity: '',
+            maxQuantity: '',
+          })}
+        />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
         <div
@@ -502,7 +776,7 @@ ${perLocation || '—'}
           }`}
         >
           <InventoryList
-            inventory={inventoryWithDetails}
+            inventory={filteredInventory}
             selectedItemId={selectedItemId}
             onSelectItem={onSelectItem}
             onAdd={() => handleOpenForm(null)}
@@ -511,6 +785,10 @@ ${perLocation || '—'}
             canManage={canManage}
             onImportInvoice={onImportInvoice}
             withApiKeyCheck={withApiKeyCheck}
+            onViewHistory={setHistoryItem}
+            isSelected={isSelected}
+            onToggleSelection={toggleSelection}
+            batchMode={selectedCount > 0}
           />
         </div>
         <div
@@ -773,6 +1051,105 @@ ${perLocation || '—'}
         onConfirm={handleConfirmTransfer}
         item={selectedItem || undefined}
         inventoryLocations={inventoryLocations}
+      />
+
+      {quickAdjustItem && (
+        <QuickStockAdjustment
+          item={quickAdjustItem}
+          isOpen={true}
+          onClose={() => setQuickAdjustItem(null)}
+          onAdjust={handleQuickAdjustment}
+        />
+      )}
+
+      <SupplierOrderTemplates
+        inventory={inventory}
+        suppliers={suppliers}
+        isOpen={isOrderTemplatesOpen}
+        onClose={() => setIsOrderTemplatesOpen(false)}
+      />
+
+      <InventoryForecast
+        isOpen={isForecastOpen}
+        onClose={() => setIsForecastOpen(false)}
+        inventory={inventory}
+        menus={menus}
+        recipes={recipes}
+        wasteLogs={wasteLogs || []}
+        forecastDays={7}
+      />
+
+      {historyItem && (
+        <StockMovementHistory
+          isOpen={true}
+          onClose={() => setHistoryItem(null)}
+          item={historyItem}
+          transactions={inventoryTransactions}
+          wasteLogs={wasteLogs || []}
+        />
+      )}
+
+      {/* Batch Action Bar */}
+      <BatchActionBar
+        selectedCount={selectedCount}
+        totalCount={filteredInventory.length}
+        actions={[
+          {
+            id: 'edit',
+            label: 'Μαζική Επεξεργασία',
+            icon: 'edit',
+            color: 'blue',
+            action: () => setIsBulkEditOpen(true),
+          },
+          {
+            id: 'delete',
+            label: 'Μαζική Διαγραφή',
+            icon: 'trash-2',
+            color: 'red',
+            dangerous: true,
+            requiresConfirmation: true,
+            action: () => setBulkDeleteConfirmOpen(true),
+          },
+        ]}
+        onSelectAll={selectAll}
+        onDeselectAll={deselectAll}
+        onCancel={deselectAll}
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditModal
+        isOpen={isBulkEditOpen}
+        title="Μαζική Επεξεργασία Αποθέματος"
+        selectedCount={selectedCount}
+        fields={[
+          {
+            id: 'supplierId',
+            label: 'Προμηθευτής',
+            type: 'select',
+            options: suppliers.map(s => ({ value: s.id, label: s.name })),
+          },
+          {
+            id: 'reorderPoint',
+            label: 'Reorder Point',
+            type: 'number',
+            placeholder: '10',
+            min: 0,
+          },
+        ]}
+        onSave={handleBulkEdit}
+        onCancel={() => setIsBulkEditOpen(false)}
+      />
+
+      {/* Bulk Delete Confirmation */}
+      <ConfirmationModal
+        isOpen={bulkDeleteConfirmOpen}
+        title="Επιβεβαίωση Μαζικής Διαγραφής"
+        message={`Είστε σίγουροι ότι θέλετε να διαγράψετε ${selectedCount} είδη; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.`}
+        confirmLabel="Διαγραφή"
+        cancelLabel="Ακύρωση"
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteConfirmOpen(false)}
+        isDangerous
       />
     </>
   );

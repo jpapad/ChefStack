@@ -8,9 +8,10 @@ interface WorkspaceSettingsProps {
     setInventoryLocations: React.Dispatch<React.SetStateAction<InventoryLocation[]>>;
     haccpItems: HaccpItem[];
     setHaccpItems: React.Dispatch<React.SetStateAction<HaccpItem[]>>;
+    currentTeamId: string;
 }
 
-const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = ({ inventoryLocations, setInventoryLocations, haccpItems, setHaccpItems }) => {
+const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = ({ inventoryLocations, setInventoryLocations, haccpItems, setHaccpItems, currentTeamId }) => {
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             <InventoryLocationsManager 
@@ -20,6 +21,7 @@ const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = ({ inventoryLocation
             <HaccpItemsManager
                 haccpItems={haccpItems}
                 setHaccpItems={setHaccpItems}
+                currentTeamId={currentTeamId}
             />
         </div>
     );

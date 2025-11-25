@@ -9,6 +9,7 @@ import {
 import { useTranslation } from '../i18n';
 import { Icon } from './common/Icon';
 import KitchenAICoachModal from './common/KitchenAICoachModal';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 interface HeaderProps {
   currentViewTitleKey: string;
@@ -35,6 +36,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isCoachOpen, setIsCoachOpen] = useState(false);
+  const [isDarkMode, toggleDarkMode] = useDarkMode();
 
   const currentTeam = useMemo(
     () => allTeams.find((t) => t.id === currentTeamId),
@@ -82,8 +84,22 @@ const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Right: AI button, notifications, user */}
+        {/* Right: Dark mode toggle, AI button, notifications, user */}
         <div className="flex items-center gap-3">
+          {/* Dark Mode Toggle */}
+          <button
+            type="button"
+            onClick={toggleDarkMode}
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDarkMode ? (
+              <Icon name="sun" className="w-5 h-5 text-yellow-500" />
+            ) : (
+              <Icon name="moon" className="w-5 h-5 text-slate-700" />
+            )}
+          </button>
+
           {/* Kitchen AI button */}
           <button
             type="button"

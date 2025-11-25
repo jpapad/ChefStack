@@ -6,6 +6,7 @@ import {
   PrepTask,
   HaccpLog,
   HaccpItem,
+  HaccpReminder,
   Supplier,
   InventoryItem,
   Menu,
@@ -20,7 +21,11 @@ import {
   InventoryTransaction,
   WasteLog,
   KitchenServiceOrder,
-  KitchenOrderItem
+  KitchenOrderItem,
+  KitchenOrder,
+  RecipeVariation,
+  EmailReport,
+  ReportHistory
 } from '../types';
 import * as mockData from '../data/mockData';
 
@@ -280,6 +285,7 @@ export const api = {
     tasks: PrepTask[];
     haccpLogs: HaccpLog[];
     haccpItems: HaccpItem[];
+    haccpReminders: HaccpReminder[];
     suppliers: Supplier[];
     inventory: InventoryItem[];
     inventoryLocations: InventoryLocation[];
@@ -293,6 +299,10 @@ export const api = {
     shifts: Shift[];
     shiftSchedules: ShiftSchedule[];
     channels: Channel[];
+    orders: KitchenOrder[];
+    variations: RecipeVariation[];
+    reports: EmailReport[];
+    reportHistory: ReportHistory[];
   }> => {
     if (useMockApi) {
       console.warn('Supabase not configured, returning mock data.');
@@ -305,6 +315,7 @@ export const api = {
             tasks: mockData.mockPrepTasks,
             haccpLogs: mockData.mockHaccpLogs,
             haccpItems: mockData.mockHaccpItems,
+            haccpReminders: mockData.mockHaccpReminders,
             suppliers: mockData.mockSuppliers,
             inventory: mockData.mockInventory,
             inventoryLocations: mockData.mockInventoryLocations,
@@ -317,7 +328,11 @@ export const api = {
             messages: mockData.mockMessages,
             shifts: mockData.mockShifts,
             shiftSchedules: mockData.mockShiftSchedules,
-            channels: mockData.mockChannels
+            channels: mockData.mockChannels,
+            orders: mockData.mockOrders,
+            variations: mockData.mockVariations,
+            reports: mockData.mockReports,
+            reportHistory: mockData.mockReportHistory
           })
         )
       );
@@ -330,6 +345,7 @@ export const api = {
       tasksRes,
       haccpLogsRes,
       haccpItemsRes,
+      haccpRemindersRes,
       suppliersRes,
       inventoryRes,
       inventoryLocationsRes,
@@ -350,6 +366,7 @@ export const api = {
       supabase.from('tasks').select('*'),
       supabase.from('haccp_logs').select('*'),
       supabase.from('haccp_items').select('*'),
+      supabase.from('haccp_reminders').select('*'),
       supabase.from('suppliers').select('*'),
       supabase.from('inventory').select('*'),
       supabase.from('inventory_locations').select('*'),
@@ -367,6 +384,20 @@ export const api = {
 
     const safeData = <T,>(res: any, label: string): T[] => {
       if (res?.error) {
+        // Special handling for haccp_reminders table not found
+        if (label === 'haccp_reminders' && res.error.code === 'PGRST205') {
+          console.warn(`⚠️ Table 'haccp_reminders' not found. Create it with:
+CREATE TABLE haccp_reminders (
+  id TEXT PRIMARY KEY,
+  team_id TEXT NOT NULL,
+  haccp_item_id TEXT REFERENCES haccp_items(id),
+  frequency TEXT NOT NULL,
+  next_check_due TIMESTAMP NOT NULL,
+  is_overdue BOOLEAN DEFAULT FALSE,
+  assigned_user_id TEXT
+);`);
+          return [];
+        }
         console.error(`Error fetching ${label} from Supabase:`, res.error);
         return [];
       }
@@ -385,6 +416,7 @@ export const api = {
     const taskRows = safeData<PrepTask>(tasksRes, 'tasks');
     const haccpLogRows = safeData<any>(haccpLogsRes, 'haccp_logs');
     const haccpItemRows = safeData<HaccpItem>(haccpItemsRes, 'haccp_items');
+    const haccpReminderRows = safeData<any>(haccpRemindersRes, 'haccp_reminders');
     const supplierRows = safeData<any>(suppliersRes, 'suppliers');
     const inventoryRows = safeData<any>(inventoryRes, 'inventory');
     const inventoryLocationRows = safeData<InventoryLocation>(
@@ -437,11 +469,30 @@ export const api = {
       ingredientCosts: ingredientCostRows.map(mapIngredientCostFromDb),
       workstations: workstationRows,
       tasks: taskRows,
-      haccpLogs: haccpLogRows.map((l) => ({
-        ...l,
+      haccpLogs: haccpLogRows.map((l: any) => ({
+        id: l.id,
+        teamId: l.team_id,
+        haccpItemId: l.haccp_item_id,
+        type: l.type,
+        value: l.value,
+        user: l.user,
+        notes: l.notes,
         timestamp: new Date(l.timestamp)
       })),
-      haccpItems: haccpItemRows,
+      haccpItems: haccpItemRows.map((item: any) => ({
+        id: item.id,
+        teamId: item.team_id,
+        name: item.name,
+        category: item.category
+      })),
+      haccpReminders: haccpReminderRows.map((r: any) => ({
+        ...r,
+        nextCheckDue: new Date(r.next_check_due),
+        isOverdue: r.is_overdue,
+        assignedUserId: r.assigned_user_id,
+        haccpItemId: r.haccp_item_id,
+        teamId: r.team_id
+      })),
       suppliers: supplierRows.map(mapSupplierFromDb),
       inventory: inventoryRows.map(mapInventoryItemFromDb),
       inventoryLocations: inventoryLocationRows,
@@ -1447,6 +1498,161 @@ export const api = {
 
     if (error) {
       console.error('[api.deleteKitchenServiceOrder] error', error);
+      throw error;
+    }
+  },
+
+  // HACCP Items CRUD
+  upsertHaccpItem: async (item: HaccpItem): Promise<HaccpItem> => {
+    if (useMockApi) {
+      console.warn('[api.upsertHaccpItem] Supabase not configured – returning item as-is.');
+      return item;
+    }
+    if (!supabase) throwConfigError();
+
+    const { data, error } = await supabase
+      .from('haccp_items')
+      .upsert({
+        id: item.id,
+        team_id: item.teamId,
+        name: item.name,
+        category: item.category
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[api.upsertHaccpItem] error', error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      teamId: data.team_id,
+      name: data.name,
+      category: data.category
+    };
+  },
+
+  deleteHaccpItem: async (itemId: string): Promise<void> => {
+    if (useMockApi) {
+      console.warn('[api.deleteHaccpItem] Supabase not configured – no-op.');
+      return;
+    }
+    if (!supabase) throwConfigError();
+
+    const { error } = await supabase
+      .from('haccp_items')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) {
+      console.error('[api.deleteHaccpItem] error', error);
+      throw error;
+    }
+  },
+
+  // HACCP Logs CRUD
+  createHaccpLog: async (log: HaccpLog): Promise<HaccpLog> => {
+    if (useMockApi) {
+      console.warn('[api.createHaccpLog] Supabase not configured – returning log as-is.');
+      return log;
+    }
+    if (!supabase) throwConfigError();
+
+    const { data, error } = await supabase
+      .from('haccp_logs')
+      .insert({
+        id: log.id,
+        team_id: log.teamId,
+        haccp_item_id: log.haccpItemId,
+        timestamp: log.timestamp.toISOString(),
+        type: log.type,
+        value: log.value,
+        user: log.user,
+        status: log.status,
+        notes: log.notes,
+        is_out_of_range: log.isOutOfRange
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[api.createHaccpLog] error', error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      teamId: data.team_id,
+      haccpItemId: data.haccp_item_id,
+      timestamp: new Date(data.timestamp),
+      type: data.type,
+      value: data.value,
+      user: data.user,
+      status: data.status,
+      notes: data.notes,
+      isOutOfRange: data.is_out_of_range
+    };
+  },
+
+  updateHaccpLog: async (log: HaccpLog): Promise<HaccpLog> => {
+    if (useMockApi) {
+      console.warn('[api.updateHaccpLog] Supabase not configured – returning log as-is.');
+      return log;
+    }
+    if (!supabase) throwConfigError();
+
+    const { data, error } = await supabase
+      .from('haccp_logs')
+      .update({
+        team_id: log.teamId,
+        haccp_item_id: log.haccpItemId,
+        timestamp: log.timestamp.toISOString(),
+        type: log.type,
+        value: log.value,
+        user: log.user,
+        status: log.status,
+        notes: log.notes,
+        is_out_of_range: log.isOutOfRange
+      })
+      .eq('id', log.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[api.updateHaccpLog] error', error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      teamId: data.team_id,
+      haccpItemId: data.haccp_item_id,
+      timestamp: new Date(data.timestamp),
+      type: data.type,
+      value: data.value,
+      user: data.user,
+      status: data.status,
+      notes: data.notes,
+      isOutOfRange: data.is_out_of_range
+    };
+  },
+
+  deleteHaccpLog: async (logId: string): Promise<void> => {
+    if (useMockApi) {
+      console.warn('[api.deleteHaccpLog] Supabase not configured – no-op.');
+      return;
+    }
+    if (!supabase) throwConfigError();
+
+    const { error } = await supabase
+      .from('haccp_logs')
+      .delete()
+      .eq('id', logId);
+
+    if (error) {
+      console.error('[api.deleteHaccpLog] error', error);
       throw error;
     }
   }

@@ -1,9 +1,10 @@
 
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Recipe } from '../types';
 import { Icon } from './common/Icon';
 import { useTranslation } from '../i18n';
+import StarRating from './common/StarRating';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -12,26 +13,56 @@ interface RecipeCardProps {
   isBookMode: boolean;
   isBookSelected: boolean;
   onBookSelect: (id: string) => void;
+  isBulkMode?: boolean;
+  isBulkSelected?: boolean;
+  onBulkSelect?: (id: string) => void;
 }
 
-const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, isSelected, onClick, isBookMode, isBookSelected, onBookSelect }) => {
+const RecipeCard: React.FC<RecipeCardProps> = ({ 
+  recipe, 
+  isSelected, 
+  onClick, 
+  isBookMode, 
+  isBookSelected, 
+  onBookSelect,
+  isBulkMode = false,
+  isBulkSelected = false,
+  onBulkSelect
+}) => {
   const { language, t } = useTranslation();
 
   const displayName = language === 'en' && recipe.name_en ? recipe.name_en : recipe.name;
   const displayDescription = recipe.description; // Assuming description is not translated for now
 
+  // Calculate average rating
+  const averageRating = useMemo(() => {
+    if (!recipe.ratings || recipe.ratings.length === 0) return 0;
+    const sum = recipe.ratings.reduce((acc, r) => acc + r.rating, 0);
+    return sum / recipe.ratings.length;
+  }, [recipe.ratings]);
+
+  const handleClick = () => {
+    if (isBookMode) {
+      onBookSelect(recipe.id);
+    } else if (isBulkMode && onBulkSelect) {
+      onBulkSelect(recipe.id);
+    } else {
+      onClick();
+    }
+  };
+
   return (
     <div
-      onClick={() => isBookMode ? onBookSelect(recipe.id) : onClick()}
+      onClick={handleClick}
       className={`relative flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 border ${
-        isSelected && !isBookMode
+        isSelected && !isBookMode && !isBulkMode
           ? 'bg-brand-yellow/20 dark:bg-brand-yellow/30 border-brand-yellow/50'
           : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'
-      } ${isBookSelected ? 'border-brand-yellow shadow-lg' : ''}`}
+      } ${isBookSelected || isBulkSelected ? 'border-brand-yellow shadow-lg' : ''}`}
     >
-        {isBookMode && (
+        {(isBookMode || isBulkMode) && (
              <div className="absolute top-2 right-2 z-10">
-                <Icon name={isBookSelected ? 'check-square' : 'square'} className={`w-6 h-6 ${isBookSelected ? 'text-brand-yellow' : 'text-gray-400 dark:text-gray-500'}`} />
+                <Icon name={(isBookSelected || isBulkSelected) ? 'check-square' : 'square'} className={`w-6 h-6 ${(isBookSelected || isBulkSelected) ? 'text-brand-yellow' : 'text-gray-400 dark:text-gray-500'}`} />
             </div>
         )}
       <img
@@ -51,6 +82,15 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, isSelected, onClick, is
                 <Icon name="servings" className="w-4 h-4 mr-1"/> 
                 <span>{recipe.servings} {t('recipe_detail_servings')}</span>
             </div>
+            {averageRating > 0 && (
+              <StarRating
+                rating={averageRating}
+                size="sm"
+                readonly
+                showCount
+                count={recipe.ratings?.length}
+              />
+            )}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Recipe } from '../types';
 import { Icon } from './common/Icon';
+import StarRating from './common/StarRating';
 import { useTranslation } from '../i18n';
 
 interface RecipeGridCardProps {
@@ -10,6 +11,9 @@ interface RecipeGridCardProps {
   isBookMode: boolean;
   isBookSelected: boolean;
   onBookSelect: (id: string) => void;
+  isBulkMode?: boolean;
+  isBulkSelected?: boolean;
+  onBulkSelect?: (id: string) => void;
 }
 
 const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
@@ -18,13 +22,40 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
   onClick,
   isBookMode,
   isBookSelected,
-  onBookSelect
+  onBookSelect,
+  isBulkMode = false,
+  isBulkSelected = false,
+  onBulkSelect
 }) => {
   const { t } = useTranslation();
+
+  // Calculate average rating
+  const averageRating = useMemo(() => {
+    if (!recipe.ratings || recipe.ratings.length === 0) return 0;
+    const sum = recipe.ratings.reduce((acc, r) => acc + r.rating, 0);
+    return sum / recipe.ratings.length;
+  }, [recipe.ratings]);
 
   const handleBookToggle = (e: React.MouseEvent | React.ChangeEvent) => {
     e.stopPropagation();
     onBookSelect(recipe.id);
+  };
+
+  const handleBulkToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onBulkSelect) {
+      onBulkSelect(recipe.id);
+    }
+  };
+
+  const handleCardClick = () => {
+    if (isBookMode) {
+      onBookSelect(recipe.id);
+    } else if (isBulkMode && onBulkSelect) {
+      onBulkSelect(recipe.id);
+    } else {
+      onClick();
+    }
   };
 
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
@@ -38,11 +69,11 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
     <div
       className={`relative group rounded-2xl overflow-hidden border shadow-sm transition-all cursor-pointer
       ${
-        isSelected
+        isSelected && !isBookMode && !isBulkMode
           ? 'border-brand-yellow ring-2 ring-brand-yellow/40'
           : 'border-slate-100 dark:border-slate-800 hover:border-brand-yellow/70 hover:shadow-md'
-      }`}
-      onClick={onClick}
+      } ${(isBookSelected || isBulkSelected) ? 'ring-2 ring-brand-yellow/60' : ''}`}
+      onClick={handleCardClick}
     >
       {/* Εικόνα */}
       <div className="relative h-28 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -58,14 +89,14 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
           </div>
         )}
 
-        {/* Book mode checkbox επάνω αριστερά */}
-        {isBookMode && (
+        {/* Book mode or bulk mode checkbox επάνω αριστερά */}
+        {(isBookMode || isBulkMode) && (
           <button
             type="button"
-            onClick={handleBookToggle}
+            onClick={isBookMode ? handleBookToggle : handleBulkToggle}
             className="absolute top-2 left-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-black/60 text-white border border-white/40"
           >
-            {isBookSelected ? (
+            {(isBookSelected || isBulkSelected) ? (
               <Icon name="check" className="w-3 h-3" />
             ) : (
               <Icon name="plus" className="w-3 h-3" />
@@ -105,7 +136,7 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
           )}
         </div>
 
-        {/* Meta: χρόνοι + μερίδες */}
+        {/* Meta: χρόνοι + μερίδες + rating */}
         <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-600 dark:text-slate-300">
           {totalTime > 0 && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10">
@@ -124,6 +155,15 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
               <Icon name="scale" className="w-3 h-3" />
               {recipe.yield.quantity}
               {recipe.yield.unit}
+            </span>
+          )}
+          {averageRating > 0 && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-50 dark:bg-yellow-900/30">
+              <StarRating
+                rating={averageRating}
+                size="sm"
+                readonly
+              />
             </span>
           )}
         </div>

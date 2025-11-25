@@ -4,17 +4,25 @@ import type {
   Recipe,
   PrepTask,
   HaccpLog,
+  HaccpItem,
+  HaccpReminder,
   InventoryItem,
   WasteLog,
   Message,
   Channel
 } from '../../types';
 import { Icon } from '../common/Icon';
+import TopRecipesWidget from './TopRecipesWidget';
+import InventoryAlertsWidget from './InventoryAlertsWidget';
+import { HaccpDashboardWidget } from '../haccp/HaccpDashboardWidget';
+import { useTranslation } from '../../i18n';
 
 interface DashboardViewProps {
   recipes: Recipe[];
   tasks: PrepTask[];
   haccpLogs: HaccpLog[];
+  haccpItems: HaccpItem[];
+  haccpReminders: HaccpReminder[];
   inventory: InventoryItem[];
   wasteLogs: WasteLog[];
   messages?: Message[];
@@ -27,6 +35,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   recipes,
   tasks,
   haccpLogs,
+  haccpItems,
+  haccpReminders,
   inventory,
   wasteLogs,
   messages,
@@ -109,92 +119,118 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-4 gap-6">
-      {/* Αριστερά: Quick actions + Live Walkie */}
-      <div className="xl:col-span-3 flex flex-col gap-6">
-        {/* Quick actions row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <button
-            type="button"
-            onClick={() => onViewChange('recipes')}
-            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
-          >
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-brand-yellow/10 text-brand-yellow">
-              <Icon name="book-open" className="w-4 h-4" />
+    <div className="h-full flex flex-col gap-6 overflow-y-auto pb-6">
+      {/* Top: Quick actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <button
+          type="button"
+          onClick={() => onViewChange('recipes')}
+          className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
+        >
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-brand-yellow/10 text-brand-yellow">
+            <Icon name="book-open" className="w-4 h-4" />
+          </span>
+          <div className="flex flex-col text-left">
+            <span className="font-semibold text-xs">Συνταγές</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Δες ή δημιούργησε συνταγές
             </span>
-            <div className="flex flex-col text-left">
-              <span className="font-semibold text-xs">Συνταγές</span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Δες ή δημιούργησε συνταγές
-              </span>
-            </div>
-          </button>
+          </div>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => onViewChange('inventory')}
-            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
-          >
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500">
-              <Icon name="package" className="w-4 h-4" />
+        <button
+          type="button"
+          onClick={() => onViewChange('inventory')}
+          className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
+        >
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500">
+            <Icon name="package" className="w-4 h-4" />
+          </span>
+          <div className="flex flex-col text-left">
+            <span className="font-semibold text-xs">Απόθεμα</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Έλεγχος και κινήσεις stock
             </span>
-            <div className="flex flex-col text-left">
-              <span className="font-semibold text-xs">Απόθεμα</span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Έλεγχος και κινήσεις stock
-              </span>
-            </div>
-          </button>
+          </div>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => onViewChange('waste_log')}
-            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
-          >
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500">
-              <Icon name="trash-2" className="w-4 h-4" />
+        <button
+          type="button"
+          onClick={() => onViewChange('waste_log')}
+          className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
+        >
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500">
+            <Icon name="trash-2" className="w-4 h-4" />
+          </span>
+          <div className="flex flex-col text-left">
+            <span className="font-semibold text-xs">Φθορές</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Καταχώρησε απώλειες
             </span>
-            <div className="flex flex-col text-left">
-              <span className="font-semibold text-xs">Φθορές</span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Καταχώρησε απώλειες
-              </span>
-            </div>
-          </button>
+          </div>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => onViewChange('notifications')}
-            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
-          >
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500">
-              <Icon name="mic" className="w-4 h-4" />
+        <button
+          type="button"
+          onClick={() => onViewChange('notifications')}
+          className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-sm"
+        >
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500">
+            <Icon name="mic" className="w-4 h-4" />
+          </span>
+          <div className="flex flex-col text-left">
+            <span className="font-semibold text-xs">Walkie</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Άνοιξε τα κανάλια επικοινωνίας
             </span>
-            <div className="flex flex-col text-left">
-              <span className="font-semibold text-xs">Walkie</span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Άνοιξε τα κανάλια επικοινωνίας
-              </span>
-            </div>
-          </button>
-        </div>
+          </div>
+        </button>
+      </div>
 
-        {/* Live Walkie Feed */}
-        <div className="flex-1 rounded-3xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-800/70 shadow-sm p-4 md:p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/10 text-amber-500">
-                <Icon name="radio" className="w-4 h-4" />
-              </span>
-              <div>
-                <h2 className="text-sm font-semibold">Live Walkie Feed</h2>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Τελευταία μηνύματα από τα κανάλια υπηρεσίας.
-                </p>
+      {/* Analytics widgets row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TopRecipesWidget 
+          recipes={recipes}
+          limit={5}
+          onRecipeClick={(id) => {
+            // Could navigate to recipe detail in future
+            console.log('Recipe clicked:', id);
+          }}
+        />
+        
+        <InventoryAlertsWidget 
+          inventory={inventory}
+          limit={8}
+        />
+      </div>
+
+      {/* HACCP Dashboard Widget */}
+      <HaccpDashboardWidget
+        logs={haccpLogs}
+        haccpItems={haccpItems}
+        haccpReminders={haccpReminders}
+        onViewAll={() => onViewChange('haccp')}
+      />
+
+      {/* Main content grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Left: Live Walkie Feed */}
+        <div className="xl:col-span-3">
+          <div className="rounded-3xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-slate-800/70 shadow-sm p-4 md:p-6 flex flex-col h-96">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/10 text-amber-500">
+                  <Icon name="radio" className="w-4 h-4" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-semibold">Live Walkie Feed</h2>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Τελευταία μηνύματα από τα κανάλια υπηρεσίας.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <button
+              <button
               type="button"
               onClick={() => onViewChange('notifications')}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 text-white text-[11px] font-medium hover:brightness-105"
@@ -252,11 +288,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Δεξιά στήλη: KPIs + Activity + AI card */}
-      <div className="xl:col-span-1 flex flex-col gap-4">
-        {/* KPIs */}
+        {/* Right column: KPIs + Activity + AI card */}
+        <div className="xl:col-span-1 flex flex-col gap-4">
+          {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
           <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-1">
             <span className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -409,6 +445,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             <Icon name="wand-2" className="w-3.5 h-3.5" />
             Άνοιγμα Kitchen AI
           </button>
+        </div>
         </div>
       </div>
     </div>

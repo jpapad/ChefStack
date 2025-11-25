@@ -1,17 +1,80 @@
 {
   "short_name": "ChefStack",
-  "name": "ChefStack",
-  "description": "An MVP for a professional kitchen application focused on recipe management, costing, and HACCP for chefs in Greece and the EU.",
+  "name": "ChefStack - Professional Kitchen Management",
+  "description": "Ολοκληρωμένο σύστημα διαχείρισης επαγγελματικής κουζίνας: Συνταγές, Κοστολόγηση, HACCP, Απόθεμα, Μενού για ελληνικές & ευρωπαϊκές κουζίνες.",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg%20width%3D%22100%25%22%20height%3D%22100%25%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%3Cg%3E%0A%20%20%20%20%3Cpath%20d%3D%22M50.2%2C28.24a10.45%2C10.45%2C0%2C0%2C0-19.8-5.32%2C10.21%2C10.21%2C0%2C0%2C0-2.58.4A10.45%2C10.45%2C0%2C0%2C0%2C13.8%2C28.24Z%22%20fill%3D%22%23F9FAFB%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M49.62%2C32.11a3.48%2C3.48%2C0%2C0%2C0-3.32-2.35H17.7a3.48%2C3.48%2C0%2C0%2C0-3.32%2C2.35L12%2C42.59H52Z%22%20fill%3D%22%23FBBF24%22%20stroke%3D%22%231F2937%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2212%22%20y%3D%2244.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2212%22%20y%3D%2250.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%20fill-opacity%3D%220.8%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E",
+      "src": "data:image/svg+xml,%3Csvg%20width%3D%22192%22%20height%3D%22192%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%3Cg%3E%0A%20%20%20%20%3Cpath%20d%3D%22M50.2%2C28.24a10.45%2C10.45%2C0%2C0%2C0-19.8-5.32%2C10.21%2C10.21%2C0%2C0%2C0-2.58.4A10.45%2C10.45%2C0%2C0%2C0%2C13.8%2C28.24Z%22%20fill%3D%22%23F9FAFB%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M49.62%2C32.11a3.48%2C3.48%2C0%2C0%2C0-3.32-2.35H17.7a3.48%2C3.48%2C0%2C0%2C0-3.32%2C2.35L12%2C42.59H52Z%22%20fill%3D%22%23FBBF24%22%20stroke%3D%22%231F2937%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2212%22%20y%3D%2244.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2212%22%20y%3D%2250.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%20fill-opacity%3D%220.8%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E",
       "type": "image/svg+xml",
-      "sizes": "any",
-      "purpose": "any maskable"
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20width%3D%22512%22%20height%3D%22512%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%3Cg%3E%0A%20%20%20%20%3Cpath%20d%3D%22M50.2%2C28.24a10.45%2C10.45%2C0%2C0%2C0-19.8-5.32%2C10.21%2C10.21%2C0%2C0%2C0-2.58.4A10.45%2C10.45%2C0%2C0%2C0%2C13.8%2C28.24Z%22%20fill%3D%22%23F9FAFB%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M49.62%2C32.11a3.48%2C3.48%2C0%2C0%2C0-3.32-2.35H17.7a3.48%2C3.48%2C0%2C0%2C0-3.32%2C2.35L12%2C42.59H52Z%22%20fill%3D%22%23FBBF24%22%20stroke%3D%22%231F2937%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2212%22%20y%3D%2244.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2212%22%20y%3D%2250.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%20fill-opacity%3D%220.8%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20width%3D%22512%22%20height%3D%22512%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%23FBBF24%22%2F%3E%0A%20%20%3Cg%20transform%3D%22translate%288%2C8%29%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M42.2%2C20.24a10.45%2C10.45%2C0%2C0%2C0-19.8-5.32%2C10.21%2C10.21%2C0%2C0%2C0-2.58.4A10.45%2C10.45%2C0%2C0%2C0%2C5.8%2C20.24Z%22%20fill%3D%22%23F9FAFB%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M41.62%2C24.11a3.48%2C3.48%2C0%2C0%2C0-3.32-2.35H9.7a3.48%2C3.48%2C0%2C0%2C0-3.32%2C2.35L4%2C34.59H44Z%22%20fill%3D%22%23FFFFFF%22%20stroke%3D%22%231F2937%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%224%22%20y%3D%2236.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%224%22%20y%3D%2242.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%20fill-opacity%3D%220.8%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#1F2937",
-  "background_color": "#F3F4F6"
+  "orientation": "portrait-primary",
+  "theme_color": "#FBBF24",
+  "background_color": "#1F2937",
+  "categories": ["food", "business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Συνταγές",
+      "short_name": "Recipes",
+      "description": "Δες & διαχειρίσου συνταγές",
+      "url": "/?view=recipes",
+      "icons": [{ "src": "/icons/recipes.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "HACCP",
+      "short_name": "HACCP",
+      "description": "Καταγραφές ασφάλειας τροφίμων",
+      "url": "/?view=haccp",
+      "icons": [{ "src": "/icons/haccp.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Απόθεμα",
+      "short_name": "Inventory",
+      "description": "Διαχείριση αποθέματος",
+      "url": "/?view=inventory",
+      "icons": [{ "src": "/icons/inventory.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Μενού",
+      "short_name": "Menus",
+      "description": "Σχεδίασε μενού",
+      "url": "/?view=menus",
+      "icons": [{ "src": "/icons/menus.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "lang": "el",
+  "dir": "ltr"
 }

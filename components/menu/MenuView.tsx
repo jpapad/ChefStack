@@ -9,6 +9,7 @@ import {
   RolePermissions,
   InventoryItem,
   WasteLog,
+  IngredientCost,
 } from '../../types';
 import { api } from '../../services/api';
 import MenuList from './MenuList';
@@ -17,6 +18,8 @@ import MenuForm from './MenuForm';
 import AIMenuGenerator from './AIMenuGenerator';
 import ConfirmationModal from '../common/ConfirmationModal';
 import SmartMenuCoach from './SmartMenuCoach';
+import MenuCostAnalysis from './MenuCostAnalysis';
+import AutoShoppingList from './AutoShoppingList';
 
 interface MenuViewProps {
   menus: Menu[];
@@ -32,11 +35,13 @@ interface MenuViewProps {
   withApiKeyCheck: (action: () => void | Promise<void>) => void;
   inventory: InventoryItem[];
   wasteLogs: WasteLog[];
+  ingredientCosts: IngredientCost[];
 }
 
 const MenuView: React.FC<MenuViewProps> = ({
   inventory,
   wasteLogs,
+  ingredientCosts,
   menus,
   setMenus,
   allRecipes,
@@ -55,6 +60,8 @@ const MenuView: React.FC<MenuViewProps> = ({
   const [isAiFormOpen, setIsAiFormOpen] = useState(false);
   const [menuToEdit, setMenuToEdit] = useState<Menu | null>(null);
   const [menuToDelete, setMenuToDelete] = useState<Menu | null>(null);
+  const [isCostAnalysisOpen, setIsCostAnalysisOpen] = useState(false);
+  const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
 
   // 🔍 Search & Filter state
   const [menuSearch, setMenuSearch] = useState('');
@@ -255,6 +262,8 @@ const MenuView: React.FC<MenuViewProps> = ({
                 onBack={() => setSelectedMenuId(null)}
                 onEdit={handleOpenForm}
                 canManage={canManage}
+                onOpenCostAnalysis={() => setIsCostAnalysisOpen(true)}
+                onOpenShoppingList={() => setIsShoppingListOpen(true)}
               />
 
               {/* 🔍 SmartMenuCoach κάτω από τις λεπτομέρειες του menu */}
@@ -263,6 +272,7 @@ const MenuView: React.FC<MenuViewProps> = ({
                   recipes={allRecipes}
                   inventory={inventory}
                   wasteLogs={wasteLogs}
+                  ingredientCosts={ingredientCosts}
                   withApiKeyCheck={withApiKeyCheck}
                 />
               </div>
@@ -279,6 +289,7 @@ const MenuView: React.FC<MenuViewProps> = ({
                   recipes={allRecipes}
                   inventory={inventory}
                   wasteLogs={wasteLogs}
+                  ingredientCosts={ingredientCosts}
                   withApiKeyCheck={withApiKeyCheck}
                 />
               </div>
@@ -312,6 +323,25 @@ const MenuView: React.FC<MenuViewProps> = ({
           </p>
         }
       />
+
+      {selectedMenu && (
+        <>
+          <MenuCostAnalysis
+            isOpen={isCostAnalysisOpen}
+            onClose={() => setIsCostAnalysisOpen(false)}
+            menu={selectedMenu}
+            recipes={allRecipes}
+            ingredientCosts={ingredientCosts}
+          />
+
+          <AutoShoppingList
+            isOpen={isShoppingListOpen}
+            onClose={() => setIsShoppingListOpen(false)}
+            menu={selectedMenu}
+            recipes={allRecipes}
+          />
+        </>
+      )}
     </>
   );
 };

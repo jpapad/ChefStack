@@ -1,29 +1,47 @@
 import React, { useMemo, useState } from 'react';
-import { HaccpLog, HaccpItem, Role, RolePermissions } from '../../types';
+import { HaccpLog, HaccpItem, Role, RolePermissions, HaccpReminder } from '../../types';
 import { Icon } from '../common/Icon';
+import { HaccpTrendAnalysis } from './HaccpTrendAnalysis';
+import { HaccpComplianceAlerts } from './HaccpComplianceAlerts';
+import HaccpLogForm from './HaccpLogForm';
+import { useTranslation } from '../../i18n';
+import { api } from '../../services/api';
+
+type HaccpTab = 'logs' | 'trends' | 'alerts' | 'ai';
 
 interface HaccpViewProps {
   logs: HaccpLog[];
   setLogs: React.Dispatch<React.SetStateAction<HaccpLog[]>>;
   haccpItems: HaccpItem[];
+  haccpReminders: HaccpReminder[];
   onNavigateToPrint: () => void;
   currentUserRole?: Role;
   rolePermissions: RolePermissions;
   withApiKeyCheck: (action: () => void | Promise<void>) => void;
+  currentTeamId: string;
 }
 
 const HaccpView: React.FC<HaccpViewProps> = ({
   logs,
   setLogs, // κρατάμε για μελλοντική χρήση (π.χ. δημιουργία / edit logs)
   haccpItems,
+  haccpReminders,
   onNavigateToPrint,
   currentUserRole,
   rolePermissions,
   withApiKeyCheck,
+  currentTeamId,
 }) => {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<HaccpTab>('logs');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7d' | '30d'>(
     'all'
   );
+  const [selectedItemForTrend, setSelectedItemForTrend] = useState<HaccpItem | null>(
+    haccpItems[0] || null
+  );
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [logToEdit, setLogToEdit] = useState<HaccpLog | null>(null);
 
   const [aiInsights, setAiInsights] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -262,6 +280,45 @@ ${statusSummary || '—'}
     });
   };
 
+  // Handler για νέα καταχώρηση ή επεξεργασία HACCP
+  const handleSaveLog = async (logData: Omit<HaccpLog, 'id'> | HaccpLog) => {
+    try {
+      if ('id' in logData && logData.id) {
+        // Update existing log
+        const updatedLog = await api.updateHaccpLog(logData as HaccpLog);
+        setLogs(prev => prev.map(l => l.id === updatedLog.id ? updatedLog : l));
+      } else {
+        // Create new log
+        const newLog: HaccpLog = {
+          ...(logData as Omit<HaccpLog, 'id'>),
+          id: `haccp_${Date.now()}`,
+          teamId: currentTeamId,
+        };
+        const savedLog = await api.createHaccpLog(newLog);
+        setLogs(prev => [savedLog, ...prev]);
+      }
+      setIsFormOpen(false);
+      setLogToEdit(null);
+    } catch (error) {
+      console.error('Failed to save HACCP log:', error);
+      alert('Αποτυχία αποθήκευσης καταχώρησης');
+    }
+  };
+
+  // Handler για διαγραφή HACCP log
+  const handleDeleteLog = async (logId: string) => {
+    if (!confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την καταχώρηση;')) {
+      return;
+    }
+    try {
+      await api.deleteHaccpLog(logId);
+      setLogs(prev => prev.filter(l => l.id !== logId));
+    } catch (error) {
+      console.error('Failed to delete HACCP log:', error);
+      alert('Αποτυχία διαγραφής καταχώρησης');
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-full">
       {/* Αριστερά / κέντρο: λίστα HACCP logs & μικρά stats */}
@@ -282,6 +339,30 @@ ${statusSummary || '—'}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* Κουμπί Νέας Καταχώρησης */}
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-brand-yellow text-brand-dark font-semibold hover:opacity-90 transition-opacity shadow-md"
+            >
+              <Icon name="plus" className="w-4 h-4" />
+              Νέα Καταχώρηση
+            </button>
+
+            {/* View Mode Buttons */}
+            <button
+              onClick={() => setActiveTab('trends')}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-blue-400 text-blue-700 text-xs font-semibold hover:bg-blue-50 dark:border-blue-500 dark:text-blue-200 dark:hover:bg-blue-500/10 transition-colors"
+            >
+              <Icon name="trending-up" className="w-3 h-3" />
+              Τάσεις
+            </button>
+            <button
+              onClick={() => setActiveTab('alerts')}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-amber-400 text-amber-700 text-xs font-semibold hover:bg-amber-50 dark:border-amber-500 dark:text-amber-200 dark:hover:bg-amber-500/10 transition-colors"
+            >
+              <Icon name="alert-triangle" className="w-3 h-3" />
+              Ειδοποιήσεις
+            </button>
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)}
@@ -319,6 +400,7 @@ ${statusSummary || '—'}
                   <th className="py-2 pr-4">Τιμή</th>
                   <th className="py-2 pr-4">Status</th>
                   <th className="py-2 pr-4">Σχόλια</th>
+                  <th className="py-2">Ενέργειες</th>
                 </tr>
               </thead>
               <tbody>
@@ -377,6 +459,27 @@ ${statusSummary || '—'}
                       <td className="py-2 pr-4 align-top text-xs">
                         {notes || '—'}
                       </td>
+                      <td className="py-2 align-top">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setLogToEdit(log as HaccpLog);
+                              setIsFormOpen(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                            title="Επεξεργασία"
+                          >
+                            <Icon name="pencil" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLog((log as any).id)}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400"
+                            title="Διαγραφή"
+                          >
+                            <Icon name="trash-2" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -424,6 +527,54 @@ ${statusSummary || '—'}
         </div>
       </div>
 
+      {/* Expandable Sections for Trends and Alerts */}
+      {activeTab === 'trends' && (
+        <div className="xl:col-span-2">
+          <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-light-text-primary dark:text-dark-text-primary">
+                Ανάλυση Τάσεων Θερμοκρασιών
+              </h3>
+              <button
+                onClick={() => setActiveTab('logs')}
+                className="text-xs text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary"
+              >
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+            <HaccpTrendAnalysis
+              logs={logs}
+              haccpItems={haccpItems}
+              selectedItem={selectedItemForTrend}
+              onSelectItem={setSelectedItemForTrend}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'alerts' && (
+        <div className="xl:col-span-2">
+          <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-light-text-primary dark:text-dark-text-primary">
+                Ειδοποιήσεις Συμμόρφωσης
+              </h3>
+              <button
+                onClick={() => setActiveTab('logs')}
+                className="text-xs text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary"
+              >
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+            <HaccpComplianceAlerts
+              logs={logs}
+              haccpReminders={haccpReminders}
+              haccpItems={haccpItems}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Δεξιά: AI HACCP Coach */}
       <div className="xl:col-span-1 space-y-4">
         <div className="bg-purple-50/70 dark:bg-purple-900/40 border border-purple-200/80 dark:border-purple-700/70 rounded-2xl shadow-xl p-4 h-full flex flex-col">
@@ -468,15 +619,28 @@ ${statusSummary || '—'}
             {!isAiLoading && !aiError && !aiInsights && (
               <p className="text-sm text-purple-700 dark:text-purple-200">
                 Κατέγραψε μερικά HACCP σημεία (θερμοκρασίες, καθαριότητες κ.λπ.)
-                και πάτα <strong>“Ανάλυση HACCP”</strong> για να πάρεις πρακτικό
+                και πάτα <strong>"Ανάλυση HACCP"</strong> για να πάρεις πρακτικό
                 feedback και προτεραιότητες βελτίωσης.
               </p>
             )}
           </div>
         </div>
       </div>
+
+      {/* Φόρμα νέας καταχώρησης */}
+      <HaccpLogForm
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setLogToEdit(null);
+        }}
+        onSave={handleSaveLog}
+        haccpItems={haccpItems}
+        logToEdit={logToEdit}
+      />
     </div>
   );
 };
 
 export default HaccpView;
+

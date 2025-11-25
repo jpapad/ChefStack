@@ -7,7 +7,8 @@
 
     <!-- PWA / Icons -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1F2937">
+    <meta name="theme-color" content="#FBBF24">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link
@@ -19,9 +20,6 @@
       href="data:image/svg+xml,%3Csvg%20width%3D%22100%25%22%20height%3D%22100%25%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%3Cg%3E%0A%20%20%20%20%3Cpath%20d%3D%22M50.2%2C28.24a10.45%2C10.45%2C0%2C0%2C0-19.8-5.32%2C10.21%2C10.21%2C0%2C0%2C0-2.58.4A10.45%2C10.45%2C0%2C0%2C0%2C13.8%2C28.24Z%22%20fill%3D%22%23F9FAFB%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M49.62%2C32.11a3.48%2C3.48%2C0%2C0%2C0-3.32-2.35H17.7a3.48%2C3.48%2C0%2C0%2C0-3.32%2C2.35L12%2C42.59H52Z%22%20fill%3D%22%23FBBF24%22%20stroke%3D%22%231F2937%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2212%22%20y%3D%2244.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2212%22%20y%3D%2250.59%22%20width%3D%2240%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231F2937%22%20fill-opacity%3D%220.8%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E"
     >
 
-    <!-- Tailwind CDN (για την ώρα το κρατάμε για τα styles) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,80 +27,6 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     >
-
-    <!-- Tailwind config + custom utilities -->
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              heading: ['Manrope', 'sans-serif'],
-            },
-            colors: {
-              'brand-yellow': '#FBBF24',
-              'brand-dark': '#1F2937',
-              'brand-primary': '#FBBF24',
-              'brand-secondary': '#1F2937',
-              'light-bg': '#F3F4F6',
-              'light-card': '#FFFFFF',
-              'light-text-primary': '#111827',
-              'light-text-secondary': '#4B5563',
-              'dark-bg': '#111827',
-              'dark-card': '#1F2937',
-              'dark-text-primary': '#F9FAFB',
-              'dark-text-secondary': '#9CA3AF',
-            },
-            boxShadow: {
-              'aura-yellow': '0 0 0 3px rgba(251, 191, 36, 0.4)',
-            },
-          },
-        },
-      }
-    </script>
-
-    <style type="text/tailwindcss">
-      @layer utilities {
-        .lift-on-hover {
-          @apply transition-transform duration-200 ease-in-out hover:-translate-y-0.5;
-        }
-      }
-      body {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .printable-area {
-          display: block !important;
-        }
-        .haccp-log-sheet {
-          box-shadow: none !important;
-          border: none !important;
-        }
-        .haccp-log-sheet table,
-        .haccp-log-sheet th,
-        .haccp-log-sheet td {
-          border: 1px solid black;
-          border-collapse: collapse;
-          padding: 4px;
-        }
-        .break-after-page {
-          page-break-after: always;
-        }
-        .break-inside-avoid {
-          page-break-inside: avoid;
-        }
-        .break-inside-avoid-column {
-          break-inside: avoid-column;
-        }
-      }
-    </style>
   </head>
 
   <body class="bg-light-bg dark:bg-dark-bg font-sans">

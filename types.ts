@@ -58,6 +58,23 @@ export type RecipeStep = {
   content: string;
 };
 
+export interface RecipeRating {
+  userId: string;
+  rating: number; // 1-5
+  timestamp: string;
+}
+
+export interface NutritionInfo {
+  calories: number; // kcal per serving
+  protein: number; // grams per serving
+  carbs: number; // grams per serving
+  fat: number; // grams per serving
+  fiber?: number; // grams per serving
+  sugar?: number; // grams per serving
+  sodium?: number; // mg per serving
+  isCalculated: boolean; // true if auto-calculated, false if manually entered
+}
+
 export interface Recipe {
   id: string;
   name: string;
@@ -74,6 +91,8 @@ export interface Recipe {
   teamId: string;
   price?: number; // Selling price
   yield?: { quantity: number; unit: Unit }; // e.g. This recipe produces 1kg of sauce
+  ratings?: RecipeRating[]; // Team member ratings
+  nutrition?: NutritionInfo; // Nutritional information per serving
 }
 
 export interface IngredientCost {
@@ -144,6 +163,19 @@ export interface HaccpLog {
   haccpItemId: string;
   value?: string; // For temperature, etc.
   user: string;
+  teamId: string;
+  isOutOfRange?: boolean; // Auto-calculated: true if temperature is outside safe range
+  notes?: string; // Additional notes or corrective actions
+}
+
+export interface HaccpReminder {
+  id: string;
+  haccpItemId: string;
+  frequency: 'hourly' | 'every_2_hours' | 'every_4_hours' | 'daily' | 'weekly'; // Check frequency
+  lastCheckTime?: Date; // Last time this item was checked
+  nextCheckDue?: Date; // When next check is due
+  assignedUserId?: string; // Who should do this check
+  isOverdue: boolean; // Calculated field
   teamId: string;
 }
 
@@ -232,6 +264,7 @@ export type View =
   | 'recipes'
   | 'workstations'
   | 'kitchen_service'
+  | 'kds'
   | 'haccp'
   | 'costing'
   | 'inventory'
@@ -246,7 +279,10 @@ export type View =
   | 'shifts'
   | 'inventory_history'
   | 'waste_log'
+  | 'reports'
   | 'user_manual'
+  | 'analytics'
+  | 'collaboration'
   | 'copilot';
 
 export type LogoPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -602,3 +638,203 @@ export const PERMISSION_DESCRIPTIONS: Record<
 };
 
 export type RolePermissions = Record<Role, Permission[]>;
+
+// ============================================================
+// KITCHEN DISPLAY SYSTEM (KDS) - Order Management
+// ============================================================
+
+export type OrderStatus = 'new' | 'in-progress' | 'ready' | 'served' | 'cancelled';
+
+export const ORDER_STATUS_TRANSLATIONS: Record<OrderStatus, { el: string; en: string; color: string }> = {
+  'new': { el: 'Νέα', en: 'New', color: 'blue' },
+  'in-progress': { el: 'Σε Εξέλιξη', en: 'In Progress', color: 'yellow' },
+  'ready': { el: 'Έτοιμη', en: 'Ready', color: 'green' },
+  'served': { el: 'Σερβιρισμένη', en: 'Served', color: 'gray' },
+  'cancelled': { el: 'Ακυρωμένη', en: 'Cancelled', color: 'red' },
+};
+
+export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+export const ORDER_PRIORITY_TRANSLATIONS: Record<OrderPriority, { el: string; en: string; color: string }> = {
+  'low': { el: 'Χαμηλή', en: 'Low', color: 'gray' },
+  'normal': { el: 'Κανονική', en: 'Normal', color: 'blue' },
+  'high': { el: 'Υψηλή', en: 'High', color: 'orange' },
+  'urgent': { el: 'Επείγουσα', en: 'Urgent', color: 'red' },
+};
+
+export interface OrderItem {
+  id: string;
+  recipeId: string;
+  recipeName: string;
+  quantity: number;
+  notes?: string;
+  specialRequests?: string[];
+}
+
+export interface KitchenOrder {
+  id: string;
+  orderNumber: string;
+  tableNumber?: string;
+  station?: string; // e.g., 'hot', 'cold', 'grill', 'pastry'
+  items: OrderItem[];
+  status: OrderStatus;
+  priority: OrderPriority;
+  createdAt: string; // ISO timestamp
+  startedAt?: string; // When moved to in-progress
+  readyAt?: string; // When marked as ready
+  servedAt?: string; // When served
+  cancelledAt?: string;
+  estimatedTime?: number; // minutes
+  assignedTo?: string; // User ID
+  notes?: string;
+  teamId: string;
+}
+
+export interface OrderStatusChange {
+  id: string;
+  orderId: string;
+  fromStatus: OrderStatus;
+  toStatus: OrderStatus;
+  changedBy: string; // User ID
+  changedAt: string;
+  notes?: string;
+}
+
+// ============================================================
+// RECIPE VARIATIONS - Parent/Child Recipe Relationships
+// ============================================================
+
+export type VariationType = 'vegan' | 'vegetarian' | 'gluten-free' | 'dairy-free' | 'low-carb' | 'seasonal' | 'portion-size' | 'custom';
+
+export const VARIATION_TYPE_TRANSLATIONS: Record<VariationType, { el: string; en: string; icon: string }> = {
+  'vegan': { el: 'Vegan', en: 'Vegan', icon: 'leaf' },
+  'vegetarian': { el: 'Χορτοφαγική', en: 'Vegetarian', icon: 'salad' },
+  'gluten-free': { el: 'Χωρίς Γλουτένη', en: 'Gluten-Free', icon: 'wheat-off' },
+  'dairy-free': { el: 'Χωρίς Γαλακτοκομικά', en: 'Dairy-Free', icon: 'milk-off' },
+  'low-carb': { el: 'Χαμηλών Υδατανθράκων', en: 'Low-Carb', icon: 'trending-down' },
+  'seasonal': { el: 'Εποχική', en: 'Seasonal', icon: 'sun' },
+  'portion-size': { el: 'Διαφορετική Μερίδα', en: 'Portion Size', icon: 'scale' },
+  'custom': { el: 'Προσαρμοσμένη', en: 'Custom', icon: 'settings' }
+};
+
+export interface RecipeVariation {
+  id: string;
+  parentRecipeId: string; // The original recipe
+  variationType: VariationType;
+  name: string; // Greek name (e.g., "Μουσακάς Vegan")
+  name_en: string; // English name (e.g., "Vegan Moussaka")
+  description?: string; // What makes this variation different
+  scaleFactor?: number; // For portion-size variations (e.g., 0.5 for half portion, 2.0 for double)
+  ingredientModifications: IngredientModification[]; // Changes to ingredients
+  allergenChanges?: Allergen[]; // New allergens (removed ones handled by ingredient mods)
+  seasonalPeriod?: { // For seasonal variations
+    startMonth: number; // 1-12
+    endMonth: number; // 1-12
+  };
+  isActive: boolean; // Can be toggled on/off
+  createdAt: string;
+  teamId: string;
+}
+
+export interface IngredientModification {
+  originalIngredientId?: string; // If replacing, which ingredient
+  action: 'add' | 'remove' | 'replace' | 'scale'; // What to do
+  newIngredient?: Ingredient; // For add/replace actions
+  scaleFactor?: number; // For scale action (e.g., 1.5 for 50% more)
+  notes?: string; // Why this change
+}
+
+// ============================================================
+// EMAIL REPORTS & SCHEDULING - Automated Report Generation
+// ============================================================
+
+export type ReportType = 'inventory' | 'waste' | 'haccp' | 'costing' | 'analytics' | 'custom';
+export type ReportFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'manual';
+export type ReportFormat = 'pdf' | 'csv' | 'both';
+export type ReportStatus = 'scheduled' | 'generating' | 'sent' | 'failed';
+
+export const REPORT_TYPE_TRANSLATIONS: Record<ReportType, { el: string; en: string; icon: string }> = {
+  'inventory': { el: 'Απόθεμα', en: 'Inventory', icon: 'package' },
+  'waste': { el: 'Φθορές', en: 'Waste', icon: 'trash-2' },
+  'haccp': { el: 'HACCP', en: 'HACCP', icon: 'thermometer' },
+  'costing': { el: 'Κοστολόγιο', en: 'Costing', icon: 'scale' },
+  'analytics': { el: 'Analytics', en: 'Analytics', icon: 'bar-chart-2' },
+  'custom': { el: 'Προσαρμοσμένη', en: 'Custom', icon: 'file-text' }
+};
+
+export const REPORT_FREQUENCY_TRANSLATIONS: Record<ReportFrequency, { el: string; en: string }> = {
+  'daily': { el: 'Καθημερινά', en: 'Daily' },
+  'weekly': { el: 'Εβδομαδιαία', en: 'Weekly' },
+  'biweekly': { el: 'Κάθε 2 Εβδομάδες', en: 'Biweekly' },
+  'monthly': { el: 'Μηνιαία', en: 'Monthly' },
+  'manual': { el: 'Χειροκίνητα', en: 'Manual' }
+};
+
+export interface EmailReport {
+  id: string;
+  name: string; // Report name
+  reportType: ReportType;
+  frequency: ReportFrequency;
+  format: ReportFormat;
+  recipients: string[]; // Email addresses
+  isActive: boolean;
+  
+  // Schedule
+  scheduledTime?: string; // HH:MM format (e.g., "09:00")
+  scheduledDay?: number; // For weekly/biweekly (0=Sunday, 6=Saturday)
+  scheduledDate?: number; // For monthly (1-31)
+  
+  // Content filters
+  dateRange?: {
+    from?: string; // ISO date
+    to?: string; // ISO date
+  };
+  includeCharts?: boolean;
+  customNotes?: string;
+  
+  // Metadata
+  lastSent?: string; // ISO timestamp
+  nextScheduled?: string; // ISO timestamp
+  createdAt: string;
+  createdBy: string; // User ID
+  teamId: string;
+}
+
+export interface ReportHistory {
+  id: string;
+  reportId: string; // Reference to EmailReport
+  status: ReportStatus;
+  sentAt: string;
+  recipients: string[];
+  format: ReportFormat;
+  fileSize?: number; // In bytes
+  errorMessage?: string; // If failed
+  downloadUrl?: string; // For accessing generated file
+  teamId: string;
+}
+
+export interface ReportTemplate {
+  id: string;
+  name: string;
+  name_en: string;
+  reportType: ReportType;
+  description?: string;
+  isDefault: boolean;
+  
+  // Template configuration
+  sections: ReportSection[];
+  headerLogo?: string; // Base64 or URL
+  footerText?: string;
+  
+  teamId: string;
+}
+
+export interface ReportSection {
+  id: string;
+  title: string;
+  title_en: string;
+  type: 'table' | 'chart' | 'summary' | 'text';
+  content: any; // Flexible content based on type
+  order: number;
+  isVisible: boolean;
+}

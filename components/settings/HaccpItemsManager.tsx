@@ -4,35 +4,83 @@ import { useTranslation } from '../../i18n';
 import { Icon } from '../common/Icon';
 import ConfirmationModal from '../common/ConfirmationModal';
 import HaccpItemForm from './HaccpItemForm';
+import { api } from '../../services/api';
 
 interface HaccpItemsManagerProps {
     haccpItems: HaccpItem[];
     setHaccpItems: React.Dispatch<React.SetStateAction<HaccpItem[]>>;
+    currentTeamId: string;
 }
 
-const HaccpItemsManager: React.FC<HaccpItemsManagerProps> = ({ haccpItems, setHaccpItems }) => {
+const HaccpItemsManager: React.FC<HaccpItemsManagerProps> = ({ haccpItems, setHaccpItems, currentTeamId }) => {
     const { t } = useTranslation();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<HaccpItem | null>(null);
     const [itemToDelete, setItemToDelete] = useState<HaccpItem | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const handleSave = (data: Omit<HaccpItem, 'id' | 'teamId'> | HaccpItem) => {
-        if ('id' in data) {
-            setHaccpItems(prev => prev.map(item => item.id === data.id ? data : item));
-        } else {
-            const newItem = { ...data, id: `haccp${Date.now()}`, teamId: '' }; // teamId will be set by parent context
-            setHaccpItems(prev => [...prev, newItem as HaccpItem]);
+    const handleSave = async (data: Omit<HaccpItem, 'id' | 'teamId'> | HaccpItem) => {
+        setIsSaving(true);
+        try {
+            const isUpdate = 'id' in data;
+            let itemToSave: HaccpItem;
+            
+            if (isUpdate) {
+                // Update existing
+                itemToSave = data;
+            } else {
+                // Create new
+                itemToSave = { 
+                    ...data, 
+                    id: `haccp_${Date.now()}`, 
+                    teamId: currentTeamId 
+                };
+            }
+
+            // Save to Supabase
+            const savedItem = await api.upsertHaccpItem(itemToSave);
+            console.log('[HaccpItemsManager] Saved item:', savedItem);
+
+            // Update local state
+            if (isUpdate) {
+                setHaccpItems(prev => {
+                    const updated = prev.map(item => item.id === savedItem.id ? savedItem : item);
+                    console.log('[HaccpItemsManager] Updated items:', updated);
+                    return updated;
+                });
+            } else {
+                setHaccpItems(prev => {
+                    const newItems = [...prev, savedItem];
+                    console.log('[HaccpItemsManager] Added new item, total items:', newItems.length);
+                    return newItems;
+                });
+            }
+
+            setIsFormOpen(false);
+            setItemToEdit(null);
+        } catch (error) {
+            console.error('Error saving HACCP item:', error);
+            alert('Σφάλμα κατά την αποθήκευση. Δοκίμασε ξανά.');
+        } finally {
+            setIsSaving(false);
         }
-        setIsFormOpen(false);
-        setItemToEdit(null);
     };
 
-    const handleDelete = () => {
-        if (itemToDelete) {
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+
+        try {
+            await api.deleteHaccpItem(itemToDelete.id);
             setHaccpItems(prev => prev.filter(item => item.id !== itemToDelete.id));
             setItemToDelete(null);
+        } catch (error) {
+            console.error('Error deleting HACCP item:', error);
+            alert('Σφάλμα κατά τη διαγραφή. Δοκίμασε ξανά.');
         }
     };
+
+    // Filter items by current team
+    const teamHaccpItems = haccpItems.filter(item => item.teamId === currentTeamId);
 
     return (
         <>
@@ -45,7 +93,7 @@ const HaccpItemsManager: React.FC<HaccpItemsManagerProps> = ({ haccpItems, setHa
                     </button>
                 </div>
                 <div className="space-y-2">
-                    {haccpItems.map(item => (
+                    {teamHaccpItems.map(item => (
                         <div key={item.id} className="flex items-center justify-between p-3 rounded-xl group hover:bg-black/5 dark:hover:bg-white/5">
                             <div>
                                 <span className="font-semibold">{item.name}</span>
@@ -61,7 +109,7 @@ const HaccpItemsManager: React.FC<HaccpItemsManagerProps> = ({ haccpItems, setHa
                             </div>
                         </div>
                     ))}
-                    {haccpItems.length === 0 && (
+                    {teamHaccpItems.length === 0 && (
                         <p className="text-center text-gray-500 py-4">Δεν έχετε ορίσει ακόμη σημεία ελέγχου HACCP.</p>
                     )}
                 </div>

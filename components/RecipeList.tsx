@@ -1,15 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Recipe,
   RecipeCategoryKey,
   RECIPE_CATEGORY_KEYS,
   Role,
-  RolePermissions
+  RolePermissions,
+  Allergen
 } from '../types';
 import RecipeCard from './RecipeCard';
 import RecipeGridCard from './RecipeGridCard';
 import { Icon } from './common/Icon';
+import SearchBar from './common/SearchBar';
+import FilterPanel, { FilterOptions } from './common/FilterPanel';
 import { useTranslation } from '../i18n';
+import { exportRecipesToJSON, exportRecipesToCSV } from '../utils/recipeExport';
+import { BulkActionsToolbar } from './common/BulkActionsToolbar';
 
 interface RecipeListProps {
   recipes: Recipe[];
@@ -36,6 +41,7 @@ interface RecipeListProps {
   ) => void;
   onGenerateBook: () => void;
   withApiKeyCheck: (action: () => void) => void;
+  onUpdateRecipes: (recipes: Recipe[]) => void; // For bulk operations
 }
 
 const RecipeList: React.FC<RecipeListProps> = ({
@@ -59,9 +65,31 @@ const RecipeList: React.FC<RecipeListProps> = ({
   onBookSelect,
   onBookCategorySelect,
   onGenerateBook,
-  withApiKeyCheck
+  withApiKeyCheck,
+  onUpdateRecipes
 }) => {
   const { t } = useTranslation();
+  
+  const [sortBy, setSortBy] = useState<'name' | 'rating' | 'prepTime' | 'recent'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  
+  const [filters, setFilters] = useState<FilterOptions>({
+    categories: [],
+    allergens: [],
+    difficulties: [],
+    prepTimeRange: null,
+    costRange: null,
+    ratingRange: null,
+    vegetarian: null,
+    vegan: null,
+    tags: []
+  });
+
+  // Bulk operations state
+  const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   const canManage = currentUserRole
     ? rolePermissions[currentUserRole]?.includes('manage_recipes')
@@ -84,7 +112,105 @@ const RecipeList: React.FC<RecipeListProps> = ({
 
   // Πόσες συνταγές έχει συνολικά η κατηγορία (πριν το search)
   const totalInCategory = allRecipesForCategory.length;
-  const visibleCount = recipes.length;
+  
+  // Apply advanced filters
+  const filteredRecipes = React.useMemo(() => {
+    let result = [...recipes];
+    
+    // Category filter (already applied via activeCategory, but check advanced filters too)
+    if (filters.categories.length > 0) {
+      result = result.filter(r => filters.categories.includes(r.category));
+    }
+    
+    // Allergen exclusion
+    if (filters.allergens.length > 0) {
+      result = result.filter(r => {
+        const recipeAllergens = r.allergens || [];
+        return !filters.allergens.some(a => recipeAllergens.includes(a));
+      });
+    }
+    
+    // Difficulty filter
+    if (filters.difficulties.length > 0) {
+      result = result.filter(r => {
+        // Infer difficulty from prep time (simple heuristic)
+        const totalTime = (r.prepTime || 0) + (r.cookTime || 0);
+        let difficulty: 'easy' | 'medium' | 'hard' = 'medium';
+        if (totalTime <= 30) difficulty = 'easy';
+        else if (totalTime > 60) difficulty = 'hard';
+        return filters.difficulties.includes(difficulty);
+      });
+    }
+    
+    // Prep time range
+    if (filters.prepTimeRange) {
+      result = result.filter(r => {
+        const totalTime = (r.prepTime || 0) + (r.cookTime || 0);
+        return totalTime >= filters.prepTimeRange![0] && totalTime <= filters.prepTimeRange![1];
+      });
+    }
+    
+    // Rating range
+    if (filters.ratingRange) {
+      result = result.filter(r => {
+        const ratings = r.ratings || [];
+        if (ratings.length === 0) return false;
+        const avgRating = ratings.reduce((sum, rt) => sum + rt.rating, 0) / ratings.length;
+        return avgRating >= filters.ratingRange![0] && avgRating <= filters.ratingRange![1];
+      });
+    }
+    
+    // Vegetarian/Vegan filters (simple check based on name/tags - could be enhanced)
+    if (filters.vegetarian) {
+      result = result.filter(r => 
+        !r.allergens?.includes('meat') && !r.allergens?.includes('fish')
+      );
+    }
+    if (filters.vegan) {
+      result = result.filter(r => 
+        !r.allergens?.includes('meat') && 
+        !r.allergens?.includes('fish') && 
+        !r.allergens?.includes('eggs') && 
+        !r.allergens?.includes('milk')
+      );
+    }
+    
+    return result;
+  }, [recipes, filters]);
+  
+  // Apply sorting
+  const sortedRecipes = React.useMemo(() => {
+    const result = [...filteredRecipes];
+    
+    result.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'rating': {
+          const avgA = a.ratings?.length ? a.ratings.reduce((s, r) => s + r.rating, 0) / a.ratings.length : 0;
+          const avgB = b.ratings?.length ? b.ratings.reduce((s, r) => s + r.rating, 0) / b.ratings.length : 0;
+          comparison = avgA - avgB;
+          break;
+        }
+        case 'prepTime':
+          comparison = ((a.prepTime || 0) + (a.cookTime || 0)) - ((b.prepTime || 0) + (b.cookTime || 0));
+          break;
+        case 'recent':
+          // Assume recipes have createdAt or use ID as proxy
+          comparison = a.id.localeCompare(b.id);
+          break;
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+    
+    return result;
+  }, [filteredRecipes, sortBy, sortDirection]);
+  
+  const visibleCount = sortedRecipes.length;
 
   return (
     <div className="relative bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-xl h-full flex flex-col">
@@ -132,6 +258,59 @@ const RecipeList: React.FC<RecipeListProps> = ({
 
             {canManage && (
               <>
+                {/* Bulk select mode toggle */}
+                <button
+                  onClick={() => {
+                    setShowBulkActions(!showBulkActions);
+                    if (showBulkActions) {
+                      setSelectedRecipeIds([]);
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors lift-on-hover text-sm font-semibold ${
+                    showBulkActions
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'bg-gray-200 dark:bg-gray-700 text-slate-800 dark:text-slate-50 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <Icon name="check-square" className="w-5 h-5" />
+                  <span>{t('bulk_select_mode')}</span>
+                </button>
+
+                {/* Export dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors lift-on-hover text-sm font-semibold"
+                  >
+                    <Icon name="download" className="w-5 h-5" />
+                    <span>{t('export_recipes')}</span>
+                  </button>
+                  {showExportMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-10">
+                      <button
+                        onClick={() => {
+                          exportRecipesToJSON(sortedRecipes, `recipes_${new Date().toISOString().split('T')[0]}.json`);
+                          setShowExportMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg flex items-center gap-2"
+                      >
+                        <Icon name="file-json" className="w-4 h-4" />
+                        <span>Export JSON</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportRecipesToCSV(sortedRecipes, `recipes_${new Date().toISOString().split('T')[0]}.csv`);
+                          setShowExportMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg flex items-center gap-2"
+                      >
+                        <Icon name="file-text" className="w-4 h-4" />
+                        <span>Export CSV</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
                 <button
                   onClick={() => withApiKeyCheck(onStartImport)}
                   className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors lift-on-hover text-sm font-semibold"
@@ -151,24 +330,60 @@ const RecipeList: React.FC<RecipeListProps> = ({
           </div>
         </div>
 
-        {/* Search bar */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder={t('recipes_search_placeholder')}
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-full bg-black/5 dark:bg-white/10 border border-transparent focus:border-brand-yellow focus:shadow-aura-yellow text-sm"
-          />
-          <Icon
-            name="search"
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+        {/* Search, Filter, and Sort */}
+        <div className="space-y-3 mt-4">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <SearchBar
+                value={searchTerm}
+                onChange={onSearchChange}
+                placeholder={t('recipes_search_placeholder')}
+              />
+            </div>
+            
+            {/* Sort dropdown */}
+            <select
+              value={`${sortBy}-${sortDirection}`}
+              onChange={(e) => {
+                const [sort, dir] = e.target.value.split('-') as [typeof sortBy, typeof sortDirection];
+                setSortBy(sort);
+                setSortDirection(dir);
+              }}
+              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-brand-yellow focus:border-transparent"
+            >
+              <option value="name-asc">{t('sort_name_asc')}</option>
+              <option value="name-desc">{t('sort_name_desc')}</option>
+              <option value="rating-desc">{t('sort_rating_high')}</option>
+              <option value="rating-asc">{t('sort_rating_low')}</option>
+              <option value="prepTime-asc">{t('sort_time_low')}</option>
+              <option value="prepTime-desc">{t('sort_time_high')}</option>
+              <option value="recent-desc">{t('sort_recent')}</option>
+            </select>
+          </div>
+          
+          {/* Filter panel */}
+          <FilterPanel
+            filters={filters}
+            onChange={setFilters}
+            onReset={() => setFilters({
+              categories: [],
+              allergens: [],
+              difficulties: [],
+              prepTimeRange: null,
+              costRange: null,
+              ratingRange: null,
+              vegetarian: null,
+              vegan: null,
+              tags: []
+            })}
+            isExpanded={isFilterExpanded}
+            onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
           />
         </div>
       </div>
 
       {/* Categories row */}
-      <div className="py-4 overflow-x-auto">
+      <div className="py-4 overflow-x-auto border-b border-gray-200/80 dark:border-gray-700/80">
         <div className="flex items-center space-x-2 min-w-max">
           {isBookMode && (
             <input
@@ -245,10 +460,10 @@ const RecipeList: React.FC<RecipeListProps> = ({
 
       {/* Recipes list / grid */}
       <div className="flex-1 overflow-y-auto -mr-2 pr-2 pb-16">
-        {recipes.length > 0 ? (
+        {sortedRecipes.length > 0 ? (
           recipeViewMode === 'list' ? (
             <div className="space-y-2">
-              {recipes.map((recipe) => (
+              {sortedRecipes.map((recipe) => (
                 <RecipeCard
                   key={recipe.id}
                   recipe={recipe}
@@ -257,12 +472,19 @@ const RecipeList: React.FC<RecipeListProps> = ({
                   isBookMode={isBookMode}
                   isBookSelected={bookSelectedIds.includes(recipe.id)}
                   onBookSelect={onBookSelect}
+                  isBulkMode={showBulkActions}
+                  isBulkSelected={selectedRecipeIds.includes(recipe.id)}
+                  onBulkSelect={(id) => {
+                    setSelectedRecipeIds(prev =>
+                      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+                    );
+                  }}
                 />
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {recipes.map((recipe) => (
+              {sortedRecipes.map((recipe) => (
                 <RecipeGridCard
                   key={recipe.id}
                   recipe={recipe}
@@ -271,6 +493,13 @@ const RecipeList: React.FC<RecipeListProps> = ({
                   isBookMode={isBookMode}
                   isBookSelected={bookSelectedIds.includes(recipe.id)}
                   onBookSelect={onBookSelect}
+                  isBulkMode={showBulkActions}
+                  isBulkSelected={selectedRecipeIds.includes(recipe.id)}
+                  onBulkSelect={(id) => {
+                    setSelectedRecipeIds(prev =>
+                      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+                    );
+                  }}
                 />
               ))}
             </div>
@@ -304,6 +533,54 @@ const RecipeList: React.FC<RecipeListProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Bulk actions toolbar */}
+      {showBulkActions && selectedRecipeIds.length > 0 && (
+        <BulkActionsToolbar
+          selectedCount={selectedRecipeIds.length}
+          onClearSelection={() => setSelectedRecipeIds([])}
+          onBulkDelete={() => {
+            const remaining = recipes.filter(r => !selectedRecipeIds.includes(r.id));
+            onUpdateRecipes(remaining);
+            setSelectedRecipeIds([]);
+          }}
+          onBulkExportJSON={() => {
+            const selectedRecipes = recipes.filter(r => selectedRecipeIds.includes(r.id));
+            exportRecipesToJSON(selectedRecipes, `recipes_bulk_${new Date().toISOString().split('T')[0]}.json`);
+          }}
+          onBulkExportCSV={() => {
+            const selectedRecipes = recipes.filter(r => selectedRecipeIds.includes(r.id));
+            exportRecipesToCSV(selectedRecipes, `recipes_bulk_${new Date().toISOString().split('T')[0]}.csv`);
+          }}
+          onBulkCategorize={(category) => {
+            const updated = recipes.map(r =>
+              selectedRecipeIds.includes(r.id) ? { ...r, category } : r
+            );
+            onUpdateRecipes(updated);
+            setSelectedRecipeIds([]);
+          }}
+          onBulkAddAllergens={(allergens) => {
+            const updated = recipes.map(r => {
+              if (!selectedRecipeIds.includes(r.id)) return r;
+              const existingAllergens = r.allergens || [];
+              const newAllergens = [...new Set([...existingAllergens, ...allergens])];
+              return { ...r, allergens: newAllergens };
+            });
+            onUpdateRecipes(updated);
+            setSelectedRecipeIds([]);
+          }}
+          onBulkRemoveAllergens={(allergens) => {
+            const updated = recipes.map(r => {
+              if (!selectedRecipeIds.includes(r.id)) return r;
+              const existingAllergens = r.allergens || [];
+              const filteredAllergens = existingAllergens.filter(a => !allergens.includes(a));
+              return { ...r, allergens: filteredAllergens };
+            });
+            onUpdateRecipes(updated);
+            setSelectedRecipeIds([]);
+          }}
+        />
       )}
     </div>
   );

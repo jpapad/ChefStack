@@ -13,9 +13,28 @@ interface InventoryListProps {
   canManage: boolean;
   onImportInvoice: () => void;
   withApiKeyCheck: (action: () => void) => void;
+  onViewHistory?: (item: InventoryItem) => void;
+  // Batch selection props
+  isSelected?: (id: string) => boolean;
+  onToggleSelection?: (id: string) => void;
+  batchMode?: boolean;
 }
 
-const InventoryList: React.FC<InventoryListProps> = ({ inventory, selectedItemId, onSelectItem, onAdd, onEdit, onDelete, canManage, onImportInvoice, withApiKeyCheck }) => {
+const InventoryList: React.FC<InventoryListProps> = ({ 
+  inventory, 
+  selectedItemId, 
+  onSelectItem, 
+  onAdd, 
+  onEdit, 
+  onDelete, 
+  canManage, 
+  onImportInvoice, 
+  withApiKeyCheck, 
+  onViewHistory,
+  isSelected,
+  onToggleSelection,
+  batchMode = false,
+}) => {
   const { t } = useTranslation();
   return (
     <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-xl h-full flex flex-col">
@@ -39,17 +58,36 @@ const InventoryList: React.FC<InventoryListProps> = ({ inventory, selectedItemId
         <div className="space-y-2">
           {inventory.map(item => {
             const isLowStock = item.totalQuantity <= item.reorderPoint;
+            const itemSelected = isSelected?.(item.id) || false;
+            
             return (
                 <div
                 key={item.id}
-                onClick={() => onSelectItem(item.id)}
+                onClick={() => batchMode && onToggleSelection ? onToggleSelection(item.id) : onSelectItem(item.id)}
                 className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 group border ${
                     selectedItemId === item.id
                     ? 'bg-brand-yellow/20 dark:bg-brand-yellow/30 border-brand-yellow/50'
+                    : itemSelected && batchMode
+                    ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-500/50'
                     : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
                 >
-                    <div className="flex items-center gap-3">
+                    {/* Batch selection checkbox */}
+                    {batchMode && onToggleSelection && (
+                      <div 
+                        className="flex items-center mr-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={itemSelected}
+                          onChange={() => onToggleSelection(item.id)}
+                          className="w-5 h-5 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-3 flex-1">
                         {/* Fix: Wrapped Icon in a span to apply the title attribute correctly for tooltips. */}
                         {isLowStock && <span title="Low Stock"><Icon name="warning" className="w-5 h-5 text-red-500 flex-shrink-0"/></span>}
                         <div>
@@ -61,6 +99,11 @@ const InventoryList: React.FC<InventoryListProps> = ({ inventory, selectedItemId
                     </div>
                     {canManage && (
                         <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            {onViewHistory && (
+                                <button onClick={(e) => { e.stopPropagation(); onViewHistory(item); }} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/20" title="Ιστορικό">
+                                    <Icon name="history" className="w-4 h-4" />
+                                </button>
+                            )}
                             <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/20" title="Edit">
                                 <Icon name="edit" className="w-4 h-4" />
                             </button>

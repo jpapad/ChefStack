@@ -19,10 +19,16 @@ import {
   InventoryLocation,
   InventoryTransaction,
   HaccpItem,
-  WasteLog
+  HaccpReminder,
+  WasteLog,
+  KitchenOrder,
+  RecipeVariation,
+  EmailReport,
+  ReportHistory
 } from './types';
 import AuthView from './components/auth/AuthView';
 import KitchenInterface from './components/KitchenInterface';
+import { InstallPrompt } from './components/common/InstallPrompt';
 import { api } from './services/api';
 import { supabase } from './services/supabaseClient';
 import { Icon } from './components/common/Icon';
@@ -49,6 +55,7 @@ const AppContent: React.FC = () => {
   const [tasks, setTasks] = useState<PrepTask[]>([]);
   const [haccpLogs, setHaccpLogs] = useState<HaccpLog[]>([]);
   const [haccpItems, setHaccpItems] = useState<HaccpItem[]>([]);
+  const [haccpReminders, setHaccpReminders] = useState<HaccpReminder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [inventoryLocations, setInventoryLocations] =
@@ -62,6 +69,10 @@ const AppContent: React.FC = () => {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [shiftSchedules, setShiftSchedules] = useState<ShiftSchedule[]>([]);
   const [allChannels, setAllChannels] = useState<Channel[]>([]);
+  const [orders, setOrders] = useState<KitchenOrder[]>([]);
+  const [variations, setVariations] = useState<RecipeVariation[]>([]);
+  const [reports, setReports] = useState<EmailReport[]>([]);
+  const [reportHistory, setReportHistory] = useState<ReportHistory[]>([]);
 
   // Derived team-scoped data
   const teamRecipes = recipes.filter((r) => r.teamId === currentTeamId);
@@ -82,6 +93,7 @@ const AppContent: React.FC = () => {
         setTasks(data.tasks || []);
         setHaccpLogs(data.haccpLogs || []);
         setHaccpItems(data.haccpItems || []);
+        setHaccpReminders(data.haccpReminders || []);
         setSuppliers(data.suppliers || []);
         setInventory(data.inventory || []);
         setInventoryLocations(data.inventoryLocations || []);
@@ -93,6 +105,10 @@ const AppContent: React.FC = () => {
         setShifts(data.shifts || []);
         setShiftSchedules(data.shiftSchedules || []);
         setAllChannels(data.channels || []);
+        setOrders(data.orders || []);
+        setVariations(data.variations || []);
+        setReports(data.reports || []);
+        setReportHistory(data.reportHistory || []);
 
         // 2. Έλεγξε αν υπάρχει ενεργό session
         if (supabase) {
@@ -284,6 +300,8 @@ const AppContent: React.FC = () => {
       setHaccpLogs={setHaccpLogs}
       haccpItems={haccpItems}
       setHaccpItems={setHaccpItems}
+      haccpReminders={haccpReminders}
+      setHaccpReminders={setHaccpReminders}
       suppliers={suppliers}
       setSuppliers={setSuppliers}
       inventory={inventory}
@@ -307,6 +325,14 @@ const AppContent: React.FC = () => {
       setShiftSchedules={setShiftSchedules}
       allChannels={allChannels}
       setAllChannels={setAllChannels}
+      orders={orders}
+      setOrders={setOrders}
+      variations={variations}
+      setVariations={setVariations}
+      reports={reports}
+      setReports={setReports}
+      reportHistory={reportHistory}
+      setReportHistory={setReportHistory}
     />
   );
 };
@@ -315,6 +341,7 @@ const App: React.FC = () => {
   return (
     <LanguageProvider>
       <AppContent />
+      <InstallPrompt />
     </LanguageProvider>
   );
 };

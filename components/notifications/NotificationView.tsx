@@ -680,13 +680,12 @@ const NotificationView: React.FC<NotificationViewProps> = ({
 
               return (
                 <li key={ch.id} className="relative">
-                  <button
-                    type="button"
+                  <div
                     onClick={() => {
                       setSelectedChannelId(ch.id);
                       setOpenMenuChannelId(null);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs cursor-pointer ${
                       isActive
                         ? 'bg-brand-yellow text-brand-dark'
                         : 'bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-black/10 dark:hover:bg-white/15'
@@ -752,7 +751,7 @@ const NotificationView: React.FC<NotificationViewProps> = ({
                         <Icon name="more-vertical" className="w-3 h-3" />
                       </button>
                     </div>
-                  </button>
+                  </div>
 
                   {isMenuOpen && (
                     <div className="absolute right-2 top-9 z-20 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1 text-[11px]">

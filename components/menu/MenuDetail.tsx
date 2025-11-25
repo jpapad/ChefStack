@@ -19,6 +19,8 @@ interface MenuDetailProps {
   onBack: () => void;
   onEdit: (menu: Menu) => void;
   canManage: boolean;
+  onOpenCostAnalysis?: () => void;
+  onOpenShoppingList?: () => void;
 }
 
 // ---- ΝΕΟ: Service Board τύπος & component ----
@@ -172,7 +174,7 @@ const MenuServiceBoard: React.FC<MenuServiceBoardProps> = ({ menuId, recipes }) 
 
 // ---- Κύριο component MenuDetail ----
 
-const MenuDetail: React.FC<MenuDetailProps> = ({ menu, recipes, setMenus, tasks, workstations, onBack, onEdit, canManage }) => {
+const MenuDetail: React.FC<MenuDetailProps> = ({ menu, recipes, setMenus, tasks, workstations, onBack, onEdit, canManage, onOpenCostAnalysis, onOpenShoppingList }) => {
   const [printPreviewContent, setPrintPreviewContent] = useState<React.ReactNode | null>(null);
   const [isPrintCustomizerOpen, setIsPrintCustomizerOpen] = useState(false);
 
@@ -341,6 +343,16 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menu, recipes, setMenus, tasks,
                     </div>
                 </div>
               <div className="flex items-center gap-1 flex-shrink-0 ml-4">
+                 {onOpenCostAnalysis && (
+                    <button onClick={onOpenCostAnalysis} title="Ανάλυση Κόστους" className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                        <Icon name="calculator" className="w-5 h-5 text-green-600 dark:text-green-400"/>
+                    </button>
+                 )}
+                 {onOpenShoppingList && (
+                    <button onClick={onOpenShoppingList} title="Λίστα Αγορών" className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                        <Icon name="shopping-cart" className="w-5 h-5 text-blue-600 dark:text-blue-400"/>
+                    </button>
+                 )}
                  {menu.type === 'a_la_carte' && (
                     <button onClick={() => setIsPrintCustomizerOpen(true)} title="Εκτύπωση Καταλόγου" className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
                         <Icon name="printer" className="w-5 h-5 text-brand-yellow"/>

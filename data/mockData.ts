@@ -1,5 +1,5 @@
 // Fix: Populated mockData.ts with sample data for the application.
-import { Recipe, IngredientCost, Workstation, PrepTask, PrepTaskStatus, HaccpLog, HaccpLogType, HaccpLogCategoryKey, Supplier, InventoryItem, Menu, User, Team, Notification, Message, Shift, ShiftSchedule, Channel, InventoryLocation, InventoryTransaction, HaccpItem, WasteLog } from '../types';
+import { Recipe, IngredientCost, Workstation, PrepTask, PrepTaskStatus, HaccpLog, HaccpLogType, HaccpLogCategoryKey, HaccpReminder, Supplier, InventoryItem, Menu, User, Team, Notification, Message, Shift, ShiftSchedule, Channel, InventoryLocation, InventoryTransaction, HaccpItem, WasteLog, KitchenOrder, RecipeVariation, EmailReport, ReportHistory } from '../types';
 
 export const mockTeams: Team[] = [
     { id: 'team1', name: 'Κεντρική Κουζίνα' },
@@ -281,6 +281,50 @@ export const mockHaccpLogs: HaccpLog[] = [
     { id: 'log5', timestamp: new Date('2023-10-27T09:00:00Z'), type: HaccpLogType.Temperature, haccpItemId: 'haccp5', value: '4°C', user: 'Giorgos', teamId: 'team2' }
 ];
 
+export const mockHaccpReminders: HaccpReminder[] = [
+    { 
+      id: 'rem1', 
+      haccpItemId: 'haccp1', 
+      frequency: 'every_4_hours', 
+      nextCheckDue: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+      assignedUserId: 'u1',
+      teamId: 'team1' 
+    },
+    { 
+      id: 'rem2', 
+      haccpItemId: 'haccp2', 
+      frequency: 'daily', 
+      nextCheckDue: new Date(Date.now() + 10 * 60 * 60 * 1000), // 10 hours from now
+      assignedUserId: 'u1',
+      teamId: 'team1' 
+    },
+    { 
+      id: 'rem3', 
+      haccpItemId: 'haccp3', 
+      frequency: 'every_2_hours', 
+      nextCheckDue: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes overdue
+      assignedUserId: 'u2',
+      teamId: 'team1',
+      isOverdue: true
+    },
+    { 
+      id: 'rem4', 
+      haccpItemId: 'haccp4', 
+      frequency: 'weekly', 
+      nextCheckDue: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      assignedUserId: 'u3',
+      teamId: 'team1' 
+    },
+    { 
+      id: 'rem5', 
+      haccpItemId: 'haccp5', 
+      frequency: 'every_4_hours', 
+      nextCheckDue: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1 hour from now
+      assignedUserId: 'u4',
+      teamId: 'team2' 
+    }
+];
+
 export const mockInventoryLocations: InventoryLocation[] = [
     { id: 'loc1', name: 'Κεντρική Αποθήκη', teamId: 'team1' },
     { id: 'loc2', name: 'Αποθήκη Ημέρας - Κουζίνα', teamId: 'team1' },
@@ -490,5 +534,299 @@ export const mockShiftSchedules: ShiftSchedule[] = [
         startDate: '2025-11-10',
         endDate: '2025-11-16',
         userIds: ['user1', 'user2', 'user3'],
+    }
+];
+
+export const mockOrders: KitchenOrder[] = [
+    {
+        id: 'order1',
+        orderNumber: 'ORD-001',
+        tableNumber: '5',
+        station: 'hot',
+        items: [
+            { id: 'item1', recipeId: 'recipe1', recipeName: 'Μουσακάς', quantity: 2, notes: '', specialRequests: [] },
+            { id: 'item2', recipeId: 'recipe2', recipeName: 'Σαλάτα Χωριάτικη', quantity: 1, notes: '', specialRequests: [] }
+        ],
+        status: 'new',
+        priority: 'normal',
+        createdAt: new Date().toISOString(),
+        estimatedTime: 25,
+        teamId: 'team1',
+        notes: ''
+    },
+    {
+        id: 'order2',
+        orderNumber: 'ORD-002',
+        tableNumber: '12',
+        station: 'grill',
+        items: [
+            { id: 'item3', recipeId: 'recipe3', recipeName: 'Μπριζόλα Χοιρινή', quantity: 2, notes: '', specialRequests: ['Καλοψημένη'] }
+        ],
+        status: 'in-progress',
+        priority: 'high',
+        createdAt: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+        startedAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+        estimatedTime: 15,
+        assignedTo: 'user3',
+        teamId: 'team1',
+        notes: 'Πελάτης βιάζεται'
+    },
+    {
+        id: 'order3',
+        orderNumber: 'ORD-003',
+        tableNumber: '8',
+        station: 'hot',
+        items: [
+            { id: 'item4', recipeId: 'recipe4', recipeName: 'Παστίτσιο', quantity: 1, notes: '', specialRequests: [] }
+        ],
+        status: 'ready',
+        priority: 'normal',
+        createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
+        startedAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+        readyAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+        estimatedTime: 20,
+        assignedTo: 'user2',
+        teamId: 'team1',
+        notes: ''
+    },
+    {
+        id: 'order4',
+        orderNumber: 'ORD-004',
+        tableNumber: '3',
+        station: 'cold',
+        items: [
+            { id: 'item5', recipeId: 'recipe5', recipeName: 'Τζατζίκι', quantity: 3, notes: '', specialRequests: [] }
+        ],
+        status: 'served',
+        priority: 'low',
+        createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+        startedAt: new Date(Date.now() - 1000 * 60 * 40).toISOString(),
+        readyAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+        servedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+        estimatedTime: 5,
+        assignedTo: 'user3',
+        teamId: 'team1',
+        notes: ''
+    }
+];
+
+export const mockVariations: RecipeVariation[] = [
+    {
+        id: 'var1',
+        parentRecipeId: 'recipe1', // Μουσακάς
+        variationType: 'vegan',
+        name: 'Μουσακάς Vegan',
+        name_en: 'Vegan Moussaka',
+        description: 'Χωρίς κιμά και γαλακτοκομικά, με φακές και φυτική μπεσαμέλ',
+        ingredientModifications: [
+            { action: 'remove', originalIngredientId: 'beef', notes: 'Αφαίρεση κιμά' },
+            { action: 'remove', originalIngredientId: 'milk', notes: 'Αφαίρεση γάλα' },
+            { action: 'add', notes: 'Προσθήκη φακές' }
+        ],
+        allergenChanges: [],
+        isActive: true,
+        createdAt: '2025-11-01T10:00:00Z',
+        teamId: 'team1'
+    },
+    {
+        id: 'var2',
+        parentRecipeId: 'recipe1', // Μουσακάς
+        variationType: 'portion-size',
+        name: 'Μουσακάς Μικρή Μερίδα',
+        name_en: 'Small Portion Moussaka',
+        description: 'Μισή μερίδα για παιδικό πιάτο',
+        scaleFactor: 0.5,
+        ingredientModifications: [],
+        isActive: true,
+        createdAt: '2025-11-05T14:00:00Z',
+        teamId: 'team1'
+    },
+    {
+        id: 'var3',
+        parentRecipeId: 'recipe2', // Τυρόπιτα
+        variationType: 'gluten-free',
+        name: 'Τυρόπιτα Χωρίς Γλουτένη',
+        name_en: 'Gluten-Free Cheese Pie',
+        description: 'Με φύλλο χωρίς γλουτένη',
+        ingredientModifications: [
+            { action: 'replace', originalIngredientId: 'phyllo', notes: 'Αντικατάσταση με φύλλο χωρίς γλουτένη' }
+        ],
+        allergenChanges: [],
+        isActive: true,
+        createdAt: '2025-11-10T09:00:00Z',
+        teamId: 'team1'
+    }
+];
+
+export const mockReports: EmailReport[] = [
+    {
+        id: 'report1',
+        name: 'Ημερήσια Αναφορά Αποθέματος',
+        reportType: 'inventory',
+        frequency: 'daily',
+        scheduledTime: '08:00',
+        recipients: ['chef@kitchen.app', 'sous@kitchen.app'],
+        format: 'both',
+        dateRange: 'last-7-days',
+        includeCharts: true,
+        customNotes: 'Ελεγχος για προιόντα χαμηλών αποθεμάτων',
+        isActive: true,
+        lastSent: '2025-12-01T08:00:00Z',
+        nextScheduled: '2025-12-02T08:00:00Z',
+        createdAt: '2025-11-01T10:00:00Z',
+        createdBy: 'user1',
+        teamId: 'team1'
+    },
+    {
+        id: 'report2',
+        name: 'Εβδομαδιαία Αναφορά Σπατάλης',
+        reportType: 'waste',
+        frequency: 'weekly',
+        scheduledTime: '18:00',
+        scheduledDay: 5, // Friday
+        recipients: ['chef@kitchen.app', 'admin@kitchen.app'],
+        format: 'pdf',
+        dateRange: 'last-30-days',
+        includeCharts: true,
+        customNotes: 'Ανάλυση για μείωση σπατάλης',
+        isActive: true,
+        lastSent: '2025-11-29T18:00:00Z',
+        nextScheduled: '2025-12-06T18:00:00Z',
+        createdAt: '2025-10-15T12:00:00Z',
+        createdBy: 'user1',
+        teamId: 'team1'
+    },
+    {
+        id: 'report3',
+        name: 'Μηνιαία Αναφορά HACCP',
+        reportType: 'haccp',
+        frequency: 'monthly',
+        scheduledTime: '09:00',
+        scheduledDate: 1,
+        recipients: ['chef@kitchen.app', 'compliance@kitchen.app'],
+        format: 'both',
+        dateRange: 'last-month',
+        includeCharts: true,
+        customNotes: 'Πλήρης αναφορά για έλεγχο συμμόρφωσης',
+        isActive: true,
+        lastSent: '2025-11-01T09:00:00Z',
+        nextScheduled: '2025-12-01T09:00:00Z',
+        createdAt: '2025-09-01T08:00:00Z',
+        createdBy: 'user1',
+        teamId: 'team1'
+    },
+    {
+        id: 'report4',
+        name: 'Αναφορά Κόστους Υλικών',
+        reportType: 'costing',
+        frequency: 'weekly',
+        scheduledTime: '17:00',
+        scheduledDay: 0, // Sunday
+        recipients: ['chef@kitchen.app'],
+        format: 'csv',
+        dateRange: 'last-7-days',
+        includeCharts: false,
+        isActive: false,
+        lastSent: '2025-10-20T17:00:00Z',
+        createdAt: '2025-09-10T14:00:00Z',
+        createdBy: 'user2',
+        teamId: 'team1'
+    }
+];
+
+export const mockReportHistory: ReportHistory[] = [
+    {
+        id: 'history1',
+        reportId: 'report1',
+        reportName: 'Ημερήσια Αναφορά Αποθέματος',
+        reportType: 'inventory',
+        sentAt: '2025-12-01T08:00:00Z',
+        recipients: ['chef@kitchen.app', 'sous@kitchen.app'],
+        format: 'both',
+        status: 'sent',
+        fileSize: 245678,
+        downloadUrl: '/reports/inventory-2025-12-01.pdf'
+    },
+    {
+        id: 'history2',
+        reportId: 'report1',
+        reportName: 'Ημερήσια Αναφορά Αποθέματος',
+        reportType: 'inventory',
+        sentAt: '2025-11-30T08:00:00Z',
+        recipients: ['chef@kitchen.app', 'sous@kitchen.app'],
+        format: 'both',
+        status: 'sent',
+        fileSize: 238456,
+        downloadUrl: '/reports/inventory-2025-11-30.pdf'
+    },
+    {
+        id: 'history3',
+        reportId: 'report2',
+        reportName: 'Εβδομαδιαία Αναφορά Σπατάλης',
+        reportType: 'waste',
+        sentAt: '2025-11-29T18:00:00Z',
+        recipients: ['chef@kitchen.app', 'admin@kitchen.app'],
+        format: 'pdf',
+        status: 'sent',
+        fileSize: 512678,
+        downloadUrl: '/reports/waste-2025-11-29.pdf'
+    },
+    {
+        id: 'history4',
+        reportId: 'report2',
+        reportName: 'Εβδομαδιαία Αναφορά Σπατάλης',
+        reportType: 'waste',
+        sentAt: '2025-11-22T18:00:00Z',
+        recipients: ['chef@kitchen.app', 'admin@kitchen.app'],
+        format: 'pdf',
+        status: 'sent',
+        fileSize: 498234,
+        downloadUrl: '/reports/waste-2025-11-22.pdf'
+    },
+    {
+        id: 'history5',
+        reportId: 'report3',
+        reportName: 'Μηνιαία Αναφορά HACCP',
+        reportType: 'haccp',
+        sentAt: '2025-11-01T09:00:00Z',
+        recipients: ['chef@kitchen.app', 'compliance@kitchen.app'],
+        format: 'both',
+        status: 'sent',
+        fileSize: 1024567,
+        downloadUrl: '/reports/haccp-2025-11.pdf'
+    },
+    {
+        id: 'history6',
+        reportId: 'report3',
+        reportName: 'Μηνιαία Αναφορά HACCP',
+        reportType: 'haccp',
+        sentAt: '2025-10-01T09:00:00Z',
+        recipients: ['chef@kitchen.app', 'compliance@kitchen.app'],
+        format: 'both',
+        status: 'sent',
+        fileSize: 987654,
+        downloadUrl: '/reports/haccp-2025-10.pdf'
+    },
+    {
+        id: 'history7',
+        reportId: 'report4',
+        reportName: 'Αναφορά Κόστους Υλικών',
+        reportType: 'costing',
+        sentAt: '2025-10-20T17:00:00Z',
+        recipients: ['chef@kitchen.app'],
+        format: 'csv',
+        status: 'sent',
+        fileSize: 45678
+    },
+    {
+        id: 'history8',
+        reportId: 'report1',
+        reportName: 'Ημερήσια Αναφορά Αποθέματος',
+        reportType: 'inventory',
+        sentAt: '2025-11-29T08:05:00Z',
+        recipients: ['chef@kitchen.app', 'sous@kitchen.app'],
+        format: 'both',
+        status: 'failed',
+        errorMessage: 'SMTP connection timeout'
     }
 ];

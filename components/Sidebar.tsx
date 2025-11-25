@@ -17,6 +17,14 @@ export const ALL_NAV_ITEMS: { view: View; labelKey: string; icon: IconName; role
     roles: ['Admin', 'Sous Chef']
   },
 
+  // 🆕 Kitchen Display System (KDS)
+  {
+    view: 'kds',
+    labelKey: 'nav_kds',
+    icon: 'monitor',
+    roles: ['Admin', 'Sous Chef', 'Cook']
+  },
+
   { view: 'shopping_list', labelKey: 'nav_shopping_list', icon: 'shopping-cart' },
   { view: 'labels', labelKey: 'nav_labels', icon: 'printer' },
   { view: 'inventory', labelKey: 'nav_inventory', icon: 'package' },
@@ -29,9 +37,19 @@ export const ALL_NAV_ITEMS: { view: View; labelKey: string; icon: IconName; role
   { view: 'suppliers', labelKey: 'nav_suppliers', icon: 'truck' },
   { view: 'haccp', labelKey: 'nav_haccp', icon: 'thermometer' },
 
+  // 📧 Email Reports & Scheduling – Admin & Sous Chef only
+  {
+    view: 'reports',
+    labelKey: 'nav_reports',
+    icon: 'mail',
+    roles: ['Admin', 'Sous Chef']
+  },
+
   // 🧠 Chef Copilot – διαθέσιμο σε όλους τους ρόλους
   { view: 'copilot', labelKey: 'nav_copilot', icon: 'sparkles' },
 
+  { view: 'analytics', labelKey: 'nav_analytics', icon: 'bar-chart-2' },
+  { view: 'collaboration', labelKey: 'nav_collaboration', icon: 'users' },
   { view: 'notifications', labelKey: 'nav_notifications', icon: 'bell' },
   { view: 'user_manual', labelKey: 'nav_user_manual', icon: 'help-circle' },
   { view: 'settings', labelKey: 'nav_settings', icon: 'settings', roles: ['Admin'] }

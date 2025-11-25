@@ -9,6 +9,7 @@ import type {
   PrepTask,
   HaccpLog,
   HaccpItem,
+  HaccpReminder,
   Supplier,
   InventoryItem,
   Menu,
@@ -26,7 +27,11 @@ import type {
   PurchaseUnit,
   InventoryTransaction,
   RolePermissions,
-  WasteLog
+  WasteLog,
+  KitchenOrder,
+  RecipeVariation,
+  EmailReport,
+  ReportHistory
 } from '../types';
 import { ALL_PERMISSIONS } from '../types';
 
@@ -60,11 +65,21 @@ import InvoiceImportModal from './inventory/InvoiceImportModal';
 import InvoiceConfirmationModal from './inventory/InvoiceConfirmationModal';
 import InventoryHistoryView from './inventory/InventoryHistoryView';
 import UserManualView from './manual/UserManualView';
+import AnalyticsDashboard from './analytics/AnalyticsDashboard';
+import CollaborationView from './collaboration/CollaborationView';
+import type { HandoverNote } from './collaboration/ShiftHandoverNotes';
+import type { Notification as CollabNotification } from './collaboration/NotificationCenter';
 import ChefCopilot from './ai/ChefCopilot';
 import ApiKeyPromptModal from './common/ApiKeyPromptModal';
 
 // 🆕 Kitchen–Service view
 import KitchenServiceView from './kitchen/KitchenServiceView';
+
+// 🆕 Kitchen Display System (KDS)
+import KitchenDisplayView from './kds/KitchenDisplayView';
+
+// 🆕 Email Reports & Scheduling
+import EmailReportsView from './reports/EmailReportsView';
 
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useTranslation } from '../i18n';
@@ -92,6 +107,8 @@ interface KitchenInterfaceProps {
   setHaccpLogs: React.Dispatch<React.SetStateAction<HaccpLog[]>>;
   haccpItems: HaccpItem[];
   setHaccpItems: React.Dispatch<React.SetStateAction<HaccpItem[]>>;
+  haccpReminders: HaccpReminder[];
+  setHaccpReminders: React.Dispatch<React.SetStateAction<HaccpReminder[]>>;
   suppliers: Supplier[];
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   inventory: InventoryItem[];
@@ -115,6 +132,14 @@ interface KitchenInterfaceProps {
   setShiftSchedules: React.Dispatch<React.SetStateAction<ShiftSchedule[]>>;
   allChannels: Channel[];
   setAllChannels: React.Dispatch<React.SetStateAction<Channel[]>>;
+  orders: KitchenOrder[];
+  setOrders: React.Dispatch<React.SetStateAction<KitchenOrder[]>>;
+  variations: RecipeVariation[];
+  setVariations: React.Dispatch<React.SetStateAction<RecipeVariation[]>>;
+  reports: EmailReport[];
+  setReports: React.Dispatch<React.SetStateAction<EmailReport[]>>;
+  reportHistory: ReportHistory[];
+  setReportHistory: React.Dispatch<React.SetStateAction<ReportHistory[]>>;
 }
 
 const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
@@ -140,6 +165,8 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     setHaccpLogs,
     haccpItems,
     setHaccpItems,
+    haccpReminders,
+    setHaccpReminders,
     suppliers,
     setSuppliers,
     inventory,
@@ -162,7 +189,15 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     shiftSchedules,
     setShiftSchedules,
     allChannels,
-    setAllChannels
+    setAllChannels,
+    orders,
+    setOrders,
+    variations,
+    setVariations,
+    reports,
+    setReports,
+    reportHistory,
+    setReportHistory
   } = props;
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -196,6 +231,10 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
   const [extractedInvoiceItems, setExtractedInvoiceItems] =
     useState<ExtractedInvoiceItem[] | null>(null);
 
+  // Collaboration state
+  const [handoverNotes, setHandoverNotes] = useState<HandoverNote[]>([]);
+  const [collabNotifications, setCollabNotifications] = useState<CollabNotification[]>([]);
+
   const [rolePermissions, setRolePermissions] =
     useLocalStorage<RolePermissions>('rolePermissions', {
       Admin: [...ALL_PERMISSIONS],
@@ -214,6 +253,15 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
   const [actionToResume, setActionToResume] =
     useState<(() => Promise<void> | void) | null>(null);
   const [kitchenServiceOpenCount, setKitchenServiceOpenCount] = useState(0);
+
+  // 🔊 Walkie settings για Notifications
+  const [walkieSettings, setWalkieSettings] = useLocalStorage<{
+    soundEnabled: boolean;
+    desktopEnabled: boolean;
+  }>('walkieSettings', {
+    soundEnabled: true,
+    desktopEnabled: true
+  });
 
   // ✅ withApiKeyCheck που συνεργάζεται με ApiKeyPromptModal & aistudio helper
   const withApiKeyCheck = (action: () => void | Promise<void>) => {
@@ -873,6 +921,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     const teamTasks = tasks.filter((t) => t.teamId === currentTeamId);
     const teamHaccpLogs = haccpLogs.filter((l) => l.teamId === currentTeamId);
     const teamHaccpItems = haccpItems.filter((i) => i.teamId === currentTeamId);
+    const teamHaccpReminders = haccpReminders.filter((r) => r.teamId === currentTeamId);
     const teamSuppliers = suppliers.filter((s) => s.teamId === currentTeamId);
     const teamInventory = inventory.filter((i) => i.teamId === currentTeamId);
     const teamInventoryLocations = inventoryLocations.filter(
@@ -885,6 +934,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     const teamMenusFiltered = menus.filter((m) => m.teamId === currentTeamId);
     const teamMessages = messages.filter((m) => (m as any).teamId === currentTeamId);
     const teamShifts = shifts.filter((s) => s.teamId === currentTeamId);
+    const teamUsers = allUsers.filter((u) => u.teamId === currentTeamId);
     const teamShiftSchedules = shiftSchedules.filter(
       (s) => s.teamId === currentTeamId
     );
@@ -1030,6 +1080,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                 onSaveRecipe={handleSaveRecipe}
                 onDelete={handleDeleteRecipe}
                 onSelectRecipe={setSelectedRecipeId}
+                currentUser={user}
                 currentUserRole={currentUserRole}
                 language={language}
                 rolePermissions={rolePermissions}
@@ -1086,6 +1137,32 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
           />
         );
 
+      // 🆕 Kitchen Display System (KDS)
+      case 'kds':
+        return (
+          <KitchenDisplayView
+            orders={orders.filter(o => o.teamId === currentTeamId)}
+            setOrders={setOrders}
+            recipes={teamRecipesFiltered}
+            users={allUsers}
+            currentUserId={user.id}
+            currentTeamId={currentTeamId}
+            canManage={currentUserRole === 'owner' || currentUserRole === 'admin'}
+          />
+        );
+
+      case 'reports':
+        return (
+          <EmailReportsView
+            reports={reports.filter(r => r.teamId === currentTeamId)}
+            setReports={setReports}
+            reportHistory={reportHistory}
+            setReportHistory={setReportHistory}
+            currentTeamId={currentTeamId}
+            currentUserId={user.id}
+          />
+        );
+
       case 'workstations':
         return (
           <WorkstationView
@@ -1118,10 +1195,12 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             logs={teamHaccpLogs}
             setLogs={setHaccpLogs}
             haccpItems={teamHaccpItems}
+            haccpReminders={teamHaccpReminders}
             onNavigateToPrint={() => handleViewChange('haccp_print')}
             currentUserRole={currentUserRole}
             rolePermissions={rolePermissions}
             withApiKeyCheck={withApiKeyCheck}
+            currentTeamId={currentTeamId}
           />
         );
       case 'haccp_print':
@@ -1158,6 +1237,9 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             currentTeamId={currentTeamId}
             wasteLogs={teamWasteLogs}
             onViewChange={handleViewChange}
+            menus={teamMenusFiltered}
+            recipes={teamRecipesFiltered}
+            inventoryTransactions={teamInventoryTransactions}
           />
         );
       case 'inventory_history':
@@ -1212,6 +1294,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             withApiKeyCheck={withApiKeyCheck}
             inventory={teamInventory}
             wasteLogs={teamWasteLogs}
+            ingredientCosts={teamIngredientCosts}
           />
         );
       case 'labels':
@@ -1265,6 +1348,82 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             setMessages={setMessages}
             allChannels={teamChannels}
             setAllChannels={setAllChannels}
+            walkieSettings={walkieSettings}
+            setWalkieSettings={setWalkieSettings}
+          />
+        );
+      case 'analytics':
+        return (
+          <AnalyticsDashboard
+            recipes={teamRecipesFiltered}
+            wasteLogs={teamWasteLogs}
+            inventory={teamInventory}
+            ingredientCosts={teamIngredientCosts}
+            menus={teamMenusFiltered}
+          />
+        );
+      case 'collaboration':
+        return (
+          <CollaborationView
+            shifts={teamShifts}
+            users={teamUsers}
+            teams={allTeams}
+            currentUserId={user.id}
+            currentTeamId={user.teamId}
+            handoverNotes={handoverNotes.filter(n => n.teamId === user.teamId)}
+            notifications={collabNotifications}
+            onAddHandoverNote={(note) => {
+              const newNote: HandoverNote = {
+                ...note,
+                id: `handover_${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                acknowledged: false,
+              };
+              setHandoverNotes(prev => [...prev, newNote]);
+              // Create notification for recipient
+              const recipientNotification: CollabNotification = {
+                id: `notif_${Date.now()}`,
+                teamId: note.teamId,
+                userId: note.toUserId,
+                type: 'shift',
+                title: t('new_handover_note'),
+                message: `Νέα σημείωση από ${teamUsers.find(u => u.id === note.fromUserId)?.name || 'Unknown'}`,
+                createdAt: new Date().toISOString(),
+                read: false,
+                priority: note.priority,
+              };
+              setCollabNotifications(prev => [...prev, recipientNotification]);
+            }}
+            onAcknowledgeNote={(noteId) => {
+              setHandoverNotes(prev =>
+                prev.map(n =>
+                  n.id === noteId
+                    ? { ...n, acknowledged: true, acknowledgedAt: new Date().toISOString() }
+                    : n
+                )
+              );
+            }}
+            onMarkNotificationAsRead={(notificationId) => {
+              setCollabNotifications(prev =>
+                prev.map(n =>
+                  n.id === notificationId
+                    ? { ...n, read: true, readAt: new Date().toISOString() }
+                    : n
+                )
+              );
+            }}
+            onMarkAllNotificationsAsRead={() => {
+              setCollabNotifications(prev =>
+                prev.map(n =>
+                  n.userId === user.id && !n.read
+                    ? { ...n, read: true, readAt: new Date().toISOString() }
+                    : n
+                )
+              );
+            }}
+            onDeleteNotification={(notificationId) => {
+              setCollabNotifications(prev => prev.filter(n => n.id !== notificationId));
+            }}
           />
         );
       case 'user_manual':

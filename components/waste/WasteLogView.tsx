@@ -11,6 +11,8 @@ import {
   IngredientCost,
 } from '../../types';
 import { Icon } from '../common/Icon';
+import AdvancedFilterPanel, { FilterConfig, FilterValue } from '../common/AdvancedFilterPanel';
+import { useFilterPresets } from '../../hooks/useFilterPresets';
 
 interface WasteLogViewProps {
   wasteLogs: WasteLog[];
@@ -62,6 +64,16 @@ const WasteLogView: React.FC<WasteLogViewProps> = ({
   const canManage = currentUserRole
     ? rolePermissions[currentUserRole]?.includes('manage_waste')
     : false;
+
+  // 🔍 Advanced Filters
+  const { presets, savePreset, deletePreset } = useFilterPresets('waste');
+  const [filterValues, setFilterValues] = useState<FilterValue>({
+    search: '',
+    reason: '',
+    dateRange: { from: '', to: '' },
+    minCost: '',
+    maxCost: '',
+  });
 
   // 📅 Φίλτρο ημερομηνίας
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7d' | '30d'>(

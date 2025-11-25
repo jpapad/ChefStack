@@ -89,6 +89,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
             setInventoryLocations={setInventoryLocations}
             haccpItems={haccpItems}
             setHaccpItems={setHaccpItems}
+            currentTeamId={currentTeamId}
           />
         )}
       </div>

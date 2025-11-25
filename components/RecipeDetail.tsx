@@ -8,16 +8,25 @@ import {
   LanguageMode,
   ALLERGEN_TRANSLATIONS,
   RecipeStep,
-  RolePermissions
+  RolePermissions,
+  User,
+  NutritionInfo
 } from '../types';
 import { Icon } from './common/Icon';
 import PrintLabel from './common/PrintLabel';
 import PrintPreview from './common/PrintPreview';
 import ConfirmationModal from './common/ConfirmationModal';
 import { AllergenIcon } from './common/AllergenIcon';
+import StarRating from './common/StarRating';
 import { useTranslation } from '../i18n';
 import AIResponseModal from './common/AIResponseModal';
 import { GoogleGenAI } from '@google/genai';
+import { NutritionLabel } from './common/NutritionLabel';
+import {
+  calculateRecipeNutrition,
+  getNutritionCoverage,
+  getMissingNutritionIngredients
+} from '../utils/nutritionCalculator';
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -28,13 +37,14 @@ interface RecipeDetailProps {
   onSaveRecipe: (recipe: Recipe) => void; // For AI updates
   onDelete: (recipe: Recipe) => void;
   onSelectRecipe: (id: string) => void; // For navigating to sub-recipes
+  currentUser: User;
   currentUserRole?: Role;
   rolePermissions: RolePermissions;
   language: Exclude<LanguageMode, 'both'>;
   withApiKeyCheck: (action: () => void) => void;
 }
 
-type Tab = 'ingredients' | 'steps' | 'allergens' | 'costing';
+type Tab = 'ingredients' | 'steps' | 'allergens' | 'costing' | 'nutrition';
 
 const RecipeDetail: React.FC<RecipeDetailProps> = ({
   recipe,
@@ -45,6 +55,7 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
   onSaveRecipe,
   onDelete,
   onSelectRecipe,
+  currentUser,
   currentUserRole,
   rolePermissions,
   language,
@@ -60,6 +71,16 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
   const [aiContent, setAiContent] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiAction, setAiAction] = useState<'improve' | 'translate' | null>(null);
+
+  // Nutrition calculation
+  const calculatedNutrition = useMemo(() => calculateRecipeNutrition(recipe), [recipe]);
+  const nutritionCoverage = useMemo(() => getNutritionCoverage(recipe), [recipe]);
+  const missingIngredients = useMemo(() => getMissingNutritionIngredients(recipe), [recipe]);
+  const [customNutrition, setCustomNutrition] = useState<NutritionInfo | null>(null);
+  const [isEditingNutrition, setIsEditingNutrition] = useState(false);
+
+  // Use custom nutrition if set, otherwise use calculated or recipe's stored nutrition
+  const displayNutrition = customNutrition || recipe.nutrition || calculatedNutrition;
 
   const canManage = currentUserRole
     ? rolePermissions[currentUserRole]?.includes('manage_recipes')
@@ -131,6 +152,47 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
 
   const displayName = language === 'en' && recipe.name_en ? recipe.name_en : recipe.name;
   const displayDescription = recipe.description;
+
+  // Calculate average rating
+  const averageRating = useMemo(() => {
+    if (!recipe.ratings || recipe.ratings.length === 0) return 0;
+    const sum = recipe.ratings.reduce((acc, r) => acc + r.rating, 0);
+    return sum / recipe.ratings.length;
+  }, [recipe.ratings]);
+
+  // Get current user's rating
+  const userRating = useMemo(() => {
+    if (!recipe.ratings) return 0;
+    const found = recipe.ratings.find(r => r.userId === currentUser.id);
+    return found ? found.rating : 0;
+  }, [recipe.ratings, currentUser.id]);
+
+  // Handle rating
+  const handleRate = (rating: number) => {
+    const updatedRatings = recipe.ratings ? [...recipe.ratings] : [];
+    const existingIndex = updatedRatings.findIndex(r => r.userId === currentUser.id);
+    
+    if (existingIndex >= 0) {
+      updatedRatings[existingIndex] = {
+        userId: currentUser.id,
+        rating,
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      updatedRatings.push({
+        userId: currentUser.id,
+        rating,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const updatedRecipe = {
+      ...recipe,
+      ratings: updatedRatings
+    };
+
+    onSaveRecipe(updatedRecipe);
+  };
 
   const handleAiAction = async (action: 'improve' | 'translate') => {
     setAiAction(action);
@@ -350,6 +412,36 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
                 {displayDescription}
               </p>
 
+              {/* Rating Section */}
+              <div className="mb-4 p-4 bg-white dark:bg-slate-800 rounded-xl border-2 border-yellow-400 dark:border-yellow-500 shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      {t('recipe_rating_your_rating') || 'Your Rating:'}
+                    </span>
+                    <StarRating
+                      rating={userRating}
+                      onRate={handleRate}
+                      size="md"
+                    />
+                  </div>
+                  {averageRating > 0 && (
+                    <div className="flex items-center gap-3 sm:ml-auto pl-4 sm:pl-0 border-l-2 sm:border-l-0 sm:border-l-2 border-yellow-400 dark:border-yellow-500">
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                        {t('recipe_rating_average') || 'Team Average:'}
+                      </span>
+                      <StarRating
+                        rating={averageRating}
+                        size="sm"
+                        readonly
+                        showCount
+                        count={recipe.ratings?.length}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex flex-wrap items-center gap-6 text-center">
                 <div>
                   <p className="font-bold text-xl">{recipe.prepTime}'</p>
@@ -430,6 +522,10 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
               <TabButton
                 tab="costing"
                 label={t('recipe_detail_tab_costing')}
+              />
+              <TabButton
+                tab="nutrition"
+                label={t('recipe_detail_tab_nutrition')}
               />
             </div>
             {activeTab === 'ingredients' && (
@@ -554,6 +650,154 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
                     {recipe.price?.toFixed(2) || '-'}€
                   </p>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'nutrition' && (
+              <div className="space-y-6">
+                {displayNutrition ? (
+                  <>
+                    <div className="flex justify-center">
+                      <NutritionLabel nutrition={displayNutrition} servings={recipe.servings} />
+                    </div>
+
+                    {/* Coverage info */}
+                    {nutritionCoverage < 100 && (
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <Icon name="info" className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+                              {t('nutrition_coverage')}: {nutritionCoverage.toFixed(0)}%
+                            </p>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-400 mb-2">
+                              {t('nutrition_missing_data')}
+                            </p>
+                            {missingIngredients.length > 0 && (
+                              <div className="text-sm text-yellow-700 dark:text-yellow-400">
+                                <span className="font-semibold">{t('missing_ingredients')}:</span>{' '}
+                                {missingIngredients.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Manual override option */}
+                    {canManage && !isEditingNutrition && (
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => setIsEditingNutrition(true)}
+                          className="px-4 py-2 bg-brand-yellow text-slate-900 rounded-lg hover:bg-yellow-500 transition-colors font-semibold"
+                        >
+                          {t('edit_nutrition_manually')}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Manual edit form */}
+                    {isEditingNutrition && (
+                      <div className="bg-white dark:bg-dark-card p-6 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <h3 className="text-lg font-bold mb-4">{t('manual_nutrition_entry')}</h3>
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <label className="block text-sm font-semibold mb-1">{t('calories')}</label>
+                            <input
+                              type="number"
+                              value={customNutrition?.calories ?? displayNutrition.calories}
+                              onChange={(e) => setCustomNutrition({
+                                ...(customNutrition || displayNutrition),
+                                calories: parseFloat(e.target.value) || 0,
+                                isCalculated: false
+                              })}
+                              className="w-full p-2 rounded-md bg-black/5 dark:bg-white/10 border border-slate-300 dark:border-slate-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold mb-1">{t('protein')} (g)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={customNutrition?.protein ?? displayNutrition.protein}
+                              onChange={(e) => setCustomNutrition({
+                                ...(customNutrition || displayNutrition),
+                                protein: parseFloat(e.target.value) || 0,
+                                isCalculated: false
+                              })}
+                              className="w-full p-2 rounded-md bg-black/5 dark:bg-white/10 border border-slate-300 dark:border-slate-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold mb-1">{t('total_carbs')} (g)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={customNutrition?.carbs ?? displayNutrition.carbs}
+                              onChange={(e) => setCustomNutrition({
+                                ...(customNutrition || displayNutrition),
+                                carbs: parseFloat(e.target.value) || 0,
+                                isCalculated: false
+                              })}
+                              className="w-full p-2 rounded-md bg-black/5 dark:bg-white/10 border border-slate-300 dark:border-slate-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold mb-1">{t('total_fat')} (g)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={customNutrition?.fat ?? displayNutrition.fat}
+                              onChange={(e) => setCustomNutrition({
+                                ...(customNutrition || displayNutrition),
+                                fat: parseFloat(e.target.value) || 0,
+                                isCalculated: false
+                              })}
+                              className="w-full p-2 rounded-md bg-black/5 dark:bg-white/10 border border-slate-300 dark:border-slate-600"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => {
+                              if (customNutrition) {
+                                onSaveRecipe({ ...recipe, nutrition: customNutrition });
+                              }
+                              setIsEditingNutrition(false);
+                            }}
+                            className="px-4 py-2 bg-brand-yellow text-slate-900 rounded-lg hover:bg-yellow-500 transition-colors font-semibold"
+                          >
+                            {t('save')}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setCustomNutrition(null);
+                              setIsEditingNutrition(false);
+                            }}
+                            className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-semibold"
+                          >
+                            {t('cancel')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    <Icon name="info" className="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
+                      {t('no_nutrition_data')}
+                    </p>
+                    {canManage && (
+                      <button
+                        onClick={() => setIsEditingNutrition(true)}
+                        className="px-4 py-2 bg-brand-yellow text-slate-900 rounded-lg hover:bg-yellow-500 transition-colors font-semibold"
+                      >
+                        {t('add_nutrition_manually')}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
