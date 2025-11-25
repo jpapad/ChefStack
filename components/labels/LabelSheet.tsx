@@ -1,5 +1,5 @@
 import React from 'react';
-import { Recipe, LogoPosition, LanguageMode } from '../../types';
+import { Recipe, LogoPosition, LanguageMode, AllergenIconVariant } from '../../types';
 import LabelCard from './LabelCard';
 import AllergenLegend from './AllergenLegend';
 
@@ -13,6 +13,7 @@ interface LabelSheetProps {
     languageMode: LanguageMode;
     columnsPerPage: number;
     printLegend: boolean;
+    allergenVariant?: AllergenIconVariant;
 }
 
 const LabelSheet: React.FC<LabelSheetProps> = ({ 
@@ -24,7 +25,8 @@ const LabelSheet: React.FC<LabelSheetProps> = ({
     labelHeight,
     languageMode,
     columnsPerPage,
-    printLegend
+    printLegend,
+    allergenVariant = 'colored'
 }) => {
     
     const gridStyle: React.CSSProperties = {
@@ -46,6 +48,7 @@ const LabelSheet: React.FC<LabelSheetProps> = ({
                         width={labelWidth}
                         height={labelHeight}
                         languageMode={languageMode}
+                        allergenVariant={allergenVariant}
                     />
                 ))}
             </div>

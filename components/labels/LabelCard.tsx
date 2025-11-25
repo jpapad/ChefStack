@@ -1,5 +1,5 @@
 import React from 'react';
-import { Recipe, LogoPosition, LanguageMode } from '../../types';
+import { Recipe, LogoPosition, LanguageMode, AllergenIconVariant } from '../../types';
 import { AllergenIcon } from '../common/AllergenIcon';
 
 interface LabelCardProps {
@@ -10,9 +10,19 @@ interface LabelCardProps {
     width: number;
     height: number;
     languageMode: LanguageMode;
+    allergenVariant?: AllergenIconVariant;
 }
 
-const LabelCard: React.FC<LabelCardProps> = ({ recipe, showAllergens, logoUrl, logoPosition, width, height, languageMode }) => {
+const LabelCard: React.FC<LabelCardProps> = ({ 
+    recipe, 
+    showAllergens, 
+    logoUrl, 
+    logoPosition, 
+    width, 
+    height, 
+    languageMode,
+    allergenVariant = 'colored'
+}) => {
     
     const containerStyle: React.CSSProperties = {
         width: `${width}mm`,
@@ -68,7 +78,7 @@ const LabelCard: React.FC<LabelCardProps> = ({ recipe, showAllergens, logoUrl, l
                     <div className="mt-1 pt-1 border-t border-dashed border-gray-300 dark:border-gray-600 flex flex-wrap justify-center gap-2">
                         {recipe.allergens.map(allergen => (
                             <div key={allergen} title={allergen}>
-                                <AllergenIcon allergen={allergen} className="w-5 h-5" />
+                                <AllergenIcon allergen={allergen} variant={allergenVariant} className="w-6 h-6" />
                             </div>
                         ))}
                     </div>
