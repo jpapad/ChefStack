@@ -69,15 +69,27 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
   };
 
   const handleSaveSchedule = async (data: Omit<ShiftSchedule, 'id'> | ShiftSchedule) => {
-    const savedSchedule = await api.saveShiftSchedule(data);
-    setShiftSchedules(prev => {
-      const exists = prev.some(s => s.id === savedSchedule.id);
-      return exists ? prev.map(s => s.id === savedSchedule.id ? savedSchedule : s) : [...prev, savedSchedule];
-    });
-    setIsFormOpen(false);
-    setScheduleToEdit(null);
-    if (!('id' in data)) {
+    try {
+      const savedSchedule = await api.saveShiftSchedule(data);
+      const isNewSchedule = !('id' in data);
+      
+      setShiftSchedules(prev => {
+        const exists = prev.some(s => s.id === savedSchedule.id);
+        if (exists) {
+          return prev.map(s => s.id === savedSchedule.id ? savedSchedule : s);
+        } else {
+          return [...prev, savedSchedule];
+        }
+      });
+      
+      setIsFormOpen(false);
+      setScheduleToEdit(null);
+      
+      if (isNewSchedule) {
         setSelectedScheduleId(savedSchedule.id);
+      }
+    } catch (error) {
+      console.error('[ShiftsView] Error saving schedule:', error);
     }
   };
   
