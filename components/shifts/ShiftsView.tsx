@@ -7,6 +7,9 @@ import PrintableSchedule from './PrintableSchedule';
 import ScheduleList from './ScheduleList';
 import ScheduleForm from './ScheduleForm';
 import ConfirmationModal from '../common/ConfirmationModal';
+import TimePickerModal from './TimePickerModal';
+import ShiftStatisticsPanel from './ShiftStatisticsPanel';
+import CopyWeekModal from './CopyWeekModal';
 import { api } from '../../services/api';
 
 interface ShiftsViewProps {
@@ -34,6 +37,18 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [scheduleToEdit, setScheduleToEdit] = useState<ShiftSchedule | null>(null);
   const [scheduleToDelete, setScheduleToDelete] = useState<ShiftSchedule | null>(null);
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
+  const [isCopyWeekOpen, setIsCopyWeekOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
+  const [selectedWeekStart, setSelectedWeekStart] = useState<string | null>(null);
+  
+  const [pendingShift, setPendingShift] = useState<{
+    userId: string;
+    date: string;
+    type: ShiftTypeKey;
+    existingShift?: Shift;
+  } | null>(null);
 
   const [editingCell, setEditingCell] = useState<{ userId: string; date: string } | null>(null);
   const [printPreviewContent, setPrintPreviewContent] = useState<React.ReactNode | null>(null);
@@ -117,21 +132,26 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
     const { userId, date } = editingCell;
     const existingShift = shiftsMap.get(`${userId}-${date}`);
 
-    // Prompt for times
-    const startTime = prompt(t('shifts_enter_start_time'), existingShift?.startTime || '09:00');
-    if (startTime === null) {
-      setEditingCell(null);
-      return; // User cancelled
-    }
-    
-    const endTime = prompt(t('shifts_enter_end_time'), existingShift?.endTime || '17:00');
-    if (endTime === null) {
-      setEditingCell(null);
-      return; // User cancelled
-    }
+    // Open time picker modal instead of prompts
+    setPendingShift({
+      userId,
+      date,
+      type,
+      existingShift,
+    });
+    setIsTimePickerOpen(true);
+    setEditingCell(null);
+  };
+
+  const handleTimeSave = async (startTime: string, endTime: string) => {
+    if (!pendingShift) return;
+
+    const { userId, date, type, existingShift } = pendingShift;
 
     if (existingShift) {
-      setShifts(prev => prev.map(s => s.id === existingShift.id ? { ...s, type, startTime, endTime } : s));
+      const updated = { ...existingShift, type, startTime, endTime };
+      await api.saveShift(updated);
+      setShifts(prev => prev.map(s => s.id === existingShift.id ? updated : s));
     } else {
       const newShift: Shift = { 
         id: `shift-${Date.now()}`, 
@@ -142,9 +162,78 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
         startTime,
         endTime
       };
+      await api.saveShift(newShift);
       setShifts(prev => [...prev, newShift]);
     }
-    setEditingCell(null);
+
+    setPendingShift(null);
+  };
+
+  const handleCopyWeek = (sourceWeekStart: string, targetWeekStart: string, overwrite: boolean) => {
+    if (!selectedSchedule) return;
+
+    const sourceDate = new Date(sourceWeekStart);
+    const targetDate = new Date(targetWeekStart);
+    
+    // Get all shifts for source week (7 days)
+    const sourceShifts: Shift[] = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(sourceDate);
+      date.setDate(sourceDate.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayShifts = shifts.filter(s => s.date === dateStr && selectedSchedule.userIds.includes(s.userId));
+      sourceShifts.push(...dayShifts);
+    }
+
+    // Create new shifts for target week
+    const newShifts: Shift[] = [];
+    sourceShifts.forEach(sourceShift => {
+      const sourceShiftDate = new Date(sourceShift.date);
+      const dayOffset = Math.floor((sourceShiftDate.getTime() - sourceDate.getTime()) / (24 * 60 * 60 * 1000));
+      
+      const targetShiftDate = new Date(targetDate);
+      targetShiftDate.setDate(targetDate.getDate() + dayOffset);
+      const targetDateStr = targetShiftDate.toISOString().split('T')[0];
+
+      // Check if shift already exists
+      const existingShift = shifts.find(s => s.date === targetDateStr && s.userId === sourceShift.userId);
+      
+      if (!existingShift || overwrite) {
+        const newShift: Shift = {
+          id: existingShift?.id || `shift-${Date.now()}-${Math.random()}`,
+          userId: sourceShift.userId,
+          teamId: currentTeamId,
+          date: targetDateStr,
+          type: sourceShift.type,
+          startTime: sourceShift.startTime,
+          endTime: sourceShift.endTime,
+        };
+        newShifts.push(newShift);
+      }
+    });
+
+    // Save all new shifts
+    newShifts.forEach(shift => api.saveShift(shift));
+
+    // Update state
+    setShifts(prev => {
+      if (overwrite) {
+        // Remove existing shifts for target week dates
+        const targetDates = newShifts.map(s => `${s.userId}-${s.date}`);
+        const filtered = prev.filter(s => !targetDates.includes(`${s.userId}-${s.date}`));
+        return [...filtered, ...newShifts];
+      } else {
+        // Add only new shifts (don't overwrite)
+        const existingKeys = new Set(prev.map(s => `${s.userId}-${s.date}`));
+        const toAdd = newShifts.filter(s => !existingKeys.has(`${s.userId}-${s.date}`));
+        return [...prev, ...toAdd];
+      }
+    });
+  };
+      setShifts(prev => [...prev, newShift]);
+    }
+
+    setPendingShift(null);
   };
 
   const handlePrint = () => {
@@ -242,7 +331,7 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
-        <div className={`h-full ${selectedScheduleId ? 'hidden lg:block' : 'lg:col-span-1'}`}>
+        <div className={`h-full space-y-4 ${selectedScheduleId ? 'hidden lg:block' : 'lg:col-span-1'}`}>
            <ScheduleList 
              schedules={shiftSchedules}
              selectedScheduleId={selectedScheduleId}
@@ -252,6 +341,32 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
              onDelete={setScheduleToDelete}
              currentUserRole={currentUserRole}
            />
+           
+           {/* Statistics Panel */}
+           {selectedSchedule && (
+             <div className="hidden lg:block">
+               <button
+                 onClick={() => setIsStatsOpen(!isStatsOpen)}
+                 className="w-full flex items-center justify-between gap-2 bg-brand-yellow hover:bg-brand-yellow-dark text-black px-4 py-3 rounded-full font-semibold transition-colors"
+               >
+                 <div className="flex items-center gap-2">
+                   <Icon name="bar-chart" className="w-5 h-5" />
+                   <span>{t('shifts_statistics')}</span>
+                 </div>
+                 <Icon name={isStatsOpen ? "chevron-up" : "chevron-down"} className="w-4 h-4" />
+               </button>
+               
+               {isStatsOpen && (
+                 <div className="mt-4">
+                   <ShiftStatisticsPanel
+                     schedule={selectedSchedule}
+                     shifts={shifts.filter(s => s.teamId === currentTeamId)}
+                     users={teamMembers}
+                   />
+                 </div>
+               )}
+             </div>
+           )}
         </div>
         <div className={`lg:col-span-3 h-full flex flex-col ${!selectedScheduleId ? 'hidden lg:flex' : 'flex'}`}>
             {selectedSchedule ? (
@@ -262,12 +377,48 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                             {t('shifts_back_to_list')}
                         </button>
                         <h2 className="text-2xl font-bold font-heading">{selectedSchedule.name}</h2>
-                        <button onClick={handlePrint} className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                            <Icon name="printer" className="w-5 h-5" />
-                            <span className="font-semibold text-sm">{t('shifts_print_schedule')}</span>
-                        </button>
+                        
+                        <div className="flex items-center gap-2">
+                          {/* Copy Week Button */}
+                          {canManage && (
+                            <button 
+                              onClick={() => setIsCopyWeekOpen(true)} 
+                              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition-colors"
+                            >
+                              <Icon name="copy" className="w-4 h-4" />
+                              <span className="font-semibold text-sm hidden sm:inline">{t('shifts_copy_week')}</span>
+                            </button>
+                          )}
+                          
+                          {/* Print Button */}
+                          <button onClick={handlePrint} className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            <Icon name="printer" className="w-4 h-4" />
+                            <span className="font-semibold text-sm hidden sm:inline">{t('shifts_print_schedule')}</span>
+                          </button>
+                          
+                          {/* Stats Toggle (Mobile) */}
+                          <button
+                            onClick={() => setIsStatsOpen(!isStatsOpen)}
+                            className="lg:hidden flex items-center gap-2 bg-brand-yellow hover:bg-brand-yellow-dark text-black px-4 py-2 rounded-full transition-colors"
+                          >
+                            <Icon name="bar-chart" className="w-4 h-4" />
+                          </button>
+                        </div>
                     </div>
+                    
+                    {/* Mobile Stats */}
+                    {isStatsOpen && (
+                      <div className="lg:hidden mt-4">
+                        <ShiftStatisticsPanel
+                          schedule={selectedSchedule}
+                          shifts={shifts.filter(s => s.teamId === currentTeamId)}
+                          users={teamMembers}
+                        />
+                      </div>
+                    )}
+                    
                     {renderGrid(selectedSchedule)}
+                </div>
                 </div>
             ) : (
                 <div className="flex-1 flex items-center justify-center text-light-text-secondary dark:text-dark-text-secondary bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-6 rounded-2xl shadow-xl">
@@ -291,6 +442,27 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
         teamId={currentTeamId}
         teamMembers={teamMembers}
       />
+      
+      <TimePickerModal
+        isOpen={isTimePickerOpen}
+        onClose={() => {
+          setIsTimePickerOpen(false);
+          setPendingShift(null);
+        }}
+        onSave={handleTimeSave}
+        shiftType={pendingShift?.type || 'morning'}
+        initialStartTime={pendingShift?.existingShift?.startTime}
+        initialEndTime={pendingShift?.existingShift?.endTime}
+      />
+      
+      {selectedSchedule && (
+        <CopyWeekModal
+          isOpen={isCopyWeekOpen}
+          onClose={() => setIsCopyWeekOpen(false)}
+          onCopy={handleCopyWeek}
+          schedule={selectedSchedule}
+        />
+      )}
       
       <ConfirmationModal
         isOpen={!!scheduleToDelete}
