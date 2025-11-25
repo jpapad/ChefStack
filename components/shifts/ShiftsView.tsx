@@ -88,8 +88,10 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
       if (isNewSchedule) {
         setSelectedScheduleId(savedSchedule.id);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[ShiftsView] Error saving schedule:', error);
+      console.error('[ShiftsView] Error details:', error?.message || error);
+      alert(`Σφάλμα αποθήκευσης: ${error?.message || 'Unknown error'}`);
     }
   };
   

@@ -217,9 +217,11 @@ const mapShiftScheduleToDb = (schedule: Omit<ShiftSchedule, 'id'> | ShiftSchedul
     user_ids: schedule.userIds
   };
 
-  if ('id' in schedule) {
+  if ('id' in schedule && schedule.id) {
     return { id: schedule.id, ...base };
   }
+  
+  // For new schedules, let Supabase generate the UUID or provide one
   return base;
 };
 
@@ -862,12 +864,20 @@ CREATE TABLE haccp_reminders (
     // Map camelCase to snake_case for Supabase
     const dbSchedule = mapShiftScheduleToDb(scheduleData);
     
+    console.log('[api.saveShiftSchedule] Sending to Supabase:', dbSchedule);
+    
     const { data, error } = await supabase
       .from('shift_schedules')
       .upsert(dbSchedule)
       .select()
       .single();
-    if (error) throw error;
+      
+    if (error) {
+      console.error('[api.saveShiftSchedule] Supabase error:', error);
+      throw error;
+    }
+    
+    console.log('[api.saveShiftSchedule] Received from Supabase:', data);
     
     // Map snake_case back to camelCase
     return mapShiftScheduleFromDb(data);
