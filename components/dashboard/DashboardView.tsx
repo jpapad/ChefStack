@@ -12,6 +12,7 @@ import type {
   Channel
 } from '../../types';
 import { Icon } from '../common/Icon';
+import { DashboardSkeleton } from './DashboardSkeleton';
 import TopRecipesWidget from './TopRecipesWidget';
 import InventoryAlertsWidget from './InventoryAlertsWidget';
 import { HaccpDashboardWidget } from '../haccp/HaccpDashboardWidget';
@@ -29,6 +30,7 @@ interface DashboardViewProps {
   channels?: Channel[];
   onViewChange: (view: View) => void;
   withApiKeyCheck: (action: () => void | Promise<void>) => void;
+  isLoading?: boolean;
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({
@@ -42,7 +44,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   messages,
   channels,
   onViewChange,
-  withApiKeyCheck
+  withApiKeyCheck,
+  isLoading = false
 }) => {
   // --- Στατιστικά ---
   const totalRecipes = recipes.length;
@@ -117,6 +120,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       onViewChange('shopping_list');
     });
   };
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="h-full flex flex-col gap-6 overflow-y-auto pb-6">
