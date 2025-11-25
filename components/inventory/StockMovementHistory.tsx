@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { InventoryItem, InventoryTransaction, WasteLog } from '../../types';
 import { Icon } from '../common/Icon';
 import { useTranslation } from '../../i18n';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { Button } from '../ui/button';
 
 interface StockMovementHistoryProps {
   isOpen: boolean;
@@ -111,31 +113,20 @@ const StockMovementHistory: React.FC<StockMovementHistoryProps> = ({
     };
   }, [timeline]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-dark-bg rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <Icon name="history" className="w-8 h-8" />
-                <h2 className="text-2xl font-heading font-bold">Ιστορικό Κινήσεων</h2>
-              </div>
-              <p className="text-white/90 text-lg font-medium">{item.name}</p>
-              <p className="text-white/80 text-sm">
-                Τρέχον απόθεμα: {item.totalQuantity.toFixed(2)} {item.unit}
-              </p>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh]">
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white -m-6 p-6 mb-4 rounded-t-lg">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <Icon name="history" className="w-8 h-8" />
+              <DialogTitle className="text-white text-2xl">Ιστορικό Κινήσεων</DialogTitle>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <Icon name="x" className="w-6 h-6" />
-            </button>
-          </div>
+            <DialogDescription className="text-white/90 text-lg">{item.name}</DialogDescription>
+            <p className="text-white/80 text-sm">
+              Τρέχον απόθεμα: {item.totalQuantity.toFixed(2)} {item.unit}
+            </p>
+          </DialogHeader>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
@@ -165,68 +156,58 @@ const StockMovementHistory: React.FC<StockMovementHistoryProps> = ({
         </div>
 
         {/* Filters */}
-        <div className="p-4 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50">
+        <div className="p-4 border-b">
           <div className="flex flex-wrap gap-3 items-center justify-between">
             <div className="flex gap-2 flex-wrap">
-              <button
+              <Button
+                variant={filterType === 'all' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('all')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  filterType === 'all'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border'
-                }`}
               >
                 Όλες
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={filterType === 'purchase' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('purchase')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  filterType === 'purchase'
-                    ? 'bg-green-600 text-white shadow-lg'
-                    : 'bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border'
-                }`}
+                className={filterType === 'purchase' ? 'bg-green-600 hover:bg-green-700' : ''}
               >
                 Αγορές
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={filterType === 'usage' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('usage')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  filterType === 'usage'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border'
-                }`}
               >
                 Χρήση
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={filterType === 'waste' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('waste')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  filterType === 'waste'
-                    ? 'bg-red-600 text-white shadow-lg'
-                    : 'bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border'
-                }`}
+                className={filterType === 'waste' ? 'bg-red-600 hover:bg-red-700' : ''}
               >
                 Απώλεια
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={filterType === 'adjustment' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('adjustment')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  filterType === 'adjustment'
-                    ? 'bg-purple-600 text-white shadow-lg'
-                    : 'bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border'
-                }`}
+                className={filterType === 'adjustment' ? 'bg-purple-600 hover:bg-purple-700' : ''}
               >
                 Προσαρμογές
-              </button>
+              </Button>
             </div>
 
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border hover:border-blue-400 transition-colors flex items-center gap-2"
+              className="gap-2"
             >
               <Icon name={sortOrder === 'desc' ? 'arrow-down' : 'arrow-up'} className="w-4 h-4" />
               {sortOrder === 'desc' ? 'Νεότερα πρώτα' : 'Παλαιότερα πρώτα'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -304,17 +285,13 @@ const StockMovementHistory: React.FC<StockMovementHistoryProps> = ({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             Κλείσιμο
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

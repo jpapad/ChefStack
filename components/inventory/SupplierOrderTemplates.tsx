@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { InventoryItem, Supplier } from '../../types';
 import { Icon } from '../common/Icon';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { Button } from '../ui/button';
 
 interface SupplierOrderTemplatesProps {
   inventory: InventoryItem[];
@@ -125,26 +127,17 @@ const SupplierOrderTemplates: React.FC<SupplierOrderTemplatesProps> = ({
     });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div>
-            <h2 className="text-2xl font-bold">Προτεινόμενες Παραγγελίες</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Βασισμένες σε χαμηλό απόθεμα ανά προμηθευτή
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
-            <Icon name="x" className="w-6 h-6" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-6xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>Προτεινόμενες Παραγγελίες</DialogTitle>
+          <DialogDescription>
+            Βασισμένες σε χαμηλό απόθεμα ανά προμηθευτή
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto">
+        <div className="overflow-auto max-h-[70vh]">
           {supplierOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center">
               <Icon name="check-circle" className="w-16 h-16 text-emerald-500 mb-4" />
@@ -216,13 +209,13 @@ const SupplierOrderTemplates: React.FC<SupplierOrderTemplatesProps> = ({
                             </p>
                           )}
                         </div>
-                        <button
+                        <Button
                           onClick={() => handleExportOrder(selectedOrder)}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                          className="gap-2"
                         >
                           <Icon name="copy" className="w-4 h-4" />
                           <span>Αντιγραφή</span>
-                        </button>
+                        </Button>
                       </div>
                       <div className="flex items-center gap-4 text-sm">
                         <span className="font-semibold">{selectedOrder.items.length} προϊόντα</span>
@@ -286,8 +279,8 @@ const SupplierOrderTemplates: React.FC<SupplierOrderTemplatesProps> = ({
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

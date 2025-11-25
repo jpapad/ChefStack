@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ExtractedInvoiceItem, MappedInvoiceItem, InventoryItem, InventoryLocation } from '../../types';
 import { Icon } from '../common/Icon';
 import { useTranslation } from '../../i18n';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Label } from '../ui/label';
 
 interface InvoiceConfirmationModalProps {
   isOpen: boolean;
@@ -50,27 +54,27 @@ const InvoiceConfirmationModal: React.FC<InvoiceConfirmationModalProps> = ({ isO
     onConfirm(mappedItems, targetLocationId);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-700/80">
-          <div>
-            <h3 className="text-xl font-semibold">{t('invoice_import_confirm_title')}</h3>
-            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">{t('invoice_import_confirm_subtitle')}</p>
-          </div>
-          <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
-            <Icon name="x" className="w-6 h-6" />
-          </button>
-        </header>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>{t('invoice_import_confirm_title')}</DialogTitle>
+          <DialogDescription>{t('invoice_import_confirm_subtitle')}</DialogDescription>
+        </DialogHeader>
 
-        <div className="flex-grow p-6 overflow-y-auto">
+        <div className="overflow-y-auto max-h-[60vh] py-4">
            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">{t('invoice_import_target_location')}</label>
-              <select value={targetLocationId} onChange={e => setTargetLocationId(e.target.value)} className="w-full md:w-1/2 p-2 rounded bg-light-bg dark:bg-dark-bg">
-                {inventoryLocations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-              </select>
+              <Label className="mb-2">{t('invoice_import_target_location')}</Label>
+              <Select value={targetLocationId} onValueChange={setTargetLocationId}>
+                <SelectTrigger className="w-full md:w-1/2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {inventoryLocations.map(loc => (
+                    <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
            </div>
 
             <div className="space-y-4">
@@ -111,15 +115,15 @@ const InvoiceConfirmationModal: React.FC<InvoiceConfirmationModalProps> = ({ isO
             </div>
         </div>
 
-        <footer className="flex-shrink-0 p-4 flex justify-end gap-4 bg-black/5 dark:bg-white/5 rounded-b-2xl">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold">{t('cancel')}</button>
-          <button type="button" onClick={handleConfirmClick} className="px-4 py-2 rounded-lg bg-brand-dark text-white hover:opacity-90 font-semibold flex items-center gap-2">
-            <Icon name="check" className="w-5 h-5" />
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
+          <Button type="button" onClick={handleConfirmClick} className="gap-2">
+            <Icon name="check" className="w-4 h-4" />
             {t('invoice_confirm_and_update')}
-          </button>
-        </footer>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

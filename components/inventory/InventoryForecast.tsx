@@ -2,6 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { InventoryItem, Menu, Recipe, WasteLog } from '../../types';
 import { Icon } from '../common/Icon';
 import { useTranslation } from '../../i18n';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
 
 interface InventoryForecastProps {
   isOpen: boolean;
@@ -160,30 +163,19 @@ const InventoryForecast: React.FC<InventoryForecastProps> = ({
   const criticalCount = forecast.filter(f => f.status === 'critical').length;
   const warningCount = forecast.filter(f => f.status === 'warning').length;
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-dark-bg rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <Icon name="trending-up" className="w-8 h-8" />
-                <h2 className="text-2xl font-heading font-bold">Πρόβλεψη Αποθέματος</h2>
-              </div>
-              <p className="text-white/90">
-                Προβλέποντας την κατανάλωση για τις επόμενες {selectedDays} ημέρες
-              </p>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-5xl max-h-[90vh]">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white -m-6 p-6 mb-4 rounded-t-lg">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <Icon name="trending-up" className="w-8 h-8" />
+              <DialogTitle className="text-white text-2xl">Πρόβλεψη Αποθέματος</DialogTitle>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <Icon name="x" className="w-6 h-6" />
-            </button>
-          </div>
+            <DialogDescription className="text-white/90">
+              Προβλέποντας την κατανάλωση για τις επόμενες {selectedDays} ημέρες
+            </DialogDescription>
+          </DialogHeader>
 
           {/* Stats Summary */}
           <div className="grid grid-cols-3 gap-4 mt-6">
@@ -203,21 +195,18 @@ const InventoryForecast: React.FC<InventoryForecastProps> = ({
         </div>
 
         {/* Forecast Days Selector */}
-        <div className="p-4 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50">
-          <label className="block text-sm font-medium mb-2">Περίοδος Πρόβλεψης:</label>
-          <div className="flex gap-2">
+        <div className="p-4 border-b">
+          <Label className="mb-2">Περίοδος Πρόβλεψης:</Label>
+          <div className="flex gap-2 mt-2">
             {[3, 7, 14, 30].map(days => (
-              <button
+              <Button
                 key={days}
+                variant={selectedDays === days ? 'default' : 'outline'}
                 onClick={() => setSelectedDays(days)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  selectedDays === days
-                    ? 'bg-purple-600 text-white shadow-lg'
-                    : 'bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border hover:border-purple-400'
-                }`}
+                className={selectedDays === days ? 'bg-purple-600 hover:bg-purple-700' : ''}
               >
                 {days} ημέρες
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -333,33 +322,27 @@ const InventoryForecast: React.FC<InventoryForecastProps> = ({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50">
-          <div className="flex items-center justify-between text-sm text-light-text-secondary dark:text-dark-text-secondary">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <span>Κρίσιμο (≤2 ημέρες)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <span>Προσοχή</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span>Εντάξει</span>
-              </div>
+        <div className="p-4 border-t flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span>Κρίσιμο (≤2 ημέρες)</span>
             </div>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              Κλείσιμο
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <span>Προσοχή</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span>Εντάξει</span>
+            </div>
           </div>
+          <Button variant="outline" onClick={onClose}>
+            Κλείσιμο
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

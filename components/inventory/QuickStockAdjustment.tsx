@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { InventoryItem } from '../../types';
 import { Icon } from '../common/Icon';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 interface QuickStockAdjustmentProps {
   item: InventoryItem & { totalQuantity: number };
@@ -36,29 +40,20 @@ const QuickStockAdjustment: React.FC<QuickStockAdjustmentProps> = ({
     setAdjustmentType('add');
   };
 
-  if (!isOpen) return null;
-
   const newQuantity = adjustmentType === 'add'
     ? item.totalQuantity + (parseFloat(quantity) || 0)
     : item.totalQuantity - (parseFloat(quantity) || 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <div>
-              <h3 className="text-xl font-bold">Γρήγορη Ενημέρωση Αποθέματος</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{item.name}</p>
-            </div>
-            <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
-              <Icon name="x" className="w-5 h-5" />
-            </button>
-          </div>
+          <DialogHeader>
+            <DialogTitle>Γρήγορη Ενημέρωση Αποθέματος</DialogTitle>
+            <p className="text-sm text-muted-foreground">{item.name}</p>
+          </DialogHeader>
 
-          {/* Content */}
-          <div className="p-6 space-y-6">
+          <div className="space-y-6 py-4">
             {/* Current Stock */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <div className="text-sm text-blue-700 dark:text-blue-300 mb-1">Τρέχον Απόθεμα</div>
@@ -110,22 +105,22 @@ const QuickStockAdjustment: React.FC<QuickStockAdjustmentProps> = ({
 
             {/* Quantity Input */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <Label className="mb-2">
                 Ποσότητα {adjustmentType === 'add' ? 'Προσθήκης' : 'Αφαίρεσης'}
-              </label>
+              </Label>
               <div className="relative">
-                <input
+                <Input
                   type="number"
                   step="0.01"
                   min="0"
                   value={quantity}
                   onChange={e => setQuantity(e.target.value)}
-                  className="w-full p-3 pr-16 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-900"
+                  className="pr-16"
                   placeholder="0.00"
                   required
                   autoFocus
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
                   {item.unit}
                 </span>
               </div>
@@ -154,42 +149,39 @@ const QuickStockAdjustment: React.FC<QuickStockAdjustmentProps> = ({
 
             {/* Reason (Optional) */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <Label className="mb-2">
                 Αιτιολογία (προαιρετικό)
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 value={reason}
                 onChange={e => setReason(e.target.value)}
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-900"
                 placeholder="π.χ. Παραλαβή παραγγελίας, Χρήση σε παραγωγή..."
               />
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="p-6 bg-gray-50 dark:bg-gray-900/50 rounded-b-2xl flex gap-3">
-            <button
+          <DialogFooter>
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold"
             >
               Άκυρο
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className={`flex-1 px-4 py-3 rounded-lg font-semibold text-white ${
-                adjustmentType === 'add'
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              }`}
+              className={adjustmentType === 'add'
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-red-600 hover:bg-red-700'
+              }
             >
               {adjustmentType === 'add' ? 'Προσθήκη' : 'Αφαίρεση'} Αποθέματος
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
