@@ -138,12 +138,12 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ isOpen, onClose, onSave, 
 
             <div className="space-y-2">
               <Label htmlFor="supplier">Προμηθευτής (Προαιρετικά)</Label>
-              <Select value={supplierId || ''} onValueChange={(value) => setSupplierId(value || undefined)}>
+              <Select value={supplierId || 'none'} onValueChange={(value) => setSupplierId(value === 'none' ? undefined : value)}>
                 <SelectTrigger id="supplier">
                   <SelectValue placeholder="-- Κανένας --" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">-- Κανένας --</SelectItem>
+                  <SelectItem value="none">-- Κανένας --</SelectItem>
                   {suppliers.map(s => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
