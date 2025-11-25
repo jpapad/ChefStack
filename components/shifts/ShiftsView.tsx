@@ -61,6 +61,7 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
   const [selectedWeekStart, setSelectedWeekStart] = useState<string | null>(null);
+  const [draggedShift, setDraggedShift] = useState<Shift | null>(null);
   
   const [pendingShift, setPendingShift] = useState<{
     userId: string;
@@ -371,6 +372,65 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
     }
   };
 
+  const handleDragStart = (shift: Shift) => {
+    if (!canManage) return;
+    setDraggedShift(shift);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!canManage || !draggedShift) return;
+    e.preventDefault();
+  };
+
+  const handleDrop = async (userId: string, date: string) => {
+    if (!canManage || !draggedShift) return;
+    
+    // Don't drop on same cell
+    if (draggedShift.userId === userId && draggedShift.date === date) {
+      setDraggedShift(null);
+      return;
+    }
+
+    // Check if target cell already has a shift
+    const existingShift = shiftsMap.get(`${userId}-${date}`);
+    
+    if (existingShift) {
+      // Swap shifts
+      const updatedDragged = {
+        ...draggedShift,
+        userId,
+        date,
+      };
+      
+      const updatedExisting = {
+        ...existingShift,
+        userId: draggedShift.userId,
+        date: draggedShift.date,
+      };
+      
+      await api.saveShift(updatedDragged);
+      await api.saveShift(updatedExisting);
+      
+      setShifts(prev => prev.map(s => {
+        if (s.id === draggedShift.id) return updatedDragged;
+        if (s.id === existingShift.id) return updatedExisting;
+        return s;
+      }));
+    } else {
+      // Move shift to empty cell
+      const updatedShift = {
+        ...draggedShift,
+        userId,
+        date,
+      };
+      
+      await api.saveShift(updatedShift);
+      setShifts(prev => prev.map(s => s.id === draggedShift.id ? updatedShift : s));
+    }
+    
+    setDraggedShift(null);
+  };
+
   const renderGrid = (schedule: ShiftSchedule) => {
       const scheduleUsers = teamMembers.filter(u => schedule.userIds.includes(u.id));
       
@@ -430,7 +490,22 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                                 <div
                                     key={dateString}
                                     onClick={() => handleCellClick(user.id, dateString)}
-                                    className={`relative p-2 flex flex-col items-center justify-center text-center font-bold ${shift ? SHIFT_TYPE_DETAILS[shift.type].color : 'bg-light-card dark:bg-dark-card'} ${canManage ? 'cursor-pointer' : 'cursor-default'}`}
+                                    draggable={!!(canManage && shift)}
+                                    onDragStart={(e) => {
+                                      if (shift) {
+                                        handleDragStart(shift);
+                                        e.currentTarget.style.opacity = '0.4';
+                                      }
+                                    }}
+                                    onDragEnd={(e) => {
+                                      e.currentTarget.style.opacity = '1';
+                                    }}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => {
+                                      e.preventDefault();
+                                      handleDrop(user.id, dateString);
+                                    }}
+                                    className={`relative p-2 flex flex-col items-center justify-center text-center font-bold ${shift ? SHIFT_TYPE_DETAILS[shift.type].color : 'bg-light-card dark:bg-dark-card'} ${canManage ? 'cursor-pointer' : 'cursor-default'} ${canManage && shift ? 'hover:ring-2 ring-brand-yellow' : ''} ${draggedShift && canManage ? 'transition-all' : ''}`}
                                     title={shift ? `${SHIFT_TYPE_DETAILS[shift.type][language]} ${shift.startTime || ''} - ${shift.endTime || ''} ${duration ? `(${duration}h)` : ''}` : ''}
                                 >
                                     {shift ? (
