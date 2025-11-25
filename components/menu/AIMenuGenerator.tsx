@@ -3,6 +3,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Recipe, Allergen, ALLERGENS_LIST, RECIPE_CATEGORY_KEYS } from '../../types';
 import { Icon } from '../common/Icon';
 import { useTranslation } from '../../i18n';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
 
 interface AIMenuGeneratorProps {
   isOpen: boolean;
@@ -232,21 +234,21 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
               </div>
             </div>
             <footer className="p-4 flex justify-end gap-4 bg-black/5 dark:bg-white/5 rounded-b-2xl">
-              <button
+              <Button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-black/5 dark:bg:white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold"
+                variant="outline"
               >
                 {t('cancel')}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleGenerate}
-                className="px-4 py-2 rounded-lg bg-brand-dark text-white hover:opacity-90 font-semibold flex items-center gap-2"
+                className="bg-brand-dark text-white hover:opacity-90 gap-2"
               >
                 <Icon name="sparkles" className="w-5 h-5" />
                 Δημιουργία
-              </button>
+              </Button>
             </footer>
           </>
         )}

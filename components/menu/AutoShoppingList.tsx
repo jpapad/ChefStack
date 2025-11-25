@@ -217,7 +217,6 @@ const AutoShoppingList: React.FC<AutoShoppingListProps> = ({
           }
         `}
       </style>
-        </div>
       </DialogContent>
     </Dialog>
   );
