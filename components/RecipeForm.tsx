@@ -11,6 +11,11 @@ import {
 import { Icon } from './common/Icon';
 import AIImageModal from './common/AIImageModal';
 import { useToast } from '../hooks/use-toast';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface RecipeFormProps {
   recipeToEdit?: Recipe | null;
@@ -284,19 +289,19 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               </p>
             </div>
             <div className="flex gap-3 flex-shrink-0">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={onCancel}
-                className="py-2 px-4 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 font-semibold text-sm"
               >
                 Άκυρο
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="py-2 px-6 rounded-lg bg-brand-yellow text-brand-dark hover:brightness-105 font-semibold text-sm shadow-md"
               >
+                <Icon name="save" className="w-4 h-4 mr-2" />
                 Αποθήκευση
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -314,56 +319,54 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Όνομα Συνταγής (Ελληνικά) */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">
-                  Όνομα Συνταγής (Ελληνικά) *
-                </label>
-                <input
-                  type="text"
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  Όνομα Συνταγής (Ελληνικά) <span className="text-destructive">*</span>
+                </Label>
+                <Input
                   id="name"
                   name="name"
                   value={recipe.name}
                   onChange={handleChange}
                   placeholder="π.χ. Μοσχαράκι Κοκκινιστό"
                   required
-                  className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                 />
               </div>
 
               {/* Όνομα Συνταγής (Αγγλικά) */}
-              <div>
-                <label htmlFor="name_en" className="block text-sm font-medium mb-1">
+              <div className="space-y-2">
+                <Label htmlFor="name_en">
                   Όνομα Συνταγής (Αγγλικά)
-                </label>
-                <input
-                  type="text"
+                </Label>
+                <Input
                   id="name_en"
                   name="name_en"
                   value={recipe.name_en}
                   onChange={handleChange}
                   placeholder="e.g. Beef Kokkinisto"
-                  className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                 />
               </div>
 
               {/* Κατηγορία */}
-              <div className="col-span-1 md:col-span-2">
-                <label htmlFor="category" className="block text-sm font-medium mb-1">
+              <div className="col-span-1 md:col-span-2 space-y-2">
+                <Label htmlFor="category">
                   Κατηγορία
-                </label>
-                <select
-                  id="category"
-                  name="category"
+                </Label>
+                <Select
                   value={recipe.category}
-                  onChange={handleChange}
-                  className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
+                  onValueChange={(value) => setRecipe(prev => ({ ...prev, category: value as any }))}
                 >
-                  {RECIPE_CATEGORY_KEYS.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECIPE_CATEGORY_KEYS.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Εικόνα Συνταγής */}
@@ -388,22 +391,25 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                         className="w-full h-full object-contain rounded-md"
                       />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
-                        <button
+                        <Button
                           type="button"
+                          size="icon"
                           onClick={openAiImageModal}
                           title="Επεξεργασία με AI"
-                          className="text-white p-2 rounded-full bg-purple-600 hover:bg-purple-700 transition-colors"
+                          className="rounded-full bg-purple-600 hover:bg-purple-700"
                         >
                           <Icon name="sparkles" className="w-6 h-6" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          size="icon"
+                          variant="destructive"
                           onClick={handleRemoveImage}
                           title="Αφαίρεση εικόνας"
-                          className="text-white p-2 rounded-full bg-red-600 hover:bg-red-700 transition-colors"
+                          className="rounded-full"
                         >
                           <Icon name="trash-2" className="w-6 h-6" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -413,134 +419,139 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                         className="mx-auto h-10 w-10 text-gray-400"
                       />
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        <button
+                        <Button
                           type="button"
+                          variant="link"
                           onClick={handleImageUploadClick}
-                          className="font-semibold text-brand-secondary hover:underline focus:outline-none"
+                          className="p-0 h-auto font-semibold"
                         >
                           Ανεβάστε ένα αρχείο
-                        </button>
+                        </Button>
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                         ή
                       </p>
-                      <button
+                      <Button
                         type="button"
                         onClick={openAiImageModal}
-                        className="mt-2 flex items-center gap-2 text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900 lift-on-hover"
+                        className="mt-2 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900"
                       >
-                        <Icon name="sparkles" className="w-4 h-4" /> Δημιουργία με AI
-                      </button>
+                        <Icon name="sparkles" className="w-4 h-4 mr-2" />
+                        Δημιουργία με AI
+                      </Button>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Περιγραφή */}
-              <div className="col-span-1 md:col-span-2">
-                <label htmlFor="description" className="block text-sm font-medium mb-1">
+              <div className="col-span-1 md:col-span-2 space-y-2">
+                <Label htmlFor="description">
                   Περιγραφή
-                </label>
-                <textarea
+                </Label>
+                <Textarea
                   name="description"
                   id="description"
                   value={recipe.description}
                   onChange={handleChange}
                   rows={3}
                   placeholder="Λίγα λόγια για το πιάτο, τεχνικές, tips σερβιρίσματος..."
-                  className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
-                ></textarea>
+                />
               </div>
 
               {/* Χρόνοι */}
-              <div>
-                <label htmlFor="prepTime" className="block text-sm font-medium mb-1">
+              <div className="space-y-2">
+                <Label htmlFor="prepTime">
                   Χρόνος Προετοιμασίας (λεπτά)
-                </label>
-                <input
+                </Label>
+                <Input
                   type="number"
                   id="prepTime"
                   name="prepTime"
                   min={0}
                   value={recipe.prepTime}
                   onChange={handleChange}
-                  className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                 />
               </div>
 
-              <div>
-                <label htmlFor="cookTime" className="block text-sm font-medium mb-1">
+              <div className="space-y-2">
+                <Label htmlFor="cookTime">
                   Χρόνος Μαγειρέματος (λεπτά)
-                </label>
-                <input
+                </Label>
+                <Input
                   type="number"
                   id="cookTime"
                   name="cookTime"
                   min={0}
                   value={recipe.cookTime}
                   onChange={handleChange}
-                  className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                 />
               </div>
 
               {/* Yield ή Μερίδες / Τιμή */}
               {recipe.category === 'sub_recipe' ? (
                 <>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
+                  <div className="space-y-2">
+                    <Label>
                       Παραγωγή (Yield)
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="number"
                       name="yield_quantity"
                       min={0}
                       value={recipe.yield?.quantity || 1}
                       onChange={handleChange}
-                      className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground">
                       Συνολική ποσότητα που παράγει η υποπαρασκευή.
                     </p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
+                  <div className="space-y-2">
+                    <Label>
                       Μονάδα Παραγωγής
-                    </label>
-                    <select
-                      name="yield_unit"
+                    </Label>
+                    <Select
                       value={recipe.yield?.unit || 'kg'}
-                      onChange={handleChange}
-                      className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                      onValueChange={(value) => {
+                        setRecipe(prev => ({
+                          ...prev,
+                          yield: { ...prev.yield!, unit: value as any }
+                        }));
+                      }}
                     >
-                      <option value="kg">kg</option>
-                      <option value="L">L</option>
-                      <option value="g">g</option>
-                      <option value="ml">ml</option>
-                      <option value="τεμ">τεμ</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="kg">kg</SelectItem>
+                        <SelectItem value="L">L</SelectItem>
+                        <SelectItem value="g">g</SelectItem>
+                        <SelectItem value="ml">ml</SelectItem>
+                        <SelectItem value="τεμ">τεμ</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </>
               ) : (
                 <>
-                  <div>
-                    <label htmlFor="servings" className="block text-sm font-medium mb-1">
+                  <div className="space-y-2">
+                    <Label htmlFor="servings">
                       Μερίδες
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="number"
                       id="servings"
                       name="servings"
                       min={1}
                       value={recipe.servings}
                       onChange={handleChange}
-                      className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                     />
                   </div>
-                  <div>
-                    <label htmlFor="price" className="block text-sm font-medium mb-1">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">
                       Τιμή Πώλησης (€)
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="number"
                       id="price"
                       name="price"
@@ -548,6 +559,8 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                       min={0}
                       value={recipe.price || ''}
                       onChange={handleChange}
+                    />
+                  </div>
                       className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                     />
                   </div>
@@ -655,25 +668,29 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                     </label>
                   </div>
                   <div className="col-span-2 md:col-span-1 flex items-center justify-center">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => removeIngredient(index)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 disabled:opacity-50"
                       disabled={recipe.ingredients.length <= 1}
+                      className="h-8 w-8 text-gray-400 hover:text-destructive"
                     >
                       <Icon name="trash-2" className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={addIngredient}
-              className="mt-4 flex items-center gap-2 text-sm font-semibold text-brand-secondary hover:underline"
+              className="mt-4 p-0 h-auto"
             >
-              <Icon name="plus" className="w-4 h-4" /> Προσθήκη Συστατικού
-            </button>
+              <Icon name="plus" className="w-4 h-4 mr-2" />
+              Προσθήκη Συστατικού
+            </Button>
           </div>
 
           {/* Εκτέλεση */}
@@ -729,32 +746,38 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                         required
                       />
                     )}
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => removeStep(index)}
-                      className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-50"
                       disabled={recipe.steps.length <= 1}
+                      className="text-gray-400 hover:text-destructive"
                     >
                       <Icon name="trash-2" className="w-5 h-5" />
-                    </button>
+                    </Button>
                   </div>
                 );
               })}
             </div>
             <div className="mt-4 flex items-center gap-4">
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={() => addStep('step')}
-                className="flex items-center gap-2 text-sm font-semibold text-brand-secondary hover:underline"
+                className="p-0 h-auto"
               >
-                <Icon name="plus" className="w-4 h-4" /> Προσθήκη Βήματος
-              </button>
-              <button
+                <Icon name="plus" className="w-4 h-4 mr-2" />
+                Προσθήκη Βήματος
+              </Button>
+              <Button
                 type="button"
+                variant="link"
                 onClick={() => addStep('heading')}
-                className="flex items-center gap-2 text-sm font-semibold text-brand-secondary hover:underline"
+                className="p-0 h-auto"
               >
-                <Icon name="plus" className="w-4 h-4" /> Προσθήκη Ενότητας
+                <Icon name="plus" className="w-4 h-4 mr-2" />
+                Προσθήκη Ενότητας
               </button>
             </div>
           </div>
