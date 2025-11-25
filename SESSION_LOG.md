@@ -564,17 +564,98 @@ Session 4 split into 3 sub-sessions:
 
 ---
 
-## 📅 Session 5 - [Date TBD]
+## 📅 Session 5 - November 25, 2025
 
-### 🎯 Planned Work
-- Dashboard loading state integration (DashboardSkeleton)
-- Button audit across app (replace custom buttons with shadcn Button)
-- Additional form modernizations (if any remaining)
-- Documentation: Update DESIGN_COMPARISON.md with Session 4 screenshots
+### 🎯 Goals
+Final polish session:
+- **5A:** DashboardView Skeleton integration
+- **5B:** Additional form/button migrations
+
+### ✅ Ολοκληρώθηκαν
+
+#### 🔄 **Session 5A: Dashboard Skeleton Integration** - Complete ✅
+
+**DashboardView.tsx** - Loading State
+- ✅ **Import:** Added DashboardSkeleton component
+- ✅ **Props:** Added `isLoading?: boolean` to DashboardViewProps
+- ✅ **Logic:** Conditional render: `if (isLoading) return <DashboardSkeleton />;`
+- ✅ **Pattern:** Early return prevents unnecessary calculations when loading
+- ✅ **Ready:** KitchenInterface can now pass `isLoading` prop
+
+**Git Commit:**
+- `555e02d` - feat: Integrate DashboardSkeleton loading state into DashboardView
 
 ---
 
-## 🎓 Lessons Learned
+#### 📝 **Session 5B: Forms & Buttons Migration** - Complete ✅
+
+**TransferStockModal.tsx** - Dialog + Toast Migration
+- ✅ **Dialog Replacement:** Custom modal → shadcn `Dialog`
+- ✅ **Toast Integration:** Replace `alert()` with `useToast()` hook
+- ✅ **Component Migration:**
+  - From/To location → 2x `Select` with filtered options
+  - Quantity → `Input type="number"` with unit display
+  - All buttons → `Button` components
+- ✅ **Validation:** Toast notification for validation errors (destructive variant)
+- ✅ **DialogDescription:** "Μεταφέρετε ποσότητα μεταξύ τοποθεσιών αποθήκευσης"
+- ✅ **Auto-close:** Calls onClose() after successful confirm
+
+**IngredientCostForm.tsx** - Dialog Migration
+- ✅ **Dialog Replacement:** Custom modal → shadcn `Dialog`
+- ✅ **Component Migration:**
+  - Ingredient name → `Input` with placeholder
+  - Cost → `Input type="number"` step="0.01"
+  - Purchase unit → `Select` (kg/L/τεμ)
+- ✅ **Layout:** Grid 2 columns for cost/unit
+- ✅ **DialogDescription:** "Ορίστε το κόστος αγοράς για το συστατικό"
+- ✅ **Placeholders:** Helpful examples (π.χ. Τομάτα)
+
+**Action Buttons Modernization**
+- ✅ **InventoryList.tsx:**
+  - Invoice import button → `Button` with bg-blue-600
+  - Add item button → `Button` default variant
+  - Icon sizing: w-5 h-5 → w-4 h-4 (shadcn standard)
+- ✅ **IngredientCostList.tsx:**
+  - Add cost button → `Button` with gap-2
+  - Consistent icon sizing
+
+**Git Commit:**
+- `ecbb5c2` - feat: Modernize TransferStockModal, IngredientCostForm, and action buttons with shadcn components
+
+---
+
+### 📊 Session 5 Metrics
+- **Forms Modernized:** 2 (TransferStockModal, IngredientCostForm)
+- **Loading States Integrated:** 1 (DashboardView)
+- **Action Buttons Replaced:** 3 buttons across 2 lists
+- **Toast Migration:** 1 (alert → Toast in TransferStockModal)
+- **Lines Changed:** ~200 insertions, ~120 deletions
+- **Git Commits:** 2 total (555e02d, ecbb5c2)
+- **Bugs Fixed:** 0 (clean run!)
+- **Time:** ~25 minutes
+
+### 🎓 Lessons Learned
+
+#### Session 5
+- **Toast > alert():** Toast provides better UX with non-blocking notifications
+- **Button consistency:** Replacing custom buttons with shadcn Button unifies styling
+- **Icon sizing:** w-4 h-4 is shadcn standard for button icons (was w-5 h-5)
+- **Early return pattern:** `if (isLoading) return <Skeleton />` cleaner than ternary
+- **Dialog auto-close:** Always call onClose() after successful form submission
+
+---
+
+## 📅 Session 6 - [Date TBD]
+
+### 🎯 Planned Work
+- Additional button audit across remaining views
+- Browser testing of all modernized components
+- Documentation updates with screenshots
+- Performance testing of Skeleton loading states
+
+---
+
+## 🎓 Lessons Learned - Cumulative
 
 ### Session 1
 - **Tailwind v4 too early:** Rolled back to v3 due to PostCSS compatibility
@@ -624,6 +705,42 @@ npx shadcn@latest add <component>  # Add new shadcn component
 
 ---
 
-**Last Updated:** November 25, 2025 @ Session 4 End (4A+4B+4C Complete)
-**Next Session:** Session 5 (Dashboard, Button audit, Documentation)
-**Status:** ✅ Ready to continue from commit `28c6c80`
+**Last Updated:** November 25, 2025 @ Session 5 End (5A+5B Complete)
+**Next Session:** Session 6 (Button audit, Testing, Documentation)
+**Status:** ✅ Ready to continue from commit `ecbb5c2`
+
+---
+
+## 📊 **Project Progress Summary**
+
+### Sessions Completed: 5 (Session 1-5)
+### Total Git Commits: 16
+### shadcn Components: 13 installed
+### Forms Modernized: 11 total
+### List Components: 6 modernized
+### Loading States: 6 Skeleton components
+### Time Investment: ~3.5 hours total
+
+### Key Achievements:
+- ✅ Tailwind CSS v3 migration (150KB build, 95% reduction from CDN)
+- ✅ shadcn/ui foundation (13 components: Button, Card, Dialog, AlertDialog, Input, Select, Badge, Toast, Toaster, Label, Textarea, Skeleton, Checkbox)
+- ✅ Modern Card-based layouts across all major views
+- ✅ Consistent Dialog pattern for all modals
+- ✅ Skeleton loading states for better UX
+- ✅ Toast notifications replacing alert()
+- ✅ Type-safe Select components
+- ✅ Accessible form controls (Label + Input/Select pairing)
+
+### Code Quality Improvements:
+- **Lines reduced:** ~500+ deletions (cleaner, more maintainable code)
+- **Component reuse:** 13 shadcn components replacing 50+ custom patterns
+- **Accessibility:** Proper ARIA labels, focus management, keyboard navigation
+- **Dark mode:** Consistent theming across all components
+- **Mobile responsive:** Grid layouts, truncation, proper spacing
+
+### Next Steps:
+1. Continue button audit in remaining views
+2. Browser testing (Chrome, Firefox, Safari)
+3. Screenshot documentation for DESIGN_COMPARISON.md
+4. Performance profiling of Skeleton transitions
+5. User feedback collection
