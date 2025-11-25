@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Menu } from '../../types';
 import { Icon } from '../common/Icon';
 import { MenuListSkeleton } from './MenuListSkeleton';
+import { Card } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 interface MenuListProps {
   menus: Menu[];
@@ -82,69 +85,78 @@ const MenuList: React.FC<MenuListProps> = ({
         {isLoading ? (
           <MenuListSkeleton count={6} />
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {menus.map((menu) => {
             const isSelected = selectedMenuId === menu.id;
             const eightySixCount = menu86Counts[menu.id] || 0;
 
             return (
-              <div
+              <Card
                 key={menu.id}
                 onClick={() => onSelectMenu(menu.id)}
-                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 group border ${
+                className={`cursor-pointer transition-all duration-200 group hover:shadow-lg ${
                   isSelected
-                    ? 'bg-brand-yellow/20 dark:bg-brand-yellow/30 border-brand-yellow/50'
-                    : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'
+                    ? 'border-brand-yellow bg-brand-yellow/10 dark:bg-brand-yellow/20'
+                    : 'hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Icon
-                    name={menu.type === 'buffet' ? 'servings' : 'list'}
-                    className="w-5 h-5 text-brand-yellow flex-shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="font-bold text-md truncate">{menu.name}</p>
-                    <div className="flex items-center gap-2 text-xs text-light-text-secondary dark:text-dark-text-secondary mt-0.5">
-                      <span>
-                        {menu.type === 'a_la_carte'
-                          ? 'À la carte'
-                          : `Buffet (${menu.pax} pax)`}
-                      </span>
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="flex-shrink-0">
+                      <div className="h-10 w-10 rounded-lg bg-brand-yellow/20 dark:bg-brand-yellow/30 flex items-center justify-center">
+                        <Icon
+                          name={menu.type === 'buffet' ? 'utensils' : 'list'}
+                          className="w-5 h-5 text-brand-yellow"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-base mb-1 truncate">{menu.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="text-xs">
+                          {menu.type === 'a_la_carte'
+                            ? 'À la carte'
+                            : `Buffet (${menu.pax} pax)`}
+                        </Badge>
 
-                      {menu.type === 'a_la_carte' && eightySixCount > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-600/10 text-red-600 font-semibold">
-                          <Icon name="circle-off" className="w-3 h-3" />
-                          {eightySixCount}× 86
-                        </span>
-                      )}
+                        {menu.type === 'a_la_carte' && eightySixCount > 0 && (
+                          <Badge variant="destructive" className="gap-1">
+                            <Icon name="circle-off" className="w-3 h-3" />
+                            {eightySixCount}× 86
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {canManage && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(menu);
+                        }}
+                        title="Edit"
+                      >
+                        <Icon name="edit" className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(menu);
+                        }}
+                        className="text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                        title="Delete"
+                      >
+                        <Icon name="trash-2" className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                {canManage && (
-                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(menu);
-                      }}
-                      className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/20"
-                      title="Edit"
-                    >
-                      <Icon name="edit" className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(menu);
-                      }}
-                      className="p-2 rounded-full text-light-text-secondary hover:text-red-500 hover:bg-red-500/10"
-                      title="Delete"
-                    >
-                      <Icon name="trash-2" className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
+              </Card>
             );
           })}
           </div>

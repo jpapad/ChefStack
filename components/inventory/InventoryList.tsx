@@ -2,6 +2,9 @@ import React from 'react';
 import { InventoryItem } from '../../types';
 import { Icon } from '../common/Icon';
 import { InventoryListSkeleton } from './InventoryListSkeleton';
+import { Card } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { useTranslation } from '../../i18n';
 
 interface InventoryListProps {
@@ -61,27 +64,28 @@ const InventoryList: React.FC<InventoryListProps> = ({
         {isLoading ? (
           <InventoryListSkeleton count={8} />
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {inventory.map(item => {
             const isLowStock = item.totalQuantity <= item.reorderPoint;
             const itemSelected = isSelected?.(item.id) || false;
             
             return (
-                <div
+                <Card
                 key={item.id}
                 onClick={() => batchMode && onToggleSelection ? onToggleSelection(item.id) : onSelectItem(item.id)}
-                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 group border ${
+                className={`cursor-pointer transition-all duration-200 group hover:shadow-lg ${
                     selectedItemId === item.id
-                    ? 'bg-brand-yellow/20 dark:bg-brand-yellow/30 border-brand-yellow/50'
+                    ? 'border-brand-yellow bg-brand-yellow/10 dark:bg-brand-yellow/20'
                     : itemSelected && batchMode
-                    ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-500/50'
-                    : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                    : 'hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
                 >
+                  <div className="p-4 flex items-center justify-between gap-4">
                     {/* Batch selection checkbox */}
                     {batchMode && onToggleSelection && (
                       <div 
-                        className="flex items-center mr-2"
+                        className="flex items-center"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <input
@@ -93,32 +97,66 @@ const InventoryList: React.FC<InventoryListProps> = ({
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-3 flex-1">
-                        {/* Fix: Wrapped Icon in a span to apply the title attribute correctly for tooltips. */}
-                        {isLowStock && <span title="Low Stock"><Icon name="warning" className="w-5 h-5 text-red-500 flex-shrink-0"/></span>}
-                        <div>
-                            <p className="font-bold text-md">{item.name}</p>
-                            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {/* Item info */}
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {isLowStock && (
+                          <div className="flex-shrink-0" title="Low Stock">
+                            <Badge variant="destructive" className="gap-1">
+                              <Icon name="alert-triangle" className="w-3 h-3" />
+                              Χαμηλό
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-base mb-1 truncate">{item.name}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Badge variant="secondary" className="font-mono">
                                 {item.totalQuantity.toFixed(2)} {item.unit}
-                            </p>
+                              </Badge>
+                              {item.supplierName && (
+                                <span className="text-xs truncate">
+                                  <Icon name="package" className="w-3 h-3 inline mr-1" />
+                                  {item.supplierName}
+                                </span>
+                              )}
+                            </div>
                         </div>
                     </div>
+                    
+                    {/* Action buttons */}
                     {canManage && (
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {onViewHistory && (
-                                <button onClick={(e) => { e.stopPropagation(); onViewHistory(item); }} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/20" title="Ιστορικό">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => { e.stopPropagation(); onViewHistory(item); }}
+                                  title="Ιστορικό"
+                                >
                                     <Icon name="history" className="w-4 h-4" />
-                                </button>
+                                </Button>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/20" title="Edit">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                              title="Edit"
+                            >
                                 <Icon name="edit" className="w-4 h-4" />
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); onDelete(item); }} className="p-2 rounded-full text-light-text-secondary hover:text-red-500 hover:bg-red-500/10" title="Delete">
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { e.stopPropagation(); onDelete(item); }}
+                              className="text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                              title="Delete"
+                            >
                                 <Icon name="trash-2" className="w-4 h-4" />
-                            </button>
+                            </Button>
                         </div>
                     )}
-                </div>
+                  </div>
+                </Card>
             );
           })}
           </div>
