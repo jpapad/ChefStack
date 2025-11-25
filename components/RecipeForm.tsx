@@ -16,6 +16,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 interface RecipeFormProps {
   recipeToEdit?: Recipe | null;
@@ -306,76 +307,76 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
           </div>
 
           {/* Βασικές Πληροφορίες */}
-          <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <Icon name="info" className="w-5 h-5 text-brand-yellow" />
                 Βασικές Πληροφορίες
-              </h3>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              </CardTitle>
+              <CardDescription>
                 Τα πεδία με * είναι υποχρεωτικά
-              </span>
-            </div>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Όνομα Συνταγής (Ελληνικά) */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">
+                    Όνομα Συνταγής (Ελληνικά) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={recipe.name}
+                    onChange={handleChange}
+                    placeholder="π.χ. Μοσχαράκι Κοκκινιστό"
+                    required
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Όνομα Συνταγής (Ελληνικά) */}
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Όνομα Συνταγής (Ελληνικά) <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={recipe.name}
-                  onChange={handleChange}
-                  placeholder="π.χ. Μοσχαράκι Κοκκινιστό"
-                  required
-                />
-              </div>
+                {/* Όνομα Συνταγής (Αγγλικά) */}
+                <div className="space-y-2">
+                  <Label htmlFor="name_en">
+                    Όνομα Συνταγής (Αγγλικά)
+                  </Label>
+                  <Input
+                    id="name_en"
+                    name="name_en"
+                    value={recipe.name_en}
+                    onChange={handleChange}
+                    placeholder="e.g. Beef Kokkinisto"
+                  />
+                </div>
 
-              {/* Όνομα Συνταγής (Αγγλικά) */}
-              <div className="space-y-2">
-                <Label htmlFor="name_en">
-                  Όνομα Συνταγής (Αγγλικά)
-                </Label>
-                <Input
-                  id="name_en"
-                  name="name_en"
-                  value={recipe.name_en}
-                  onChange={handleChange}
-                  placeholder="e.g. Beef Kokkinisto"
-                />
-              </div>
-
-              {/* Κατηγορία */}
-              <div className="col-span-1 md:col-span-2 space-y-2">
-                <Label htmlFor="category">
-                  Κατηγορία
-                </Label>
-                <Select
-                  value={recipe.category}
-                  onValueChange={(value) => setRecipe(prev => ({ ...prev, category: value as any }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Επιλέξτε κατηγορία" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RECIPE_CATEGORY_KEYS.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                {/* Κατηγορία */}
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="category">
+                    Κατηγορία
+                  </Label>
+                  <Select
+                    value={recipe.category}
+                    onValueChange={(value) => setRecipe(prev => ({ ...prev, category: value as any }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RECIPE_CATEGORY_KEYS.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
               {/* Εικόνα Συνταγής */}
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Εικόνα Συνταγής</label>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  PNG / JPG / GIF έως 10MB ή δημιουργία με AI.
+              <div className="md:col-span-2">
+                <Label>Εικόνα Συνταγής</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  PNG / JPG / GIF έως 10MB ή δημιουργία με AI
                 </p>
-                <div className="mt-1 flex justify-center items-center w-full h-48 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-2 relative text-center bg-black/5 dark:bg-white/5">
+                <div className="flex justify-center items-center w-full h-48 rounded-lg border-2 border-dashed border-input p-2 relative text-center bg-accent/50">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -445,7 +446,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               </div>
 
               {/* Περιγραφή */}
-              <div className="col-span-1 md:col-span-2 space-y-2">
+              <div className="md:col-span-2 space-y-2">
                 <Label htmlFor="description">
                   Περιγραφή
                 </Label>
@@ -458,8 +459,10 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                   placeholder="Λίγα λόγια για το πιάτο, τεχνικές, tips σερβιρίσματος..."
                 />
               </div>
+              </div>
 
-              {/* Χρόνοι */}
+              {/* Χρόνοι & Μερίδες/Τιμή */}
+              <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="prepTime">
                   Χρόνος Προετοιμασίας (λεπτά)
@@ -561,25 +564,24 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                       onChange={handleChange}
                     />
                   </div>
-                      className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
-                    />
-                  </div>
                 </>
               )}
-            </div>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Συστατικά */}
-          <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <Icon name="list" className="w-5 h-5 text-brand-yellow" />
                 Συστατικά
-              </h3>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              </CardTitle>
+              <CardDescription>
                 Μπορείς να δηλώσεις και υποπαρασκευές (βάσεις, σάλτσες κ.λπ.)
-              </span>
-            </div>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
 
             {/* Header row για desktop */}
             <div className="hidden md:grid grid-cols-12 gap-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1">
@@ -590,78 +592,81 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               <div className="col-span-1 text-center">Διαγραφή</div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {recipe.ingredients.map((ing, index) => (
                 <div
                   key={ing.id}
-                  className="grid grid-cols-12 gap-2 items-center bg-black/5 dark:bg:white/5 rounded-md px-2 py-1.5"
+                  className="grid grid-cols-12 gap-2 items-center p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
                 >
                   <div className="col-span-12 md:col-span-6">
                     {ing.isSubRecipe ? (
-                      <select
+                      <Select
                         value={ing.recipeId || ''}
-                        onChange={(e) => handleSubRecipeSelect(index, e.target.value)}
-                        className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 text-sm"
-                        required
+                        onValueChange={(value) => handleSubRecipeSelect(index, value)}
                       >
-                        <option value="" disabled>
-                          Επιλέξτε Υποπαρασκευή
-                        </option>
-                        {allRecipes.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Επιλέξτε Υποπαρασκευή" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allRecipes.map((r) => (
+                            <SelectItem key={r.id} value={r.id}>
+                              {r.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
-                      <input
+                      <Input
                         type="text"
                         placeholder="Όνομα υλικού"
                         value={ing.name}
                         onChange={(e) => handleIngredientChange(index, 'name', e.target.value)}
-                        className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 text-sm"
                         required
                       />
                     )}
                   </div>
                   <div className="col-span-4 md:col-span-2">
-                    <input
+                    <Input
                       type="number"
-                      placeholder="Ποσότητα"
+                      placeholder="Ποσ."
                       value={ing.quantity}
                       min={0}
                       onChange={(e) =>
                         handleIngredientChange(index, 'quantity', e.target.value)
                       }
-                      className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 text-sm text-right"
+                      className="text-right"
                     />
                   </div>
                   <div className="col-span-4 md:col-span-2">
-                    <select
+                    <Select
                       value={ing.unit}
-                      onChange={(e) =>
-                        handleIngredientChange(index, 'unit', e.target.value)
+                      onValueChange={(value) =>
+                        handleIngredientChange(index, 'unit', value)
                       }
-                      className="p-2 w-full rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 text-sm"
                     >
-                      <option value="g">g</option>
-                      <option value="kg">kg</option>
-                      <option value="ml">ml</option>
-                      <option value="L">L</option>
-                      <option value="τεμ">τεμ</option>
-                      <option value="κ.γ.">κ.γ.</option>
-                      <option value="κ.σ.">κ.σ.</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="g">g</SelectItem>
+                        <SelectItem value="kg">kg</SelectItem>
+                        <SelectItem value="ml">ml</SelectItem>
+                        <SelectItem value="L">L</SelectItem>
+                        <SelectItem value="τεμ">τεμ</SelectItem>
+                        <SelectItem value="κ.γ.">κ.γ.</SelectItem>
+                        <SelectItem value="κ.σ.">κ.σ.</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="col-span-2 md:col-span-1 flex items-center justify-center">
-                    <label className="inline-flex items-center gap-1 text-[11px] text-gray-600 dark:text-gray-400">
+                    <label className="inline-flex items-center gap-1 text-xs text-muted-foreground cursor-pointer">
                       <input
                         type="checkbox"
                         checked={ing.isSubRecipe}
                         onChange={(e) =>
                           handleIngredientChange(index, 'isSubRecipe', e.target.checked)
                         }
-                        className="h-4 w-4 rounded border-gray-300 text-brand-secondary focus:ring-brand-primary"
+                        className="h-4 w-4 rounded border-input"
                         title="Είναι Υποπαρασκευή;"
                       />
                       <span className="hidden lg:inline">Υποπαρ.</span>
@@ -691,20 +696,21 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               <Icon name="plus" className="w-4 h-4 mr-2" />
               Προσθήκη Συστατικού
             </Button>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Εκτέλεση */}
-          <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg	border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <Icon name="list-ordered" className="w-5 h-5 text-brand-yellow" />
                 Εκτέλεση
-              </h3>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                Χρησιμοποίησε ενότητες για μεγάλα παρασκευάσματα (π.χ. &quot;Κιμάς&quot;,
-                &quot;Σάλτσα&quot;).
-              </span>
-            </div>
+              </CardTitle>
+              <CardDescription>
+                Χρησιμοποίησε ενότητες για μεγάλα παρασκευάσματα (π.χ. &quot;Κιμάς&quot;, &quot;Σάλτσα&quot;)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
 
             <div className="space-y-4">
               {recipe.steps.map((step, index) => {
@@ -715,34 +721,34 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                 }
 
                 return (
-                  <div key={step.id} className="flex items-start gap-2">
+                  <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow">
                     {step.type === 'step' && (
-                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-brand-yellow text-brand-dark font-bold text-xs mt-1 flex-shrink-0">
-                        {displayNumber}.
+                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-yellow text-brand-dark font-bold text-sm flex-shrink-0">
+                        {displayNumber}
                       </span>
                     )}
                     {step.type === 'heading' ? (
-                      <div className="flex-1 flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                          <Icon name="bookmark" className="w-3 h-3" />
+                      <div className="flex-1 flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          <Icon name="bookmark" className="w-4 h-4" />
                           Ενότητα συνταγής
                         </div>
-                        <input
+                        <Input
                           type="text"
                           value={step.content}
                           onChange={(e) => handleStepChange(index, e.target.value)}
                           placeholder="Όνομα Ενότητας (π.χ. Κιμάς, Σάλτσα, Γαρνιτούρα)"
-                          className="flex-1 p-2 rounded bg-light-bg dark:bg-dark-bg border-0 border-b-2 border-gray-300 dark:border-gray-600 font-bold text-lg focus:ring-0 focus:border-brand-primary"
+                          className="font-bold text-lg border-0 border-b-2 rounded-none px-0 focus-visible:ring-0 focus-visible:border-brand-yellow"
                           required
                         />
                       </div>
                     ) : (
-                      <textarea
+                      <Textarea
                         value={step.content}
                         onChange={(e) => handleStepChange(index, e.target.value)}
                         rows={2}
                         placeholder="Περιέγραψε αναλυτικά το βήμα εκτέλεσης..."
-                        className="flex-1 p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                        className="flex-1"
                         required
                       />
                     )}
@@ -752,7 +758,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                       size="icon"
                       onClick={() => removeStep(index)}
                       disabled={recipe.steps.length <= 1}
-                      className="text-gray-400 hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive"
                     >
                       <Icon name="trash-2" className="w-5 h-5" />
                     </Button>
@@ -778,21 +784,23 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               >
                 <Icon name="plus" className="w-4 h-4 mr-2" />
                 Προσθήκη Ενότητας
-              </button>
-            </div>
-          </div>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Αλλεργιογόνα */}
-          <div className="p-6 bg-light-bg/50 dark:bg-dark-bg/30 rounded-lg border border-gray-200 dark:border-gray-700 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <Icon name="alert-circle" className="w-5 h-5 text-brand-yellow" />
                 Αλλεργιογόνα
-              </h3>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                Εμφανίζονται στις ετικέτες και στην πληροφόρηση πελατών.
-              </span>
-            </div>
+              </CardTitle>
+              <CardDescription>
+                Εμφανίζονται στις ετικέτες και στην πληροφόρηση πελατών
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {ALLERGENS_LIST.map((allergen) => {
                 const selected = recipe.allergens.includes(allergen);
@@ -814,9 +822,10 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                     <span className="truncate">{allergen}</span>
                   </label>
                 );
-              })}
+              ))}
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </form>
       </div>
 

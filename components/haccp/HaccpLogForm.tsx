@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { HaccpLog, HaccpLogType, HaccpItem } from '../../types';
 import { Icon } from '../common/Icon';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface HaccpLogFormProps {
   isOpen: boolean;
@@ -62,56 +68,102 @@ const HaccpLogForm: React.FC<HaccpLogFormProps> = ({ isOpen, onClose, onSave, ha
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Icon name="shield-check" className="w-5 h-5 text-brand-yellow" />
+            {logToEdit ? 'Επεξεργασία Καταγραφής HACCP' : 'Νέα Καταγραφή HACCP'}
+          </DialogTitle>
+          <DialogDescription>
+            Συμπλήρωσε τα στοιχεία της καταγραφής HACCP
+          </DialogDescription>
+        </DialogHeader>
+
         <form onSubmit={handleSubmit}>
-          <header className="flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-700/80">
-            <h3 className="text-xl font-semibold">
-              {logToEdit ? 'Επεξεργασία Καταγραφής HACCP' : 'Νέα Καταγραφή HACCP'}
-            </h3>
-            <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
-              <Icon name="x" className="w-6 h-6" />
-            </button>
-          </header>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Σημείο Ελέγχου</label>
-              <select value={haccpItemId} onChange={e => setHaccpItemId(e.target.value)} className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" required>
-                <option value="" disabled>Επιλέξτε σημείο...</option>
-                {haccpItems.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="haccp-item">Σημείο Ελέγχου</Label>
+              <Select value={haccpItemId} onValueChange={setHaccpItemId} required>
+                <SelectTrigger id="haccp-item">
+                  <SelectValue placeholder="Επιλέξτε σημείο..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {haccpItems.map(item => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Τύπος Καταγραφής</label>
-              <select value={type} onChange={e => setType(e.target.value as HaccpLogType)} className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600">
-                {Object.values(HaccpLogType).map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            {type === HaccpLogType.Temperature && (
-              <div>
-                <label className="block text-sm font-medium mb-1">Τιμή (π.χ. 3°C)</label>
-                <input type="text" value={value} onChange={e => setValue(e.target.value)} className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="log-type">Τύπος Καταγραφής</Label>
+                <Select value={type} onValueChange={(value) => setType(value as HaccpLogType)}>
+                  <SelectTrigger id="log-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(HaccpLogType).map(t => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Όνομα Χρήστη</label>
-              <input type="text" value={user} onChange={e => setUser(e.target.value)} className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" required />
+
+              {type === HaccpLogType.Temperature && (
+                <div className="space-y-2">
+                  <Label htmlFor="temperature-value">Τιμή (π.χ. 3°C)</Label>
+                  <Input
+                    id="temperature-value"
+                    type="text"
+                    value={value}
+                    onChange={e => setValue(e.target.value)}
+                    placeholder="3°C"
+                  />
+                </div>
+              )}
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Σχόλια (προαιρετικά)</label>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" rows={2} />
+
+            <div className="space-y-2">
+              <Label htmlFor="user-name">Όνομα Χρήστη</Label>
+              <Input
+                id="user-name"
+                type="text"
+                value={user}
+                onChange={e => setUser(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Σχόλια (προαιρετικά)</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={2}
+                placeholder="Πρόσθετες παρατηρήσεις..."
+              />
             </div>
           </div>
-          <footer className="p-4 flex justify-end gap-4 bg-black/5 dark:bg-white/5 rounded-b-2xl">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold">Άκυρο</button>
-            <button type="submit" className="px-4 py-2 rounded-lg bg-brand-dark text-white hover:opacity-90 font-semibold">Αποθήκευση</button>
-          </footer>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Άκυρο
+            </Button>
+            <Button type="submit">
+              Αποθήκευση
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
