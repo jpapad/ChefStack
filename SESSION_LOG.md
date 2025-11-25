@@ -134,74 +134,151 @@ Add toast notifications σε:
 
 ### ✅ Ολοκληρώθηκαν
 
-#### 🎨 **Forms Modernization - Phase 1**
-- **RecipeForm.tsx** (Complete)
-  - ✅ Replaced all `<input>` elements → shadcn `Input`
-  - ✅ Replaced all `<select>` elements → shadcn `Select`
-  - ✅ Replaced `<textarea>` → shadcn `Textarea`
-  - ✅ Replaced custom `<label>` → shadcn `Label`
-  - ✅ Replaced all custom buttons → shadcn `Button` variants
-  - ✅ Added proper spacing with `space-y-2` pattern
-  - ✅ Improved accessibility (Label/Input associations)
-  - ✅ Added label components (installed via shadcn)
-  - ✅ Added textarea component (installed via shadcn)
+#### 🎨 **Forms Redesign - Complete Modern UI Overhaul**
 
-**Components Modernized:**
-- Basic info inputs (name Greek/English)
-- Category select with dropdown
-- Description textarea
-- Time inputs (prep/cook)
-- Yield inputs (quantity + unit select)
-- Servings and price inputs
-- Image upload buttons
-- Add/Remove ingredient buttons
-- Add/Remove step buttons
-- Form action buttons (Save/Cancel)
+**RecipeForm.tsx** - Complete Redesign with Cards
+- ✅ **Card Components Integration:**
+  - Wrapped "Βασικές Πληροφορίες" section in Card with CardHeader/CardContent
+  - Wrapped "Συστατικά" section in Card with proper structure
+  - Wrapped "Εκτέλεση" section in Card
+  - Wrapped "Αλλεργιογόνα" section in Card
+  - All sections now use CardTitle + CardDescription pattern
 
-**Accessibility Improvements:**
-- All inputs now have proper Label associations
-- Required fields marked with asterisk
-- Better focus states (ring-2 ring-primary)
-- Keyboard navigation support
-- Screen reader friendly
+- ✅ **shadcn Component Replacement:**
+  - All `<input>` → `Input` (15+ instances)
+  - All `<select>` → `Select` with Trigger/Content/Item (7+ instances)
+  - All `<textarea>` → `Textarea` (2 instances)
+  - All `<label>` → `Label` (18+ instances)
+  - All custom buttons → `Button` variants (12+ instances)
+
+- ✅ **Ingredient Items Redesign:**
+  - Card-like appearance: `rounded-lg border bg-card hover:shadow-sm`
+  - Better padding: `p-3` instead of `px-2 py-1.5`
+  - Ingredient name/subrecipe: Converted to Input/Select
+  - Quantity field: Input with `text-right` class
+  - Unit dropdown: Select component with 7 options
+  - Checkbox styling: `text-muted-foreground` for consistency
+  - Hover effects for better UX
+
+- ✅ **Step Items Redesign:**
+  - Card-like containers: `p-3 rounded-lg border bg-card hover:shadow-sm`
+  - Larger numbered badges: `w-8 h-8` (was `w-7 h-7`)
+  - Font size improvements: `text-sm` on badges
+  - Headings: Input with bottom border, larger font (`text-lg`)
+  - Step content: Textarea component with proper styling
+  - Better icon sizes and spacing
+
+- ✅ **Layout Improvements:**
+  - 2-column grid in Basic Info section
+  - Separated times/servings into own grid section
+  - Better use of `md:col-span-2` for full-width fields
+  - Consistent `space-y-2` pattern throughout
+  - Improved section spacing with `space-y-6`
+
+**InventoryForm.tsx** - Dialog + Modern Components
+- ✅ **Modal Replacement:**
+  - Replaced custom modal div structure → shadcn `Dialog`
+  - DialogHeader with title + description
+  - DialogContent for proper overlay/focus trap
+  - DialogFooter for action buttons
+
+- ✅ **Component Migration:**
+  - Item name input → `Input` with proper label
+  - Location quantities → `Input` in accent background container
+  - Unit select → `Select` component (kg/L/τεμ)
+  - Reorder point → `Input` type="number"
+  - Supplier dropdown → `Select` with placeholder
+  - Cancel button → `Button variant="outline"`
+  - Save button → `Button` (default variant)
+
+**HaccpLogForm.tsx** - Dialog + Modern Components
+- ✅ **Modal Replacement:**
+  - Custom modal → shadcn `Dialog` component
+  - DialogHeader with shield-check icon
+  - Proper DialogDescription for context
+
+- ✅ **Component Migration:**
+  - HACCP item select → `Select` component
+  - Log type select → `Select` with HaccpLogType values
+  - Temperature value → `Input` (conditional render)
+  - User name → `Input` with required validation
+  - Notes → `Textarea` with placeholder
+  - All buttons → shadcn `Button` variants
+
+**Accessibility & UX Enhancements:**
+- Proper Label/Input associations (id + htmlFor)
+- Required field indicators
+- Placeholder text for all inputs
+- Better focus states (shadcn default rings)
+- Keyboard navigation in Dialogs
+- Screen reader friendly structure
+- Hover states on interactive elements
 
 **Git Commits:**
-- `f307dde` - docs: Add comprehensive design comparison documentation
-- `439420a` - feat: Modernize RecipeForm with shadcn/ui components
+- `f307dde` - docs: Add SESSION_LOG.md + DESIGN_COMPARISON.md
+- `439420a` - feat: Modernize RecipeForm with shadcn/ui components (component replacement)
+- `2a5b175` - feat: Redesign RecipeForm with Card components and modernize all major forms
 
-### 🎯 Next Steps (Remaining for Session 2)
+### 📊 Session 2 Metrics
+- **Forms modernized:** 3/3 major forms (100%)
+- **Components replaced:** 50+ input/select/button instances
+- **Cards added:** 4 sections in RecipeForm
+- **Dialogs migrated:** 2 modals → shadcn Dialog
+- **Lines changed:** 423 insertions, 242 deletions
+- **shadcn components used:** 10 total (Button, Card, Dialog, Input, Select, Badge, Toast, Toaster, Label, Textarea)
 
-#### **2. InventoryForm.tsx** (15 min - Next)
-- [ ] Replace inputs with shadcn Input
-- [ ] Replace selects with shadcn Select
-- [ ] Replace buttons with shadcn Button
+### 🎯 Next Session Priorities
 
-#### **3. HaccpLogForm.tsx** (10 min)
-- [ ] Modernize inputs/selects
-- [ ] Update buttons
+#### **1. Additional Forms** (30 min)
+- [ ] MenuForm.tsx modernization
+- [ ] Supplier forms
+- [ ] Shift forms
+- [ ] Waste log forms
 
-#### **4. Button Standardization** (10 min)
-- [ ] Audit remaining custom buttons across app
-- [ ] Replace with shadcn Button variants
+#### **2. Dialog/Modal Replacement** (20 min)
+Replace remaining custom modals με shadcn Dialog:
+- [ ] `ConfirmationModal.tsx` → shadcn AlertDialog
+- [ ] `AIImageModal.tsx` → shadcn Dialog
+- [ ] `ImportUrlModal.tsx` → shadcn Dialog
+- [ ] Other modals across features
 
-#### **5. Final Session Wrap** (5 min)
-- [ ] Update DESIGN_COMPARISON.md with screenshots/descriptions
-- [ ] Final git commit
-- [ ] Update this log
+#### **3. List/Card Components** (30 min)
+- [ ] InventoryList with hover effects
+- [ ] HaccpLogList modernization
+- [ ] MenuList card layout
+- [ ] Supplier cards
+
+#### **4. Loading States** (15 min)
+- [ ] Add Skeleton component from shadcn
+- [ ] Loading states in RecipeList
+- [ ] Loading states in InventoryList
+- [ ] Dashboard loading placeholders
+
+#### **5. Documentation Update** (10 min)
+- [ ] Update DESIGN_COMPARISON.md with form screenshots
+- [ ] Add before/after comparisons
+- [ ] Document accessibility improvements
 
 ### 📊 Progress Metrics
-- **Forms modernized:** 1/3 (RecipeForm ✅)
-- **Components using shadcn:** 12+ (Button, Card, Dialog, Input, Select, Badge, Toast, Toaster, Label, Textarea)
-- **Total shadcn components:** 10/20+
-- **Git commits this session:** 2
-- **Lines changed:** ~224 insertions, ~107 deletions
+- **Forms modernized:** 3/3 major forms (100% ✅)
+- **Dialogs modernized:** 2/8 (~25%)
+- **Components using shadcn:** 50+ instances
+- **Total shadcn components installed:** 10/20+
+- **Git commits this session:** 3
+- **Lines changed:** ~650 insertions, ~350 deletions total
 
 ### 💡 Notes
-- **Pattern established:** Label + Input in `space-y-2` container
-- **Select pattern:** Use `onValueChange` instead of onChange
-- **Button variants working well:** Primary (default), Secondary (outline), Destructive, Ghost, Link
-- **Accessibility wins:** Proper label/input association, better focus states
-- **User feedback:** Testing in browser at http://localhost:3001
+- **Card pattern works great:** RecipeForm sections look much more organized
+- **Dialog better than custom modal:** Built-in focus trap, overlay, accessibility
+- **Ingredient/Step items:** Border + hover effects make editing clearer
+- **Grid layout:** 2-column grid in forms improves space utilization
+- **Icon consistency:** Using Icon component with brand-yellow highlights
+- **User feedback:** All forms tested and working in browser ✅
+
+### 🔗 Quick Links
+- Dev Server: http://localhost:3000
+- Last Commit: `2a5b175`
+- Forms Completed: RecipeForm ✅ | InventoryForm ✅ | HaccpLogForm ✅
 
 ---
 
@@ -210,8 +287,11 @@ Add toast notifications σε:
 ### ✅ Ολοκληρώθηκαν
 _To be filled in next session..._
 
-### 🎯 Next Session Priorities
-_To be updated..._
+### 🎯 Planned Work
+- MenuForm modernization
+- Additional Dialog migrations
+- List component redesigns
+- Skeleton loading states
 
 ---
 
@@ -220,6 +300,13 @@ _To be updated..._
 ### Session 1
 - **Tailwind v4 too early:** Rolled back to v3 due to PostCSS compatibility
 - **shadcn copy-paste approach:** Much better than component library dependencies
+
+### Session 2
+- **Multi-replace efficiency:** Batch replacements save time but need careful verification
+- **Card components transform UX:** Wrapping sections in Cards dramatically improves visual hierarchy
+- **Dialog > custom modals:** Built-in accessibility, focus management, animations
+- **Ingredient/Step redesign impact:** Small changes (borders, hover, padding) = big UX improvement
+- **Type safety with Select:** `onValueChange` cleaner than `onChange` with event casting
 - **Toast UX:** Way better than alert() - users can dismiss and see multiple messages
 - **Git commits matter:** Having backup commit saved us when testing breaking changes
 - **Prop drilling is OK:** Following ChefStack architecture intentionally (see CONTEXT)
