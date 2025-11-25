@@ -10,6 +10,7 @@ import ConfirmationModal from '../common/ConfirmationModal';
 import TimePickerModal from './TimePickerModal';
 import ShiftStatisticsPanel from './ShiftStatisticsPanel';
 import CopyWeekModal from './CopyWeekModal';
+import ShiftTemplatesModal from './ShiftTemplatesModal';
 import { api } from '../../services/api';
 
 interface ShiftsViewProps {
@@ -56,6 +57,7 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
   const [scheduleToDelete, setScheduleToDelete] = useState<ShiftSchedule | null>(null);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [isCopyWeekOpen, setIsCopyWeekOpen] = useState(false);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
   const [selectedWeekStart, setSelectedWeekStart] = useState<string | null>(null);
@@ -184,6 +186,51 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
     }
 
     setPendingShift(null);
+  };
+
+  const handleApplyTemplate = (template: any, userIds: string[], startDate: string) => {
+    if (!selectedSchedule) return;
+
+    const newShifts: Shift[] = [];
+    const start = new Date(startDate);
+    start.setMinutes(start.getMinutes() + start.getTimezoneOffset());
+    const scheduleEnd = new Date(selectedSchedule.endDate);
+    scheduleEnd.setMinutes(scheduleEnd.getMinutes() + scheduleEnd.getTimezoneOffset());
+
+    // Apply template for each user
+    userIds.forEach(userId => {
+      let currentDate = new Date(start);
+      
+      // Apply pattern weekly until schedule end
+      while (currentDate <= scheduleEnd) {
+        template.assignments.forEach((assignment: any) => {
+          const targetDate = new Date(currentDate);
+          const currentDay = currentDate.getDay();
+          const daysToAdd = (assignment.dayOfWeek - currentDay + 7) % 7;
+          targetDate.setDate(currentDate.getDate() + daysToAdd);
+
+          if (targetDate >= start && targetDate <= scheduleEnd) {
+            const dateStr = targetDate.toISOString().split('T')[0];
+            const newShift: Shift = {
+              id: `shift-${Date.now()}-${Math.random()}`,
+              userId,
+              teamId: currentTeamId,
+              date: dateStr,
+              type: assignment.shiftType,
+              startTime: assignment.startTime,
+              endTime: assignment.endTime,
+            };
+            newShifts.push(newShift);
+          }
+        });
+
+        currentDate.setDate(currentDate.getDate() + 7); // Next week
+      }
+    });
+
+    // Save and update state
+    newShifts.forEach(shift => api.saveShift(shift));
+    setShifts(prev => [...prev, ...newShifts]);
   };
 
   const handleCopyWeek = (sourceWeekStart: string, targetWeekStart: string, overwrite: boolean) => {
@@ -509,6 +556,17 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                             </button>
                           )}
                           
+                          {/* Templates Button */}
+                          {canManage && (
+                            <button 
+                              onClick={() => setIsTemplatesOpen(true)} 
+                              className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-full transition-colors"
+                            >
+                              <Icon name="layout-template" className="w-4 h-4" />
+                              <span className="font-semibold text-sm hidden sm:inline">{t('shifts_templates')}</span>
+                            </button>
+                          )}
+                          
                           {/* Print Button */}
                           <button onClick={handlePrint} className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             <Icon name="printer" className="w-4 h-4" />
@@ -616,6 +674,17 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
           onClose={() => setIsCopyWeekOpen(false)}
           onCopy={handleCopyWeek}
           schedule={selectedSchedule}
+        />
+      )}
+      
+      {selectedSchedule && (
+        <ShiftTemplatesModal
+          isOpen={isTemplatesOpen}
+          onClose={() => setIsTemplatesOpen(false)}
+          onApply={handleApplyTemplate}
+          users={teamMembers}
+          scheduleStartDate={selectedSchedule.startDate}
+          scheduleEndDate={selectedSchedule.endDate}
         />
       )}
       
