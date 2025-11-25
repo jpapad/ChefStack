@@ -195,7 +195,6 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
           </DialogTitle>
         </DialogHeader>
 
-        <div className="overflow-y-auto max-h-[60vh] py-4">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center min-h-[250px]">
             <Icon name="loader-2" className="w-16 h-16 text-brand-yellow animate-spin" />
@@ -205,8 +204,7 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
           </div>
         ) : (
           <>
-            <div className="space-y-4">
-              {error && (
+            <div className="overflow-y-auto max-h-[60vh] space-y-4 py-4">{error && (
                 <p className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm p-3 rounded-lg">
                   {error}
                 </p>
@@ -252,8 +250,6 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
             </footer>
           </>
         )}
-      </div>
-        </div>
       </DialogContent>
     </Dialog>
   );
