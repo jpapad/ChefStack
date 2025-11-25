@@ -296,8 +296,13 @@
     print-color-adjust: exact;
   }
   
-  /* Hide everything except printable content */
-  body > *:not(.printable-area) {
+  /* Show only printable content, hide everything else */
+  body > div:not(:has(.printable-area)) {
+    display: none !important;
+  }
+  
+  /* Hide the modal overlay and toolbar, show only printable content */
+  .print\:hidden {
     display: none !important;
   }
   
