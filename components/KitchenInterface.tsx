@@ -1311,13 +1311,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
           />
         );
       case 'labels':
-        return (
-          <LabelView
-            recipes={recipes}
-            menus={menus}
-            onNavigateToPrint={() => handleViewChange('labels_print')}
-          />
-        );
+        return <LabelView recipes={recipes} menus={menus} />;
       case 'settings':
         return (
           <SettingsView
