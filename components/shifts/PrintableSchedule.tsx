@@ -67,7 +67,16 @@ const PrintableSchedule: React.FC<PrintableScheduleProps> = ({ schedule, allUser
                 const shift = shiftsMap.get(`${user.id}-${dateString}`);
                 return (
                   <td key={dateString} className="p-2 text-center border-r border-black font-semibold">
-                    {shift ? SHIFT_TYPE_DETAILS[shift.type].el : '-'}
+                    {shift ? (
+                      <div>
+                        <div>{SHIFT_TYPE_DETAILS[shift.type].el}</div>
+                        {shift.startTime && shift.endTime && (
+                          <div className="text-xs font-normal mt-0.5">
+                            {shift.startTime} - {shift.endTime}
+                          </div>
+                        )}
+                      </div>
+                    ) : '-'}
                   </td>
                 );
               })}

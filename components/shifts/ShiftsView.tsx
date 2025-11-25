@@ -117,10 +117,31 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
     const { userId, date } = editingCell;
     const existingShift = shiftsMap.get(`${userId}-${date}`);
 
+    // Prompt for times
+    const startTime = prompt(t('shifts_enter_start_time'), existingShift?.startTime || '09:00');
+    if (startTime === null) {
+      setEditingCell(null);
+      return; // User cancelled
+    }
+    
+    const endTime = prompt(t('shifts_enter_end_time'), existingShift?.endTime || '17:00');
+    if (endTime === null) {
+      setEditingCell(null);
+      return; // User cancelled
+    }
+
     if (existingShift) {
-      setShifts(prev => prev.map(s => s.id === existingShift.id ? { ...s, type } : s));
+      setShifts(prev => prev.map(s => s.id === existingShift.id ? { ...s, type, startTime, endTime } : s));
     } else {
-      const newShift: Shift = { id: `shift-${Date.now()}`, userId, teamId: currentTeamId, date, type };
+      const newShift: Shift = { 
+        id: `shift-${Date.now()}`, 
+        userId, 
+        teamId: currentTeamId, 
+        date, 
+        type,
+        startTime,
+        endTime
+      };
       setShifts(prev => [...prev, newShift]);
     }
     setEditingCell(null);
@@ -186,9 +207,18 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                                 <div
                                     key={dateString}
                                     onClick={() => handleCellClick(user.id, dateString)}
-                                    className={`relative p-2 flex items-center justify-center text-center font-bold ${shift ? SHIFT_TYPE_DETAILS[shift.type].color : 'bg-light-card dark:bg-dark-card'} ${canManage ? 'cursor-pointer' : 'cursor-default'}`}
+                                    className={`relative p-2 flex flex-col items-center justify-center text-center font-bold ${shift ? SHIFT_TYPE_DETAILS[shift.type].color : 'bg-light-card dark:bg-dark-card'} ${canManage ? 'cursor-pointer' : 'cursor-default'}`}
                                 >
-                                    {shift ? SHIFT_TYPE_DETAILS[shift.type][language === 'el' ? 'short_el' : 'short_en'] : '-'}
+                                    {shift ? (
+                                        <>
+                                            <div>{SHIFT_TYPE_DETAILS[shift.type][language === 'el' ? 'short_el' : 'short_en']}</div>
+                                            {shift.startTime && shift.endTime && (
+                                                <div className="text-xs opacity-80 mt-0.5">
+                                                    {shift.startTime} - {shift.endTime}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : '-'}
                                     {isEditing && (
                                         <div ref={selectorRef} className="absolute top-full mt-1 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-slate-900 rounded-lg shadow-xl border dark:border-slate-700 p-1 flex flex-col items-stretch">
                                             {SHIFT_TYPE_KEYS.map(type => (

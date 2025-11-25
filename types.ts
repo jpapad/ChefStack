@@ -433,6 +433,8 @@ export interface Shift {
   teamId: string;
   date: string; // YYYY-MM-DD
   type: ShiftTypeKey;
+  startTime?: string; // HH:MM (24-hour format)
+  endTime?: string; // HH:MM (24-hour format)
 }
 
 export interface ShiftSchedule {

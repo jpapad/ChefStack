@@ -536,7 +536,15 @@ CREATE TABLE haccp_reminders (
         timestamp: new Date(n.timestamp)
       })),
       messages: messageRows.map(mapMessageFromDb),
-      shifts: shiftRows,
+      shifts: shiftRows.map((s: any) => ({
+        id: s.id,
+        userId: s.user_id,
+        teamId: s.team_id,
+        date: s.date,
+        type: s.type,
+        startTime: s.start_time || undefined,
+        endTime: s.end_time || undefined,
+      })),
       shiftSchedules: shiftScheduleRows.map(mapShiftScheduleFromDb),
       channels: channelRows.map(mapChannelFromDb)
     };
@@ -891,6 +899,39 @@ CREATE TABLE haccp_reminders (
       .delete()
       .eq('id', scheduleId);
     if (error) throw error;
+  },
+
+  saveShift: async (shift: Shift): Promise<Shift> => {
+    if (useMockApi) return Promise.resolve(shift);
+    if (!supabase) throwConfigError();
+
+    const dbShift = {
+      id: shift.id,
+      user_id: shift.userId,
+      team_id: shift.teamId,
+      date: shift.date,
+      type: shift.type,
+      start_time: shift.startTime || null,
+      end_time: shift.endTime || null,
+    };
+
+    const { data, error } = await supabase
+      .from('shifts')
+      .upsert(dbShift)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      teamId: data.team_id,
+      date: data.date,
+      type: data.type,
+      startTime: data.start_time || undefined,
+      endTime: data.end_time || undefined,
+    };
   },
 
   // --- Channels & Messages (Walkie-Talkie) ---
