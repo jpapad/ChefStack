@@ -213,6 +213,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
   const [recipeSearchTerm, setRecipeSearchTerm] = useState('');
   const [recipeViewMode, setRecipeViewMode] =
     useLocalStorage<'list' | 'grid'>('recipeViewMode', 'list');
+  const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
 
   const [selectedCostId, setSelectedCostId] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
@@ -1059,6 +1060,8 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
               onGenerateBook={handleGenerateBook}
               rolePermissions={rolePermissions}
               withApiKeyCheck={withApiKeyCheck}
+              isLoading={isLoadingRecipes}
+              onUpdateRecipes={setRecipes}
             />
           </div>
           <div

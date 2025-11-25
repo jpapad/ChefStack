@@ -8,6 +8,7 @@ import {
   Allergen
 } from '../types';
 import { ModernRecipeCard } from './demo/ModernRecipeCard';
+import { RecipeListSkeleton } from './common/RecipeListSkeleton';
 import { Icon } from './common/Icon';
 import { useToast } from '../hooks/use-toast';
 import SearchBar from './common/SearchBar';
@@ -42,12 +43,14 @@ interface RecipeListProps {
   onGenerateBook: () => void;
   withApiKeyCheck: (action: () => void) => void;
   onUpdateRecipes: (recipes: Recipe[]) => void; // For bulk operations
+  isLoading?: boolean;
 }
 
 const RecipeList: React.FC<RecipeListProps> = ({
   recipes,
   allRecipesForCategory,
   selectedRecipeId,
+  isLoading = false,
   onSelectRecipe,
   onStartCreateRecipe,
   onStartImport,
@@ -461,7 +464,9 @@ const RecipeList: React.FC<RecipeListProps> = ({
 
       {/* Recipes list / grid */}
       <div className="flex-1 overflow-y-auto -mr-2 pr-2 pb-16">
-        {sortedRecipes.length > 0 ? (
+        {isLoading ? (
+          <RecipeListSkeleton mode={recipeViewMode} count={6} />
+        ) : sortedRecipes.length > 0 ? (
           recipeViewMode === 'list' ? (
             <div className="space-y-3">
               {sortedRecipes.map((recipe) => (
