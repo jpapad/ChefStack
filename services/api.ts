@@ -221,8 +221,8 @@ const mapShiftScheduleToDb = (schedule: Omit<ShiftSchedule, 'id'> | ShiftSchedul
     return { id: schedule.id, ...base };
   }
   
-  // For new schedules, let Supabase generate the UUID or provide one
-  return base;
+  // For new schedules, generate UUID
+  return { id: generateId('shift_schedule'), ...base };
 };
 
 const mapShiftScheduleFromDb = (row: any): ShiftSchedule => ({
