@@ -48,6 +48,7 @@ import InventoryView from './inventory/InventoryView';
 import SupplierView from './suppliers/SupplierView';
 import MenuView from './menu/MenuView';
 import LabelView from './labels/LabelView';
+import LabelPrintView from './labels/LabelPrintView';
 import HaccpPrintView from './haccp/HaccpPrintView';
 import SettingsView from './settings/SettingsView';
 import ShoppingListView from './shoppinglist/ShoppingListView';
@@ -1209,6 +1210,14 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
         );
       case 'haccp_print':
         return <HaccpPrintView onBack={() => handleViewChange('haccp')} />;
+      case 'labels_print':
+        return (
+          <LabelPrintView
+            recipes={recipes}
+            menus={menus}
+            onBack={() => handleViewChange('labels')}
+          />
+        );
       case 'costing':
         return (
           <CostingView
@@ -1302,7 +1311,13 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
           />
         );
       case 'labels':
-        return <LabelView recipes={recipes} menus={menus} />;
+        return (
+          <LabelView
+            recipes={recipes}
+            menus={menus}
+            onNavigateToPrint={() => handleViewChange('labels_print')}
+          />
+        );
       case 'settings':
         return (
           <SettingsView

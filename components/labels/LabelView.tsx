@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Menu, LogoPosition, LanguageMode, AllergenIconVariant } from '../../types';
 import { Icon } from '../common/Icon';
-import LabelSheet from './LabelSheet';
-import PrintPreview from '../common/PrintPreview';
 import LabelCard from './LabelCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
@@ -15,9 +13,10 @@ import { Badge } from '../ui/badge';
 interface LabelViewProps {
   recipes: Recipe[];
   menus: Menu[];
+  onNavigateToPrint: () => void;
 }
 
-const LabelView: React.FC<LabelViewProps> = ({ recipes, menus }) => {
+const LabelView: React.FC<LabelViewProps> = ({ recipes, menus, onNavigateToPrint }) => {
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
   const [selectedMenuId, setSelectedMenuId] = useState<string>('none');
   
@@ -45,8 +44,6 @@ const LabelView: React.FC<LabelViewProps> = ({ recipes, menus }) => {
     setLabelHeight(preset.height);
     setColumnsPerPage(preset.columns);
   };
-
-  const [printPreviewContent, setPrintPreviewContent] = useState<React.ReactNode | null>(null);
 
   const recipesToPrint = useMemo(() => {
     return recipes.filter(r => selectedRecipeIds.includes(r.id))
@@ -95,20 +92,7 @@ const LabelView: React.FC<LabelViewProps> = ({ recipes, menus }) => {
   };
 
   const handlePrint = () => {
-    setPrintPreviewContent(
-      <LabelSheet
-        recipes={recipesToPrint}
-        showAllergens={showAllergens}
-        logoUrl={logoUrl}
-        logoPosition={logoPosition}
-        labelWidth={labelWidth}
-        labelHeight={labelHeight}
-        languageMode={languageMode}
-        columnsPerPage={columnsPerPage}
-        printLegend={printLegend}
-        allergenVariant={allergenVariant}
-      />
-    );
+    onNavigateToPrint();
   };
 
   const sortedRecipes = [...recipes].sort((a,b) => a.name.localeCompare(b.name));
@@ -448,11 +432,6 @@ const LabelView: React.FC<LabelViewProps> = ({ recipes, menus }) => {
           </Card>
         </div>
       </div>
-       {printPreviewContent && (
-        <PrintPreview onClose={() => setPrintPreviewContent(null)}>
-          {printPreviewContent}
-        </PrintPreview>
-      )}
     </>
   );
 };

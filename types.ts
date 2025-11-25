@@ -274,6 +274,7 @@ export type View =
   | 'suppliers'
   | 'menus'
   | 'labels'
+  | 'labels_print'
   | 'haccp_print'
   | 'settings'
   | 'shopping_list'
