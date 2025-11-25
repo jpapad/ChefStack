@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ShiftSchedule, User } from '../../types';
-import { Icon } from '../common/Icon';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Button } from '../ui/button';
+import { Checkbox } from '../ui/checkbox';
 import { useTranslation } from '../../i18n';
 
 interface ScheduleFormProps {
@@ -51,56 +55,86 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({ isOpen, onClose, onSave, sc
 
     const data = { name, startDate, endDate, userIds, teamId };
     onSave(scheduleToEdit ? { ...scheduleToEdit, ...data } : data);
+    onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>{scheduleToEdit ? t('schedule_form_edit_title') : t('schedule_form_create_title')}</DialogTitle>
+          <DialogDescription>
+            {t('schedule_form_description') || 'Ορίστε τα μέλη της ομάδας και το χρονικό διάστημα'}
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <header className="flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-700/80">
-            <h3 className="text-xl font-semibold">{scheduleToEdit ? t('schedule_form_edit_title') : t('schedule_form_create_title')}</h3>
-            <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
-              <Icon name="x" className="w-6 h-6" />
-            </button>
-          </header>
-          <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('schedule_form_name')}</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg" required />
+          <div className="grid gap-4 py-4 overflow-y-auto max-h-[60vh]">
+            <div className="grid gap-2">
+              <Label htmlFor="name">{t('schedule_form_name')} *</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="π.χ. Βάρδια Εβδομάδας 1"
+                required
+              />
             </div>
-            <div>
-                <label className="block text-sm font-medium mb-1">{t('schedule_form_date_range')}</label>
+            <div className="grid gap-2">
+                <Label>{t('schedule_form_date_range')}</Label>
                 <div className="grid grid-cols-2 gap-4">
-                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg" />
-                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg" />
+                    <div className="grid gap-2">
+                      <Label htmlFor="startDate" className="text-xs text-muted-foreground">Έναρξη</Label>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        value={startDate}
+                        onChange={e => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="endDate" className="text-xs text-muted-foreground">Λήξη</Label>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        value={endDate}
+                        onChange={e => setEndDate(e.target.value)}
+                      />
+                    </div>
                 </div>
             </div>
-            <div>
-                <label className="block text-sm font-medium mb-1">{t('schedule_form_team_members')}</label>
-                 <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border dark:border-gray-600 p-2 bg-light-bg dark:bg-dark-bg">
+            <div className="grid gap-2">
+                <Label>{t('schedule_form_team_members')}</Label>
+                 <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border p-3">
                     {teamMembers.map(user => (
-                        <label key={user.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
-                            <input 
-                                type="checkbox"
+                        <div key={user.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer">
+                            <Checkbox
+                                id={`user-${user.id}`}
                                 checked={userIds.includes(user.id)}
-                                onChange={() => handleUserToggle(user.id)}
-                                className="h-4 w-4 rounded border-gray-300 text-brand-secondary focus:ring-brand-primary"
+                                onCheckedChange={() => handleUserToggle(user.id)}
                             />
-                            {user.name}
-                        </label>
+                            <Label
+                              htmlFor={`user-${user.id}`}
+                              className="flex-1 cursor-pointer font-normal"
+                            >
+                              {user.name}
+                            </Label>
+                        </div>
                     ))}
                 </div>
             </div>
           </div>
-          <footer className="p-4 flex justify-end gap-4 bg-black/5 dark:bg-white/5 rounded-b-2xl">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold">{t('cancel')}</button>
-            <button type="submit" className="px-4 py-2 rounded-lg bg-brand-dark text-white hover:opacity-90 font-semibold">{t('save')}</button>
-          </footer>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              {t('cancel')}
+            </Button>
+            <Button type="submit">
+              {t('save')}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
