@@ -801,8 +801,8 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {ALLERGENS_LIST.map((allergen) => {
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {ALLERGENS_LIST.map((allergen) => {
                 const selected = recipe.allergens.includes(allergen);
                 return (
                   <label
@@ -822,8 +822,8 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                     <span className="truncate">{allergen}</span>
                   </label>
                 );
-              ))}
-            </div>
+              })}
+              </div>
             </CardContent>
           </Card>
         </form>
