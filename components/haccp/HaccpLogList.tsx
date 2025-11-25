@@ -2,21 +2,28 @@
 import React from 'react';
 import { HaccpLog, HaccpItem } from '../../types';
 import { Icon } from '../common/Icon';
+import { HaccpLogListSkeleton } from './HaccpLogListSkeleton';
 
 interface HaccpLogListProps {
   logs: HaccpLog[];
   haccpItems: HaccpItem[];
   onDelete: (log: HaccpLog) => void;
   canManage: boolean;
+  isLoading?: boolean;
 }
 
-const HaccpLogList: React.FC<HaccpLogListProps> = ({ logs, haccpItems, onDelete, canManage }) => {
+const HaccpLogList: React.FC<HaccpLogListProps> = ({ logs, haccpItems, onDelete, canManage, isLoading = false }) => {
     const formatDateTime = (date: Date) => {
         return new Intl.DateTimeFormat('el-GR', {
             dateStyle: 'short',
             timeStyle: 'short',
         }).format(date);
     }
+    
+    if (isLoading) {
+        return <HaccpLogListSkeleton count={10} />;
+    }
+    
     return (
         <div className="space-y-4">
         {logs.length === 0 ? (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { InventoryItem } from '../../types';
 import { Icon } from '../common/Icon';
+import { InventoryListSkeleton } from './InventoryListSkeleton';
 import { useTranslation } from '../../i18n';
 
 interface InventoryListProps {
@@ -18,6 +19,7 @@ interface InventoryListProps {
   isSelected?: (id: string) => boolean;
   onToggleSelection?: (id: string) => void;
   batchMode?: boolean;
+  isLoading?: boolean;
 }
 
 const InventoryList: React.FC<InventoryListProps> = ({ 
@@ -34,6 +36,7 @@ const InventoryList: React.FC<InventoryListProps> = ({
   isSelected,
   onToggleSelection,
   batchMode = false,
+  isLoading = false,
 }) => {
   const { t } = useTranslation();
   return (
@@ -55,8 +58,11 @@ const InventoryList: React.FC<InventoryListProps> = ({
       </div>
 
        <div className="flex-1 overflow-y-auto -mr-2 pr-2">
-        <div className="space-y-2">
-          {inventory.map(item => {
+        {isLoading ? (
+          <InventoryListSkeleton count={8} />
+        ) : (
+          <div className="space-y-2">
+            {inventory.map(item => {
             const isLowStock = item.totalQuantity <= item.reorderPoint;
             const itemSelected = isSelected?.(item.id) || false;
             
@@ -113,9 +119,10 @@ const InventoryList: React.FC<InventoryListProps> = ({
                         </div>
                     )}
                 </div>
-            )
+            );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

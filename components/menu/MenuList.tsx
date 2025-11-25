@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Menu } from '../../types';
 import { Icon } from '../common/Icon';
+import { MenuListSkeleton } from './MenuListSkeleton';
 
 interface MenuListProps {
   menus: Menu[];
@@ -12,6 +13,7 @@ interface MenuListProps {
   onDelete: (menu: Menu) => void;
   canManage: boolean;
   withApiKeyCheck: (action: () => void) => void;
+  isLoading?: boolean;
 }
 
 const MenuList: React.FC<MenuListProps> = ({
@@ -24,6 +26,7 @@ const MenuList: React.FC<MenuListProps> = ({
   onDelete,
   canManage,
   withApiKeyCheck,
+  isLoading = false,
 }) => {
   // 🔴 86 status ανά μενού (από localStorage)
   const [menu86Counts, setMenu86Counts] = useState<Record<string, number>>({});
@@ -76,8 +79,11 @@ const MenuList: React.FC<MenuListProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto -mr-2 pr-2 pt-4">
-        <div className="space-y-2">
-          {menus.map((menu) => {
+        {isLoading ? (
+          <MenuListSkeleton count={6} />
+        ) : (
+          <div className="space-y-2">
+            {menus.map((menu) => {
             const isSelected = selectedMenuId === menu.id;
             const eightySixCount = menu86Counts[menu.id] || 0;
 
@@ -141,7 +147,8 @@ const MenuList: React.FC<MenuListProps> = ({
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
