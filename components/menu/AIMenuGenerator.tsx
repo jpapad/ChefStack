@@ -190,26 +190,20 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
           <DialogTitle className="flex items-center gap-2">
             <Icon name="sparkles" className="w-6 h-6 text-purple-500" />
             Δημιουργία Μενού με AI
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
-          >
-            <Icon name="x" className="w-6 h-6" />
-          </button>
-        </header>
+          </DialogTitle>
+        </DialogHeader>
 
+        <div className="overflow-y-auto max-h-[60vh] py-4">
         {isLoading ? (
-          <div className="p-10 flex flex-col items-center justify-center min-h-[250px]">
+          <div className="flex flex-col items-center justify-center min-h-[250px]">
             <Icon name="loader-2" className="w-16 h-16 text-brand-yellow animate-spin" />
-            <p className="mt-4 text-lg font-semibold text-light-text-secondary dark:text-dark-text-secondary">
+            <p className="mt-4 text-lg font-semibold text-muted-foreground">
               Η AI δημιουργεί το μενού σας...
             </p>
           </div>
         ) : (
           <>
-            <div className="p-6 space-y-4">
+            <div className="space-y-4">
               {error && (
                 <p className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm p-3 rounded-lg">
                   {error}

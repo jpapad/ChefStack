@@ -119,27 +119,6 @@ const AutoShoppingList: React.FC<AutoShoppingListProps> = ({
               Αντιγραφή
             </Button>
           </div>
-        {/* Header */}
-        <div className="print:border-black">
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Icon name="copy" className="w-4 h-4" />
-              <span>Αντιγραφή</span>
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-            >
-              <Icon name="printer" className="w-4 h-4" />
-              <span>Εκτύπωση</span>
-            </button>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
-              <Icon name="x" className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
 
         {/* Info Bar */}
         <div className="bg-blue-50 dark:bg-blue-900/20 px-6 py-3 border-b border-blue-200 dark:border-blue-800 print:bg-gray-100">

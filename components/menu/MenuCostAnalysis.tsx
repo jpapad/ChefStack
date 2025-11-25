@@ -100,21 +100,15 @@ const MenuCostAnalysis: React.FC<MenuCostAnalysisProps> = ({
     };
   }, [menu, recipes, ingredientCosts]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
-          <div>
-            <h2 className="text-2xl font-bold">Ανάλυση Κόστους Μενού</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{menu.name}</p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/50 dark:hover:bg-slate-700 rounded-full">
-            <Icon name="x" className="w-6 h-6" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+          <DialogTitle className="text-2xl font-bold">Ανάλυση Κόστους Μενού</DialogTitle>
+          <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            {menu.name}
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-4 p-6 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-gray-700">
