@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { Menu, Recipe } from '../../types';
 import { Icon } from '../common/Icon';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
 
 interface AutoShoppingListProps {
   menu: Menu;
@@ -99,18 +101,26 @@ const AutoShoppingList: React.FC<AutoShoppingListProps> = ({
     window.print();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col print:shadow-none print:max-w-full" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 print:border-black">
-          <div>
-            <h2 className="text-2xl font-bold">Αυτόματη Λίστα Αγορών</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{menu.name}</p>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] print:shadow-none print:max-w-full">
+        <DialogHeader className="print:border-black">
+          <DialogTitle>Αυτόματη Λίστα Αγορών</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">{menu.name}</p>
+        </DialogHeader>
+        <div className="overflow-y-auto max-h-[75vh] py-4">
+          <div className="flex gap-2 mb-4 print:hidden">
+            <Button variant="outline" onClick={handlePrint} className="gap-2">
+              <Icon name="printer" className="w-4 h-4" />
+              Εκτύπωση
+            </Button>
+            <Button variant="outline" onClick={handleCopyToClipboard} className="gap-2">
+              <Icon name="copy" className="w-4 h-4" />
+              Αντιγραφή
+            </Button>
           </div>
-          <div className="flex gap-2 print:hidden">
+        {/* Header */}
+        <div className="print:border-black">
             <button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -228,7 +238,9 @@ const AutoShoppingList: React.FC<AutoShoppingListProps> = ({
           }
         `}
       </style>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

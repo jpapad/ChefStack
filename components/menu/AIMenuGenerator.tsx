@@ -183,19 +183,11 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-lg"
-        onClick={e => e.stopPropagation()}
-      >
-        <header className="flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-700/80">
-          <h3 className="text-xl font-semibold flex items-center gap-2">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <Icon name="sparkles" className="w-6 h-6 text-purple-500" />
             Δημιουργία Μενού με AI
           </h3>
@@ -265,7 +257,9 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
           </>
         )}
       </div>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
