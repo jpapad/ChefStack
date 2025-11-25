@@ -1512,6 +1512,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
       )}
       {isImportModalOpen && (
         <ImportUrlModal
+          isOpen={isImportModalOpen}
           onClose={() => setIsImportModalOpen(false)}
           onRecipeParsed={handleStartImportedRecipe}
         />

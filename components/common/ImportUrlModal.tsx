@@ -3,13 +3,18 @@ import { GoogleGenAI } from '@google/genai';
 // Fix: Corrected RecipeCategory and RECIPE_CATEGORIES imports to their Key-based counterparts.
 import { Recipe, RecipeCategoryKey, RECIPE_CATEGORY_KEYS, Allergen, ALLERGENS_LIST, Unit } from '../../types';
 import { Icon } from './Icon';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 interface ImportUrlModalProps {
+    isOpen: boolean;
     onClose: () => void;
     onRecipeParsed: (recipeData: Partial<Recipe>) => void;
 }
 
-const ImportUrlModal: React.FC<ImportUrlModalProps> = ({ onClose, onRecipeParsed }) => {
+const ImportUrlModal: React.FC<ImportUrlModalProps> = ({ isOpen, onClose, onRecipeParsed }) => {
     const [url, setUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -118,48 +123,69 @@ const ImportUrlModal: React.FC<ImportUrlModalProps> = ({ onClose, onRecipeParsed
     };
     
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
-          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-              <header className="flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-700/80">
-                <h3 className="text-xl font-semibold">Εισαγωγή Συνταγής από URL</h3>
-                <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
-                  <Icon name="x" className="w-6 h-6" />
-                </button>
-              </header>
-              <div className="p-6 space-y-4">
-                {error && <p className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm p-3 rounded-lg">{error}</p>}
-                {isLoading ? (
-                    <div className="flex flex-col items-center justify-center min-h-[150px]">
-                        <Icon name="loader-2" className="w-12 h-12 text-brand-yellow animate-spin"/>
-                        <p className="mt-4 text-light-text-secondary dark:text-dark-text-secondary">Γίνεται ανάλυση της συνταγής...</p>
-                    </div>
-                ) : (
-                    <>
-                        <div>
-                        <label htmlFor="recipe-url" className="block text-sm font-medium mb-1">Επικολλήστε το URL της συνταγής</label>
-                        <input
-                            id="recipe-url"
-                            type="url"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600 focus:ring-brand-yellow focus:border-brand-yellow"
-                            placeholder="https://..."
-                            required
-                        />
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Icon name="link" className="w-5 h-5 text-brand-yellow" />
+                        Εισαγωγή Συνταγής από URL
+                    </DialogTitle>
+                    <DialogDescription>
+                        Αυτή η λειτουργία χρησιμοποιεί την αναζήτηση Google για να αναλύσει τη συνταγή
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-4">
+                    {error && (
+                        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg border border-destructive/20">
+                            {error}
                         </div>
-                         <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Αυτή η λειτουργία χρησιμοποιεί την αναζήτηση Google για να βρει και να αναλύσει τη συνταγή από τη σελίδα που δώσατε.</p>
-                    </>
-                )}
-              </div>
-              <footer className="p-4 flex justify-end gap-4 bg-black/5 dark:bg-white/5 rounded-b-2xl">
-                <button type="button" onClick={onClose} disabled={isLoading} className="px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold disabled:opacity-50">Άκυρο</button>
-                <button type="button" onClick={handleImport} disabled={isLoading} className="px-4 py-2 rounded-lg bg-brand-dark text-white hover:opacity-90 font-semibold flex items-center gap-2 disabled:opacity-50">
-                    {isLoading ? <Icon name="loader-2" className="animate-spin w-5 h-5"/> : <Icon name="link" className="w-5 h-5"/>}
-                    Εισαγωγή
-                </button>
-              </footer>
-          </div>
-        </div>
+                    )}
+                    
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center min-h-[150px]">
+                            <Icon name="loader-2" className="w-12 h-12 text-brand-yellow animate-spin" />
+                            <p className="mt-4 text-muted-foreground">Γίνεται ανάλυση της συνταγής...</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <Label htmlFor="recipe-url">Επικολλήστε το URL της συνταγής</Label>
+                            <Input
+                                id="recipe-url"
+                                type="url"
+                                value={url}
+                                onChange={(e) => setUrl(e.target.value)}
+                                placeholder="https://..."
+                                required
+                            />
+                        </div>
+                    )}
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={isLoading}
+                    >
+                        Άκυρο
+                    </Button>
+                    <Button
+                        type="button"
+                        onClick={handleImport}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <Icon name="loader-2" className="animate-spin w-4 h-4 mr-2" />
+                        ) : (
+                            <Icon name="link" className="w-4 h-4 mr-2" />
+                        )}
+                        Εισαγωγή
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
       );
 };
 
