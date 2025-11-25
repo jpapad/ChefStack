@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Menu, Recipe, DailyPlan, PrepTask, Workstation, Role, MenuPrintCustomizations } from '../../types';
 import { Icon } from '../common/Icon';
+import { Button } from '../ui/button';
 import RecipeSelector from './RecipeSelector';
 import PrintPreview from '../common/PrintPreview';
 import ProductionSheetView from './ProductionSheetView';
@@ -277,33 +278,39 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menu, recipes, setMenus, tasks,
             <div className="flex justify-between items-center flex-wrap gap-2">
                 <h3 className="text-xl font-semibold font-heading">Ημερήσιο Πλάνο</h3>
                  <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handlePrint(<MenuPrintView menu={typedMenu} dailyPlansToPrint={[selectedDailyPlan!]} allRecipes={recipes} />)}
                         disabled={!selectedDailyPlan}
-                        className="flex items-center gap-2 text-sm font-semibold bg-gray-200/80 dark:bg-gray-700/80 px-3 py-1.5 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="gap-2"
                         title="Εκτύπωση Μενού Ημέρας"
                     >
                         <Icon name="printer" className="w-4 h-4" />
                         Εκτύπωση Ημέρας
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handlePrint(<MenuPrintView menu={typedMenu} dailyPlansToPrint={typedMenu.dailyPlans} allRecipes={recipes} />)}
                         disabled={typedMenu.dailyPlans.length === 0}
-                        className="flex items-center gap-2 text-sm font-semibold bg-gray-200/80 dark:bg-gray-700/80 px-3 py-1.5 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="gap-2"
                         title="Εκτύπωση Μενού Περιόδου"
                     >
                         <Icon name="printer" className="w-4 h-4" />
                         Εκτύπωση Περιόδου
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handlePrint(<ProductionSheetView dailyPlan={selectedDailyPlan!} menuName={menu.name} pax={typedMenu.pax} allRecipes={recipes} allTasks={tasks} allWorkstations={workstations} />)}
                         disabled={!selectedDailyPlan}
-                        className="flex items-center gap-2 text-sm font-semibold bg-gray-200/80 dark:bg-gray-700/80 px-3 py-1.5 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="gap-2"
                         title="Εκτύπωση Λίστας Παραγωγής"
                     >
                         <Icon name="clipboard-list" className="w-4 h-4" />
                         Λίστα Παραγωγής
-                    </button>
+                    </Button>
                 </div>
             </div>
             
