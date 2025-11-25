@@ -11,6 +11,7 @@ import TimePickerModal from './TimePickerModal';
 import ShiftStatisticsPanel from './ShiftStatisticsPanel';
 import CopyWeekModal from './CopyWeekModal';
 import ShiftTemplatesModal from './ShiftTemplatesModal';
+import { ExportOptionsModal } from './ExportOptionsModal';
 import { api } from '../../services/api';
 
 interface ShiftsViewProps {
@@ -59,6 +60,7 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
   const [isCopyWeekOpen, setIsCopyWeekOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
   const [selectedWeekStart, setSelectedWeekStart] = useState<string | null>(null);
   const [draggedShift, setDraggedShift] = useState<Shift | null>(null);
@@ -648,6 +650,15 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                             <span className="font-semibold text-sm hidden sm:inline">{t('shifts_print_schedule')}</span>
                           </button>
                           
+                          {/* Export Button */}
+                          <button 
+                            onClick={() => setIsExportOpen(true)} 
+                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-full transition-colors"
+                          >
+                            <Icon name="share-2" className="w-4 h-4" />
+                            <span className="font-semibold text-sm hidden sm:inline">{t('shifts_export')}</span>
+                          </button>
+                          
                           {/* Stats Toggle (Mobile) */}
                           <button
                             onClick={() => setIsStatsOpen(!isStatsOpen)}
@@ -760,6 +771,16 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
           users={teamMembers}
           scheduleStartDate={selectedSchedule.startDate}
           scheduleEndDate={selectedSchedule.endDate}
+        />
+      )}
+      
+      {selectedSchedule && (
+        <ExportOptionsModal
+          isOpen={isExportOpen}
+          onClose={() => setIsExportOpen(false)}
+          schedule={selectedSchedule}
+          shifts={shifts.filter(s => s.teamId === currentTeamId)}
+          users={teamMembers}
         />
       )}
       
