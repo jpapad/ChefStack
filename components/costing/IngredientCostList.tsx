@@ -1,6 +1,7 @@
 import React from 'react';
 import { IngredientCost } from '../../types';
 import { Icon } from '../common/Icon';
+import { Button } from '../ui/button';
 
 interface IngredientCostListProps {
   ingredientCosts: IngredientCost[];
@@ -20,10 +21,10 @@ const IngredientCostList: React.FC<IngredientCostListProps> = ({ ingredientCosts
        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200/80 dark:border-gray-700/80 flex-wrap gap-2">
         <h2 className="text-3xl font-extrabold font-heading">Κοστολόγιο</h2>
          {canManage && (
-            <button onClick={onAdd} className="flex items-center gap-2 bg-brand-dark text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
-                <Icon name="plus" className="w-5 h-5" />
+            <Button onClick={onAdd} className="gap-2">
+                <Icon name="plus" className="w-4 h-4" />
                 <span className="font-semibold text-sm">Νέο Κόστος</span>
-            </button>
+            </Button>
          )}
       </div>
 

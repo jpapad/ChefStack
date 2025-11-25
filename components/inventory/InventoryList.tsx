@@ -48,14 +48,17 @@ const InventoryList: React.FC<InventoryListProps> = ({
         <h2 className="text-3xl font-extrabold font-heading">Απόθεμα</h2>
          {canManage && (
             <div className="flex items-center gap-2">
-                 <button onClick={() => withApiKeyCheck(onImportInvoice)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
-                    <Icon name="file-up" className="w-5 h-5" />
+                 <Button 
+                   onClick={() => withApiKeyCheck(onImportInvoice)} 
+                   className="gap-2 bg-blue-600 hover:bg-blue-700"
+                 >
+                    <Icon name="file-up" className="w-4 h-4" />
                     <span className="font-semibold text-sm">{t('invoice_import_button')}</span>
-                </button>
-                <button onClick={onAdd} className="flex items-center gap-2 bg-brand-dark text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
-                    <Icon name="plus" className="w-5 h-5" />
+                </Button>
+                <Button onClick={onAdd} className="gap-2">
+                    <Icon name="plus" className="w-4 h-4" />
                     <span className="font-semibold text-sm">Νέο Είδος</span>
-                </button>
+                </Button>
             </div>
          )}
       </div>
