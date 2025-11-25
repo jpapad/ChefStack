@@ -2,6 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { Icon } from './Icon';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 
 interface BaseImageForEditing {
   data: string;      // καθαρό base64, χωρίς "data:image/..,"
@@ -116,106 +120,86 @@ const AIImageModal: React.FC<AIImageModalProps> = ({
     }
   };
 
-  const handleBackdropClick = () => {
-    if (!isLoading) onClose();
-  };
-
   return (
-    <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4"
-      onClick={handleBackdropClick}
-    >
-      <div
-        className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl w-full max-w-lg"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <header className="flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-700/80">
-          <h3 className="text-xl font-semibold flex items-center gap-2">
-            <Icon name="sparkles" className="w-6 h-6 text-purple-500" />
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isLoading && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Icon name="sparkles" className="w-5 h-5 text-purple-500" />
             Δημιουργία Εικόνας με AI
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-50"
-          >
-            <Icon name="x" className="w-6 h-6" />
-          </button>
-        </header>
+          </DialogTitle>
+          <DialogDescription>
+            Χρησιμοποίησε το Google Imagen για να δημιουργήσεις μια εικόνα από περιγραφή
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Body */}
         {isLoading ? (
-          <div className="p-10 flex flex-col items-center justify-center min-h-[250px]">
+          <div className="py-10 flex flex-col items-center justify-center min-h-[250px]">
             <Icon name="loader-2" className="w-16 h-16 text-brand-yellow animate-spin" />
-            <p className="mt-4 text-lg font-semibold text-light-text-secondary dark:text-dark-text-secondary">
+            <p className="mt-4 text-lg font-semibold text-muted-foreground">
               Η AI δημιουργεί την εικόνα της συνταγής...
             </p>
           </div>
         ) : (
           <>
-            <div className="p-6 space-y-4">
+            <div className="space-y-4 py-4">
               {error && (
-                <p className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm p-3 rounded-lg">
+                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg border border-destructive/20">
                   {error}
-                </p>
+                </div>
               )}
 
-              <div className="space-y-1">
-                <label className="block text-sm font-medium mb-1">
-                  Περιγραφή εικόνας
-                </label>
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="ai-prompt">Περιγραφή εικόνας</Label>
+                <Textarea
+                  id="ai-prompt"
                   value={prompt}
                   onChange={e => setPrompt(e.target.value)}
                   rows={3}
-                  className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
                   placeholder="π.χ. «Ρεαλιστική φωτογραφία πιάτου με Μουσακά, σε ξύλινο τραπέζι, φυσικό φως»"
                 />
                 {baseImage && (
-                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                  <p className="text-xs text-muted-foreground">
                     🔁 Υπάρχει ήδη βάση εικόνας, προς το παρόν δημιουργείται νέα εικόνα από την περιγραφή.
                   </p>
                 )}
               </div>
 
               {preview && (
-                <div className="mt-4">
-                  <p className="text-sm mb-1 font-medium">Προεπισκόπηση τελευταίας εικόνας</p>
+                <div className="space-y-2">
+                  <Label>Προεπισκόπηση τελευταίας εικόνας</Label>
                   <img
                     src={preview}
                     alt="AI preview"
-                    className="w-full h-60 object-contain rounded-lg border border-gray-200 dark:border-gray-700 bg-black/5"
+                    className="w-full h-60 object-contain rounded-lg border bg-accent"
                   />
                 </div>
               )}
             </div>
 
-            {/* Footer */}
-            <footer className="p-4 flex justify-end gap-4 bg-black/5 dark:bg-white/5 rounded-b-2xl">
-              <button
+            <DialogFooter>
+              <Button
                 type="button"
+                variant="outline"
                 onClick={onClose}
                 disabled={isLoading}
-                className="px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 font-semibold disabled:opacity-50"
               >
                 Άκυρο
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 font-semibold flex items-center gap-2 disabled:opacity-50"
+                className="bg-purple-600 hover:bg-purple-700"
               >
-                <Icon name="sparkles" className="w-5 h-5" />
+                <Icon name="sparkles" className="w-4 h-4 mr-2" />
                 Δημιουργία εικόνας
-              </button>
-            </footer>
+              </Button>
+            </DialogFooter>
           </>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
