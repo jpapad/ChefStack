@@ -296,14 +296,20 @@
     print-color-adjust: exact;
   }
   
-  /* Hide all direct children of body */
-  body > * {
+  /* Hide ALL content by default */
+  #root > * {
     display: none !important;
   }
   
-  /* Show only the element containing printable-area */
-  body > *:has(.printable-area) {
+  /* Show ONLY content that has printable-area */
+  #root > *:has(.printable-area) {
     display: block !important;
+  }
+  
+  /* Hide modal overlay and UI */
+  .print\:hidden,
+  .fixed.inset-0:not(:has(.printable-area)) {
+    display: none !important;
   }
   
   /* Ensure printable-area itself is visible */
