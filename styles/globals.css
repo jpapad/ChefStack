@@ -296,6 +296,11 @@
     print-color-adjust: exact;
   }
   
+  /* Hide everything except printable content */
+  body > *:not(.printable-area) {
+    display: none !important;
+  }
+  
   .printable-area {
     display: block !important;
   }
