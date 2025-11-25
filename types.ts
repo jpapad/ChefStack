@@ -283,6 +283,7 @@ export type View =
   | 'user_manual'
   | 'analytics'
   | 'collaboration'
+  | 'shadcn_demo'
   | 'copilot';
 
 export type LogoPosition = 'top' | 'bottom' | 'left' | 'right';

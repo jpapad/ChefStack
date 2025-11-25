@@ -67,6 +67,7 @@ import InventoryHistoryView from './inventory/InventoryHistoryView';
 import UserManualView from './manual/UserManualView';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import CollaborationView from './collaboration/CollaborationView';
+import { ShadcnDemo } from './demo/ShadcnDemo';
 import type { HandoverNote } from './collaboration/ShiftHandoverNotes';
 import type { Notification as CollabNotification } from './collaboration/NotificationCenter';
 import ChefCopilot from './ai/ChefCopilot';
@@ -1426,6 +1427,10 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             }}
           />
         );
+      
+      case 'shadcn_demo':
+        return <ShadcnDemo />;
+      
       case 'user_manual':
         return <UserManualView withApiKeyCheck={withApiKeyCheck} />;
       default:

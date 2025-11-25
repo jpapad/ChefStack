@@ -29,6 +29,7 @@ import {
 import AuthView from './components/auth/AuthView';
 import KitchenInterface from './components/KitchenInterface';
 import { InstallPrompt } from './components/common/InstallPrompt';
+import { Toaster } from './components/ui/toaster';
 import { api } from './services/api';
 import { supabase } from './services/supabaseClient';
 import { Icon } from './components/common/Icon';
@@ -342,6 +343,7 @@ const App: React.FC = () => {
     <LanguageProvider>
       <AppContent />
       <InstallPrompt />
+      <Toaster />
     </LanguageProvider>
   );
 };

@@ -7,9 +7,9 @@ import {
   RolePermissions,
   Allergen
 } from '../types';
-import RecipeCard from './RecipeCard';
-import RecipeGridCard from './RecipeGridCard';
+import { ModernRecipeCard } from './demo/ModernRecipeCard';
 import { Icon } from './common/Icon';
+import { useToast } from '../hooks/use-toast';
 import SearchBar from './common/SearchBar';
 import FilterPanel, { FilterOptions } from './common/FilterPanel';
 import { useTranslation } from '../i18n';
@@ -69,6 +69,7 @@ const RecipeList: React.FC<RecipeListProps> = ({
   onUpdateRecipes
 }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   
   const [sortBy, setSortBy] = useState<'name' | 'rating' | 'prepTime' | 'recent'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -462,44 +463,26 @@ const RecipeList: React.FC<RecipeListProps> = ({
       <div className="flex-1 overflow-y-auto -mr-2 pr-2 pb-16">
         {sortedRecipes.length > 0 ? (
           recipeViewMode === 'list' ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {sortedRecipes.map((recipe) => (
-                <RecipeCard
+                <ModernRecipeCard
                   key={recipe.id}
                   recipe={recipe}
-                  isSelected={selectedRecipeId === recipe.id}
-                  onClick={() => onSelectRecipe(recipe.id)}
-                  isBookMode={isBookMode}
-                  isBookSelected={bookSelectedIds.includes(recipe.id)}
-                  onBookSelect={onBookSelect}
-                  isBulkMode={showBulkActions}
-                  isBulkSelected={selectedRecipeIds.includes(recipe.id)}
-                  onBulkSelect={(id) => {
-                    setSelectedRecipeIds(prev =>
-                      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-                    );
-                  }}
+                  mode="full"
+                  onView={() => onSelectRecipe(recipe.id)}
+                  onEdit={() => onSelectRecipe(recipe.id)}
                 />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {sortedRecipes.map((recipe) => (
-                <RecipeGridCard
+                <ModernRecipeCard
                   key={recipe.id}
                   recipe={recipe}
-                  isSelected={selectedRecipeId === recipe.id}
-                  onClick={() => onSelectRecipe(recipe.id)}
-                  isBookMode={isBookMode}
-                  isBookSelected={bookSelectedIds.includes(recipe.id)}
-                  onBookSelect={onBookSelect}
-                  isBulkMode={showBulkActions}
-                  isBulkSelected={selectedRecipeIds.includes(recipe.id)}
-                  onBulkSelect={(id) => {
-                    setSelectedRecipeIds(prev =>
-                      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-                    );
-                  }}
+                  mode="thumbnail"
+                  onView={() => onSelectRecipe(recipe.id)}
+                  onEdit={() => onSelectRecipe(recipe.id)}
                 />
               ))}
             </div>

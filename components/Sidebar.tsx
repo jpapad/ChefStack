@@ -52,6 +52,7 @@ export const ALL_NAV_ITEMS: { view: View; labelKey: string; icon: IconName; role
   { view: 'collaboration', labelKey: 'nav_collaboration', icon: 'users' },
   { view: 'notifications', labelKey: 'nav_notifications', icon: 'bell' },
   { view: 'user_manual', labelKey: 'nav_user_manual', icon: 'help-circle' },
+  { view: 'shadcn_demo', labelKey: 'shadcn_ui_demo', icon: 'palette' },
   { view: 'settings', labelKey: 'nav_settings', icon: 'settings', roles: ['Admin'] }
 ];
 

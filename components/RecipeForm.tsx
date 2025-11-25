@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { Icon } from './common/Icon';
 import AIImageModal from './common/AIImageModal';
+import { useToast } from '../hooks/use-toast';
 
 interface RecipeFormProps {
   recipeToEdit?: Recipe | null;
@@ -45,6 +46,8 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
   allRecipes,
   withApiKeyCheck
 }) => {
+  const { toast } = useToast();
+  
   // αρχικό state μόνο στο mount
   const [recipe, setRecipe] = useState<Omit<Recipe, 'id'> | Recipe>(() => {
     if (recipeToEdit) {
@@ -92,7 +95,11 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Το αρχείο είναι πολύ μεγάλο. Παρακαλώ επιλέξτε μια εικόνα κάτω από 10MB.');
+      toast({
+        title: "Σφάλμα",
+        description: "Το αρχείο είναι πολύ μεγάλο. Παρακαλώ επιλέξτε μια εικόνα κάτω από 10MB.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -102,7 +109,11 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
     };
     reader.onerror = () => {
       console.error('Πρόβλημα κατά την ανάγνωση του αρχείου.');
-      alert('Δεν ήταν δυνατή η ανάγνωση του αρχείου εικόνας.');
+      toast({
+        title: "Σφάλμα",
+        description: "Δεν ήταν δυνατή η ανάγνωση του αρχείου εικόνας.",
+        variant: "destructive"
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -240,12 +251,18 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
       recipe.ingredients.some((i) => !i.name) ||
       recipe.steps.some((s) => !s.content)
     ) {
-      alert(
-        'Συμπλήρωσε όλα τα απαραίτητα πεδία: Όνομα συνταγής, ονόματα υλικών και βήματα εκτέλεσης.'
-      );
+      toast({
+        title: "Ελλιπή στοιχεία",
+        description: "Συμπλήρωσε όλα τα απαραίτητα πεδία: Όνομα συνταγής, ονόματα υλικών και βήματα εκτέλεσης.",
+        variant: "destructive"
+      });
       return;
     }
     onSave(recipe);
+    toast({
+      title: "Επιτυχία!",
+      description: recipeToEdit ? "Η συνταγή ενημερώθηκε επιτυχώς." : "Η συνταγή δημιουργήθηκε επιτυχώς.",
+    });
   };
 
   // Για σωστή αρίθμηση βημάτων (αγνοεί τις ενότητες)
