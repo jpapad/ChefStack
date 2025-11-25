@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { Icon } from './Icon';
 
 interface PrintPreviewProps {
@@ -10,6 +11,13 @@ const PrintPreview: React.FC<PrintPreviewProps> = ({ children, onClose }) => {
   const handlePrint = () => {
     window.print();
   };
+
+  // Create printable content outside of React root using portal
+  const printableContent = (
+    <div className="hidden print:block printable-area">
+      {children}
+    </div>
+  );
 
   return (
     <>
@@ -43,10 +51,8 @@ const PrintPreview: React.FC<PrintPreviewProps> = ({ children, onClose }) => {
         </main>
       </div>
 
-      {/* Printable content, hidden from screen view but used by print command */}
-      <div className="hidden print:block printable-area">
-        {children}
-      </div>
+      {/* Render printable content as portal directly to body, outside #root */}
+      {ReactDOM.createPortal(printableContent, document.body)}
     </>
   );
 };

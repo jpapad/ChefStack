@@ -296,23 +296,12 @@
     print-color-adjust: exact;
   }
   
-  /* Hide ALL content by default */
-  #root > * {
+  /* Hide the React app root */
+  #root {
     display: none !important;
   }
   
-  /* Show ONLY content that has printable-area */
-  #root > *:has(.printable-area) {
-    display: block !important;
-  }
-  
-  /* Hide modal overlay and UI */
-  .print\:hidden,
-  .fixed.inset-0:not(:has(.printable-area)) {
-    display: none !important;
-  }
-  
-  /* Ensure printable-area itself is visible */
+  /* Show ONLY the printable-area (which is a portal outside #root) */
   .printable-area {
     display: block !important;
   }
