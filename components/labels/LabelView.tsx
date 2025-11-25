@@ -19,7 +19,7 @@ interface LabelViewProps {
 
 const LabelView: React.FC<LabelViewProps> = ({ recipes, menus }) => {
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
-  const [selectedMenuId, setSelectedMenuId] = useState<string>('');
+  const [selectedMenuId, setSelectedMenuId] = useState<string>('none');
   
   // Customization State
   const [showAllergens, setShowAllergens] = useState(true);
@@ -61,7 +61,7 @@ const LabelView: React.FC<LabelViewProps> = ({ recipes, menus }) => {
   
   const handleMenuSelect = (menuId: string) => {
       setSelectedMenuId(menuId);
-      if (!menuId) {
+      if (!menuId || menuId === 'none') {
           setSelectedRecipeIds([]);
           return;
       }
@@ -328,7 +328,7 @@ const LabelView: React.FC<LabelViewProps> = ({ recipes, menus }) => {
                     <SelectValue placeholder="-- Επιλογή Μενού --" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Καμία (Χειροκίνητη επιλογή)</SelectItem>
+                    <SelectItem value="none">Καμία (Χειροκίνητη επιλογή)</SelectItem>
                     {menus.map((menu) => (
                       <SelectItem key={menu.id} value={menu.id}>
                         {menu.name}
