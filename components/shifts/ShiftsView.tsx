@@ -275,29 +275,97 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Calculate available weeks for navigation
+  const availableWeeks = useMemo(() => {
+    if (!selectedSchedule) return [];
+    
+    const weeks: string[] = [];
+    let currentDate = new Date(selectedSchedule.startDate);
+    currentDate.setMinutes(currentDate.getMinutes() + currentDate.getTimezoneOffset());
+    const finalDate = new Date(selectedSchedule.endDate);
+    finalDate.setMinutes(finalDate.getMinutes() + finalDate.getTimezoneOffset());
+
+    while (currentDate <= finalDate) {
+      const dayOfWeek = currentDate.getDay();
+      const monday = new Date(currentDate);
+      monday.setDate(currentDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      
+      const mondayStr = monday.toISOString().split('T')[0];
+      if (!weeks.includes(mondayStr)) {
+        weeks.push(mondayStr);
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return weeks;
+  }, [selectedSchedule]);
+
+  // Initialize selectedWeekStart
+  useEffect(() => {
+    if (viewMode === 'week' && !selectedWeekStart && availableWeeks.length > 0) {
+      setSelectedWeekStart(availableWeeks[0]);
+    }
+  }, [viewMode, selectedWeekStart, availableWeeks]);
+
+  const handlePreviousWeek = () => {
+    if (!selectedWeekStart) return;
+    const currentIndex = availableWeeks.indexOf(selectedWeekStart);
+    if (currentIndex > 0) {
+      setSelectedWeekStart(availableWeeks[currentIndex - 1]);
+    }
+  };
+
+  const handleNextWeek = () => {
+    if (!selectedWeekStart) return;
+    const currentIndex = availableWeeks.indexOf(selectedWeekStart);
+    if (currentIndex < availableWeeks.length - 1) {
+      setSelectedWeekStart(availableWeeks[currentIndex + 1]);
+    }
+  };
+
   const renderGrid = (schedule: ShiftSchedule) => {
       const scheduleUsers = teamMembers.filter(u => schedule.userIds.includes(u.id));
       
-      const displayDates = [];
+      let displayDates: Date[] = [];
       let currentDate = new Date(schedule.startDate);
       currentDate.setMinutes(currentDate.getMinutes() + currentDate.getTimezoneOffset());
       const finalDate = new Date(schedule.endDate);
       finalDate.setMinutes(finalDate.getMinutes() + finalDate.getTimezoneOffset());
       
-      while(currentDate <= finalDate) {
-          displayDates.push(new Date(currentDate));
-          currentDate.setDate(currentDate.getDate() + 1);
+      // Week view: show only selected week
+      if (viewMode === 'week' && selectedWeekStart) {
+        const weekStart = new Date(selectedWeekStart);
+        weekStart.setMinutes(weekStart.getMinutes() + weekStart.getTimezoneOffset());
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(weekStart);
+          date.setDate(weekStart.getDate() + i);
+          if (date >= currentDate && date <= finalDate) {
+            displayDates.push(date);
+          }
+        }
+      } else {
+        // Month view: show all dates
+        while(currentDate <= finalDate) {
+            displayDates.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
       }
+
+      const cellWidth = viewMode === 'week' ? 'minmax(140px, 1fr)' : 'minmax(80px, 1fr)';
 
       return (
         <div className="flex-1 overflow-auto">
-            <div className="grid gap-px bg-gray-200/80 dark:bg-gray-700/50" style={{ gridTemplateColumns: `minmax(150px, 1.5fr) repeat(${displayDates.length}, minmax(80px, 1fr))`}}>
+            <div className="grid gap-px bg-gray-200/80 dark:bg-gray-700/50" style={{ gridTemplateColumns: `minmax(150px, 1.5fr) repeat(${displayDates.length}, ${cellWidth})`}}>
                 {/* Header Row */}
                 <div className="p-2 bg-light-card dark:bg-dark-card font-semibold sticky top-0 z-10">{t('schedule_form_team_members')}</div>
                 {displayDates.map(date => (
                     <div key={date.toISOString()} className="p-2 text-center bg-light-card dark:bg-dark-card font-semibold sticky top-0 z-10">
-                        <div>{formatDate(date, { weekday: 'short' })}</div>
-                        <div className="text-lg font-bold">{formatDate(date, { day: 'numeric' })}</div>
+                        <div className={viewMode === 'week' ? 'text-sm' : 'text-xs'}>{formatDate(date, { weekday: viewMode === 'week' ? 'long' : 'short' })}</div>
+                        <div className={`${viewMode === 'week' ? 'text-2xl' : 'text-lg'} font-bold`}>{formatDate(date, { day: 'numeric' })}</div>
+                        {viewMode === 'week' && (
+                          <div className="text-xs text-light-text-secondary dark:text-dark-text-secondary">{formatDate(date, { month: 'short' })}</div>
+                        )}
                     </div>
                 ))}
 
@@ -405,7 +473,31 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                         </button>
                         <h2 className="text-2xl font-bold font-heading">{selectedSchedule.name}</h2>
                         
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* View Mode Toggle */}
+                          <div className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-full p-1">
+                            <button
+                              onClick={() => setViewMode('month')}
+                              className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                                viewMode === 'month'
+                                  ? 'bg-brand-yellow text-black'
+                                  : 'text-light-text-secondary dark:text-dark-text-secondary hover:bg-gray-300 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {t('shifts_month_view')}
+                            </button>
+                            <button
+                              onClick={() => setViewMode('week')}
+                              className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                                viewMode === 'week'
+                                  ? 'bg-brand-yellow text-black'
+                                  : 'text-light-text-secondary dark:text-dark-text-secondary hover:bg-gray-300 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {t('shifts_week_view')}
+                            </button>
+                          </div>
+                          
                           {/* Copy Week Button */}
                           {canManage && (
                             <button 
@@ -441,6 +533,42 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                           shifts={shifts.filter(s => s.teamId === currentTeamId)}
                           users={teamMembers}
                         />
+                      </div>
+                    )}
+                    
+                    {/* Week Navigation (only in week view) */}
+                    {viewMode === 'week' && selectedWeekStart && (
+                      <div className="flex items-center justify-center gap-4 py-3 border-b border-gray-200/80 dark:border-gray-700/80">
+                        <button
+                          onClick={handlePreviousWeek}
+                          disabled={availableWeeks.indexOf(selectedWeekStart) === 0}
+                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Icon name="chevron-left" className="w-5 h-5" />
+                        </button>
+                        
+                        <div className="text-center">
+                          <div className="font-semibold">
+                            {(() => {
+                              const weekStart = new Date(selectedWeekStart);
+                              weekStart.setMinutes(weekStart.getMinutes() + weekStart.getTimezoneOffset());
+                              const weekEnd = new Date(weekStart);
+                              weekEnd.setDate(weekStart.getDate() + 6);
+                              return `${formatDate(weekStart, { day: 'numeric', month: 'short' })} - ${formatDate(weekEnd, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+                            })()}
+                          </div>
+                          <div className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                            {language === 'el' ? 'Εβδομάδα' : 'Week'} {availableWeeks.indexOf(selectedWeekStart) + 1} / {availableWeeks.length}
+                          </div>
+                        </div>
+                        
+                        <button
+                          onClick={handleNextWeek}
+                          disabled={availableWeeks.indexOf(selectedWeekStart) === availableWeeks.length - 1}
+                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Icon name="chevron-right" className="w-5 h-5" />
+                        </button>
                       </div>
                     )}
                     
