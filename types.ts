@@ -14,6 +14,9 @@ export type Allergen =
   | 'Lupin'
   | 'Molluscs';
 
+// Allergen icon display variants
+export type AllergenIconVariant = 'colored' | 'monochrome' | 'outline';
+
 export const ALLERGENS_LIST: Allergen[] = [
   'Gluten', 'Crustaceans', 'Eggs', 'Fish', 'Peanuts', 'Soybeans', 'Milk',
   'Nuts', 'Celery', 'Mustard', 'Sesame seeds', 'Sulphur dioxide and sulphites',
