@@ -297,11 +297,6 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
       }
     });
   };
-      setShifts(prev => [...prev, newShift]);
-    }
-
-    setPendingShift(null);
-  };
 
   const handlePrint = () => {
     if (selectedSchedule) {
