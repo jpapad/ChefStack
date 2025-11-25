@@ -29,6 +29,23 @@ const formatDate = (date: Date, options: Intl.DateTimeFormatOptions): string => 
   return new Intl.DateTimeFormat('el-GR', options).format(date);
 };
 
+const calculateDuration = (startTime?: string, endTime?: string): number | null => {
+  if (!startTime || !endTime) return null;
+  
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+  
+  let startMinutes = startHour * 60 + startMin;
+  let endMinutes = endHour * 60 + endMin;
+  
+  // Handle overnight shifts
+  if (endMinutes < startMinutes) {
+    endMinutes += 24 * 60;
+  }
+  
+  return (endMinutes - startMinutes) / 60;
+};
+
 const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedules, setShiftSchedules, allUsers, currentTeamId, currentUserRole, rolePermissions }) => {
   const { t, language } = useTranslation();
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(shiftSchedules[0]?.id || null);
@@ -292,19 +309,29 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                             const dateString = toISODateString(date);
                             const shift = shiftsMap.get(`${user.id}-${dateString}`);
                             const isEditing = editingCell?.userId === user.id && editingCell?.date === dateString;
+                            const duration = shift ? calculateDuration(shift.startTime, shift.endTime) : null;
+                            
                             return (
                                 <div
                                     key={dateString}
                                     onClick={() => handleCellClick(user.id, dateString)}
                                     className={`relative p-2 flex flex-col items-center justify-center text-center font-bold ${shift ? SHIFT_TYPE_DETAILS[shift.type].color : 'bg-light-card dark:bg-dark-card'} ${canManage ? 'cursor-pointer' : 'cursor-default'}`}
+                                    title={shift ? `${SHIFT_TYPE_DETAILS[shift.type][language]} ${shift.startTime || ''} - ${shift.endTime || ''} ${duration ? `(${duration}h)` : ''}` : ''}
                                 >
                                     {shift ? (
                                         <>
                                             <div>{SHIFT_TYPE_DETAILS[shift.type][language === 'el' ? 'short_el' : 'short_en']}</div>
                                             {shift.startTime && shift.endTime && (
-                                                <div className="text-xs opacity-80 mt-0.5">
-                                                    {shift.startTime} - {shift.endTime}
-                                                </div>
+                                                <>
+                                                    <div className="text-xs opacity-80 mt-0.5">
+                                                        {shift.startTime} - {shift.endTime}
+                                                    </div>
+                                                    {duration && (
+                                                        <div className="text-xs font-bold opacity-90 mt-0.5 bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                                                            {duration}h
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </>
                                     ) : '-'}
