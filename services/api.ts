@@ -207,6 +207,31 @@ const mapWasteLogToDb = (log: Omit<WasteLog, 'id'> | WasteLog) => {
   return { id: generateId('waste'), ...base };
 };
 
+// ---------- Helpers για ShiftSchedule ----------
+const mapShiftScheduleToDb = (schedule: Omit<ShiftSchedule, 'id'> | ShiftSchedule) => {
+  const base = {
+    name: schedule.name,
+    team_id: schedule.teamId,
+    start_date: schedule.startDate,
+    end_date: schedule.endDate,
+    user_ids: schedule.userIds
+  };
+
+  if ('id' in schedule) {
+    return { id: schedule.id, ...base };
+  }
+  return base;
+};
+
+const mapShiftScheduleFromDb = (row: any): ShiftSchedule => ({
+  id: row.id,
+  name: row.name,
+  teamId: row.team_id,
+  startDate: row.start_date,
+  endDate: row.end_date,
+  userIds: row.user_ids ?? []
+});
+
 // ---------- Helpers για Messages & Channels ----------
 const mapMessageFromDb = (row: any): Message => {
   const createdAt = row.created_at ? new Date(row.created_at) : new Date();
@@ -510,7 +535,7 @@ CREATE TABLE haccp_reminders (
       })),
       messages: messageRows.map(mapMessageFromDb),
       shifts: shiftRows,
-      shiftSchedules: shiftScheduleRows,
+      shiftSchedules: shiftScheduleRows.map(mapShiftScheduleFromDb),
       channels: channelRows.map(mapChannelFromDb)
     };
 
@@ -833,13 +858,19 @@ CREATE TABLE haccp_reminders (
       return Promise.resolve(newSchedule);
     }
     if (!supabase) throwConfigError();
+    
+    // Map camelCase to snake_case for Supabase
+    const dbSchedule = mapShiftScheduleToDb(scheduleData);
+    
     const { data, error } = await supabase
       .from('shift_schedules')
-      .upsert(scheduleData)
+      .upsert(dbSchedule)
       .select()
       .single();
     if (error) throw error;
-    return data as ShiftSchedule;
+    
+    // Map snake_case back to camelCase
+    return mapShiftScheduleFromDb(data);
   },
 
   deleteShiftSchedule: async (scheduleId: string): Promise<void> => {
