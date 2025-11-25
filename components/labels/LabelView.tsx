@@ -129,7 +129,6 @@ const LabelView: React.FC<LabelViewProps> = ({ recipes, menus }) => {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto space-y-6">
-            <CardContent className="flex-1 overflow-y-auto space-y-6">
               {/* Quick Presets */}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Γρήγορα Πρότυπα</Label>
