@@ -713,7 +713,6 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
                     
                     {renderGrid(selectedSchedule)}
                 </div>
-                </div>
             ) : (
                 <div className="flex-1 flex items-center justify-center text-light-text-secondary dark:text-dark-text-secondary bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-6 rounded-2xl shadow-xl">
                     <p>{t('shifts_select_prompt')}</p>
