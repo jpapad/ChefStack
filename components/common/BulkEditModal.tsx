@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { Icon } from './Icon';
 import { useTranslation } from '../../i18n';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export interface BulkEditField {
   id: string;
@@ -75,36 +81,39 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({
     switch (field.type) {
       case 'text':
         return (
-          <input
+          <Input
             type="text"
             value={value || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
             placeholder={field.placeholder}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-light-text dark:text-dark-text focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!enabledFields.has(field.id)}
+            className="flex-1"
           />
         );
 
       case 'select':
         return (
-          <select
+          <Select
             value={value || ''}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-light-text dark:text-dark-text focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            onValueChange={(val) => handleFieldChange(field.id, val)}
             disabled={!enabledFields.has(field.id)}
           >
-            <option value="">{language === 'el' ? 'Επιλέξτε...' : 'Select...'}</option>
-            {field.options?.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder={language === 'el' ? 'Επιλέξτε...' : 'Select...'} />
+            </SelectTrigger>
+            <SelectContent>
+              {field.options?.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         );
 
       case 'number':
         return (
-          <input
+          <Input
             type="number"
             value={value || ''}
             onChange={(e) => handleFieldChange(field.id, parseFloat(e.target.value))}
@@ -112,36 +121,35 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({
             min={field.min}
             max={field.max}
             step={field.step}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-light-text dark:text-dark-text focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!enabledFields.has(field.id)}
+            className="flex-1"
           />
         );
 
       case 'date':
         return (
-          <input
+          <Input
             type="date"
             value={value || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-light-text dark:text-dark-text focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!enabledFields.has(field.id)}
+            className="flex-1"
           />
         );
 
       case 'boolean':
         return (
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2">
+            <Checkbox
               checked={value || false}
-              onChange={(e) => handleFieldChange(field.id, e.target.checked)}
-              className="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              onCheckedChange={(checked) => handleFieldChange(field.id, checked)}
               disabled={!enabledFields.has(field.id)}
+              id={`${field.id}-boolean`}
             />
-            <span className="text-light-text dark:text-dark-text">
+            <Label htmlFor={`${field.id}-boolean`} className="cursor-pointer">
               {language === 'el' ? 'Ενεργό' : 'Enabled'}
-            </span>
-          </label>
+            </Label>
+          </div>
         );
 
       default:
@@ -149,34 +157,18 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">
-                {title}
-              </h2>
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-1">
-                {language === 'el' ? 'Μαζική επεξεργασία' : 'Bulk edit'} {selectedCount}{' '}
-                {language === 'el' ? 'επιλεγμένων εγγραφών' : 'selected items'}
-              </p>
-            </div>
-            <button
-              onClick={handleCancel}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              <Icon name="x" className="w-6 h-6 text-gray-500 dark:text-gray-400" />
-            </button>
-          </div>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {language === 'el' ? 'Μαζική επεξεργασία' : 'Bulk edit'} {selectedCount}{' '}
+            {language === 'el' ? 'επιλεγμένων εγγραφών' : 'selected items'}
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="overflow-y-auto max-h-[60vh] py-4">
           <div className="space-y-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-start gap-3">
               <Icon name="info" className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
@@ -197,15 +189,14 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={enabledFields.has(field.id)}
-                    onChange={() => handleToggleField(field.id)}
-                    className="rounded text-blue-500 focus:ring-2 focus:ring-blue-500"
+                    onCheckedChange={() => handleToggleField(field.id)}
+                    id={`field-${field.id}`}
                   />
-                  <label className="font-medium text-light-text dark:text-dark-text cursor-pointer flex-1">
+                  <Label htmlFor={`field-${field.id}`} className="font-medium cursor-pointer flex-1">
                     {field.label}
-                  </label>
+                  </Label>
                 </div>
                 <div className="ml-7">{renderField(field)}</div>
               </div>
@@ -213,25 +204,26 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-200 dark:border-slate-700 flex gap-3">
-          <button
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
             onClick={handleCancel}
-            className="flex-1 px-6 py-3 bg-gray-200 dark:bg-slate-700 text-light-text dark:text-dark-text rounded-lg hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors font-medium"
           >
             {language === 'el' ? 'Ακύρωση' : 'Cancel'}
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
             onClick={handleSave}
             disabled={enabledFields.size === 0}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="gap-2"
           >
-            <Icon name="check" className="w-5 h-5" />
+            <Icon name="check" className="w-4 h-4" />
             {language === 'el' ? 'Εφαρμογή Αλλαγών' : 'Apply Changes'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
