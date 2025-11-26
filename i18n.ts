@@ -36,6 +36,15 @@ const translations: Record<Language, Record<string, string>> = {
     user_menu_logout: 'Αποσύνδεση',
 
     // Navigation
+    nav_category_home: 'Αρχική',
+    nav_category_menu_recipes: 'Μενού & Συνταγές',
+    nav_category_inventory: 'Απόθεμα',
+    nav_category_costing: 'Κοστολόγηση',
+    nav_category_production: 'Παραγωγή',
+    nav_category_management: 'Διαχείριση',
+    nav_category_tools: 'Εργαλεία',
+    nav_category_system: 'Σύστημα',
+    
     nav_dashboard: 'Πίνακας Ελέγχου',
     nav_recipes: 'Συνταγές',
     nav_menus: 'Μενού',
@@ -539,6 +548,15 @@ const translations: Record<Language, Record<string, string>> = {
     user_menu_logout: 'Logout',
 
     // Navigation
+    nav_category_home: 'Home',
+    nav_category_menu_recipes: 'Menu & Recipes',
+    nav_category_inventory: 'Inventory',
+    nav_category_costing: 'Costing',
+    nav_category_production: 'Production',
+    nav_category_management: 'Management',
+    nav_category_tools: 'Tools',
+    nav_category_system: 'System',
+    
     nav_dashboard: 'Dashboard',
     nav_recipes: 'Recipes',
     nav_menus: 'Menus',
