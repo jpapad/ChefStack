@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Shift, User, Team } from '../../types';
+import { Shift, User, Team, TeamTask, ChatMessage } from '../../types';
 import { Icon } from '../common/Icon';
 import { useTranslation } from '../../i18n';
 import ShiftHandoverNotes, { HandoverNote } from './ShiftHandoverNotes';
 import NotificationCenter, { Notification } from './NotificationCenter';
+import TeamTasks from './TeamTasks';
+import TeamChat from './TeamChat';
 
 interface CollaborationViewProps {
   shifts: Shift[];
@@ -13,11 +15,19 @@ interface CollaborationViewProps {
   currentTeamId: string;
   handoverNotes: HandoverNote[];
   notifications: Notification[];
+  tasks: TeamTask[];
+  chatMessages: ChatMessage[];
   onAddHandoverNote: (note: Omit<HandoverNote, 'id' | 'createdAt' | 'acknowledged'>) => void;
   onAcknowledgeNote: (noteId: string) => void;
   onMarkNotificationAsRead: (notificationId: string) => void;
   onMarkAllNotificationsAsRead: () => void;
   onDeleteNotification: (notificationId: string) => void;
+  onAddTask: (task: Omit<TeamTask, 'id' | 'createdAt'>) => void;
+  onUpdateTask: (taskId: string, updates: Partial<TeamTask>) => void;
+  onDeleteTask: (taskId: string) => void;
+  onSendMessage: (message: Omit<ChatMessage, 'id' | 'createdAt'>) => void;
+  onDeleteMessage: (messageId: string) => void;
+  onReactToMessage: (messageId: string, emoji: string) => void;
 }
 
 const CollaborationView: React.FC<CollaborationViewProps> = ({
@@ -28,11 +38,19 @@ const CollaborationView: React.FC<CollaborationViewProps> = ({
   currentTeamId,
   handoverNotes,
   notifications,
+  tasks,
+  chatMessages,
   onAddHandoverNote,
   onAcknowledgeNote,
   onMarkNotificationAsRead,
   onMarkAllNotificationsAsRead,
   onDeleteNotification,
+  onAddTask,
+  onUpdateTask,
+  onDeleteTask,
+  onSendMessage,
+  onDeleteMessage,
+  onReactToMessage,
 }) => {
   const { language } = useTranslation();
   const [activeTab, setActiveTab] = useState<'handover' | 'tasks' | 'chat'>('handover');
@@ -102,31 +120,27 @@ const CollaborationView: React.FC<CollaborationViewProps> = ({
         )}
 
         {activeTab === 'tasks' && (
-          <div className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg text-center">
-            <Icon name="construction" className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-xl font-bold mb-2 text-light-text dark:text-dark-text">
-              {language === 'el' ? 'Σύντομα διαθέσιμο' : 'Coming Soon'}
-            </h3>
-            <p className="text-light-text-secondary dark:text-dark-text-secondary">
-              {language === 'el' 
-                ? 'Σύστημα ανάθεσης εργασιών με real-time updates'
-                : 'Task assignment system with real-time updates'}
-            </p>
-          </div>
+          <TeamTasks
+            tasks={tasks}
+            users={users}
+            currentUserId={currentUserId}
+            currentTeamId={currentTeamId}
+            onAddTask={onAddTask}
+            onUpdateTask={onUpdateTask}
+            onDeleteTask={onDeleteTask}
+          />
         )}
 
         {activeTab === 'chat' && (
-          <div className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg text-center">
-            <Icon name="construction" className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-xl font-bold mb-2 text-light-text dark:text-dark-text">
-              {language === 'el' ? 'Σύντομα διαθέσιμο' : 'Coming Soon'}
-            </h3>
-            <p className="text-light-text-secondary dark:text-dark-text-secondary">
-              {language === 'el' 
-                ? 'Team chat με mentions & file sharing'
-                : 'Team chat with mentions & file sharing'}
-            </p>
-          </div>
+          <TeamChat
+            messages={chatMessages}
+            users={users}
+            currentUserId={currentUserId}
+            currentTeamId={currentTeamId}
+            onSendMessage={onSendMessage}
+            onDeleteMessage={onDeleteMessage}
+            onReactToMessage={onReactToMessage}
+          />
         )}
       </div>
     </div>

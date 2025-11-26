@@ -848,8 +848,8 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
           <div
-            className={`h-full lg:col-span-2 ${
-              selectedRecipeId && !isBookMode ? 'hidden lg:block' : ''
+            className={`h-full ${
+              selectedRecipeId && !isBookMode ? 'hidden' : 'col-span-1 lg:col-span-5'
             }`}
           >
             <RecipeList
@@ -882,8 +882,8 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             />
           </div>
           <div
-            className={`h-full lg:col-span-3 ${
-              !selectedRecipeId ? 'hidden lg:flex' : 'flex'
+            className={`h-full w-full ${
+              !selectedRecipeId ? 'hidden' : 'col-span-1 lg:col-span-5 flex'
             }`}
           >
             {teamRecipesForTeam.find((r) => r.id === selectedRecipeId) ? (

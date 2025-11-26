@@ -2,9 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { KitchenOrder, OrderStatus, ORDER_STATUS_TRANSLATIONS, Recipe, User } from '../../types';
 import { Icon } from '../common/Icon';
 import { useTranslation } from '../../i18n';
-import OrderCard from './OrderCard.tsx';
-import NewOrderModal from './NewOrderModal.tsx';
-import OrderDetailsModal from './OrderDetailsModal.tsx';
+import OrderCard from './OrderCard';
+import NewOrderModal from './NewOrderModal';
+import OrderDetailsModal from './OrderDetailsModal';
+import { supabase } from '../../services/supabaseClient';
+import { api } from '../../services/api';
 
 interface KitchenDisplayViewProps {
   orders: KitchenOrder[];
@@ -15,6 +17,29 @@ interface KitchenDisplayViewProps {
   currentTeamId: string;
   canManage: boolean;
 }
+
+// Notification sound (simple beep using Web Audio API)
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800; // 800 Hz beep
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  } catch (error) {
+    console.error('Error playing notification sound:', error);
+  }
+};
 
 const KitchenDisplayView: React.FC<KitchenDisplayViewProps> = ({
   orders,
@@ -30,18 +55,137 @@ const KitchenDisplayView: React.FC<KitchenDisplayViewProps> = ({
   const [selectedOrder, setSelectedOrder] = useState<KitchenOrder | null>(null);
   const [filterStation, setFilterStation] = useState<string>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
 
-  // Auto-refresh every 30 seconds
+  // Supabase Realtime subscription for live updates
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!supabase) {
+      console.log('Supabase not configured - running in offline mode');
+      return;
+    }
+
+    console.log('🔌 Setting up Realtime subscription for kitchen_orders...');
+
+    const channel = supabase
+      .channel('kitchen-orders-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'kitchen_orders',
+          filter: `team_id=eq.${currentTeamId}`
+        },
+        (payload) => {
+          console.log('🆕 New order received:', payload.new);
+          
+          // Transform from snake_case to camelCase
+          const newOrder = mapOrderFromDb(payload.new as any);
+          
+          setOrders(prev => {
+            // Check if order already exists (avoid duplicates)
+            if (prev.some(o => o.id === newOrder.id)) {
+              return prev;
+            }
+            return [...prev, newOrder];
+          });
+          
+          // Play notification sound
+          playNotificationSound();
+          
+          // Browser notification (if permitted)
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Νέα Παραγγελία! 🍽️', {
+              body: `Τραπέζι ${newOrder.tableNumber || 'N/A'} - ${newOrder.items?.length || 0} πιάτα`,
+              icon: '/logo.png',
+              tag: newOrder.id
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'kitchen_orders',
+          filter: `team_id=eq.${currentTeamId}`
+        },
+        (payload) => {
+          console.log('📝 Order updated:', payload.new);
+          
+          const updatedOrder = mapOrderFromDb(payload.new as any);
+          
+          setOrders(prev => prev.map(order => 
+            order.id === updatedOrder.id ? updatedOrder : order
+          ));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'kitchen_orders',
+          filter: `team_id=eq.${currentTeamId}`
+        },
+        (payload) => {
+          console.log('🗑️ Order deleted:', payload.old);
+          
+          setOrders(prev => prev.filter(order => order.id !== (payload.old as any).id));
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+        setIsRealtimeConnected(status === 'SUBSCRIBED');
+      });
+
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    return () => {
+      console.log('🔌 Unsubscribing from Realtime...');
+      supabase.removeChannel(channel);
+    };
+  }, [currentTeamId, setOrders]);
+
+  // Auto-refresh fallback (for offline mode or if realtime fails)
+  useEffect(() => {
+    if (!autoRefresh || isRealtimeConnected) return;
     
     const interval = setInterval(() => {
-      // In real app, this would fetch from API
-      console.log('Auto-refreshing orders...');
+      console.log('⏰ Auto-refreshing orders (fallback mode)...');
+      // In offline mode, this is just a placeholder
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, isRealtimeConnected]);
+
+  // Helper function to map DB order to app format
+  const mapOrderFromDb = (dbOrder: any): KitchenOrder => {
+    return {
+      id: dbOrder.id,
+      teamId: dbOrder.team_id,
+      orderNumber: dbOrder.order_number,
+      tableNumber: dbOrder.table_number,
+      customerName: dbOrder.customer_name,
+      items: dbOrder.items || [],
+      station: dbOrder.station,
+      priority: dbOrder.priority || 'normal',
+      status: dbOrder.status,
+      source: dbOrder.source,
+      externalOrderId: dbOrder.external_order_id,
+      createdAt: dbOrder.created_at,
+      startedAt: dbOrder.started_at,
+      readyAt: dbOrder.ready_at,
+      servedAt: dbOrder.served_at,
+      cancelledAt: dbOrder.cancelled_at,
+      assignedTo: dbOrder.assigned_to,
+      notes: dbOrder.notes,
+    };
+  };
 
   // Group orders by status
   const ordersByStatus = useMemo(() => {
@@ -63,49 +207,82 @@ const KitchenDisplayView: React.FC<KitchenDisplayViewProps> = ({
     return Array.from(stationSet);
   }, [orders]);
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(prev => prev.map(order => {
-      if (order.id !== orderId) return order;
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
 
-      const updates: Partial<KitchenOrder> = { status: newStatus };
+    const updates: Partial<Pick<KitchenOrder, 'startedAt' | 'readyAt' | 'servedAt' | 'cancelledAt' | 'assignedTo'>> = {};
 
-      switch (newStatus) {
-        case 'in-progress':
-          updates.startedAt = new Date().toISOString();
-          updates.assignedTo = currentUserId;
-          break;
-        case 'ready':
-          updates.readyAt = new Date().toISOString();
-          break;
-        case 'served':
-          updates.servedAt = new Date().toISOString();
-          break;
-        case 'cancelled':
-          updates.cancelledAt = new Date().toISOString();
-          break;
+    switch (newStatus) {
+      case 'in-progress':
+        updates.startedAt = new Date().toISOString();
+        updates.assignedTo = currentUserId;
+        break;
+      case 'ready':
+        updates.readyAt = new Date().toISOString();
+        break;
+      case 'served':
+        updates.servedAt = new Date().toISOString();
+        break;
+      case 'cancelled':
+        updates.cancelledAt = new Date().toISOString();
+        break;
+    }
+
+    // Optimistic update
+    setOrders(prev => prev.map(o => 
+      o.id === orderId ? { ...o, status: newStatus, ...updates } : o
+    ));
+
+    // Save to API (async)
+    try {
+      await api.updateKitchenOrderStatus(orderId, newStatus, updates);
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+      // Revert on error
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? order : o
+      ));
+    }
+  };
+
+  const handleCreateOrder = async (orderData: Omit<KitchenOrder, 'id' | 'teamId' | 'createdAt' | 'status'>) => {
+    try {
+      const newOrder = await api.createKitchenOrder({
+        ...orderData,
+        teamId: currentTeamId,
+        status: 'new',
+      });
+
+      // If realtime is connected, it will add the order automatically
+      // Otherwise, add it manually
+      if (!isRealtimeConnected) {
+        setOrders(prev => [...prev, newOrder]);
       }
-
-      return { ...order, ...updates };
-    }));
+      
+      setIsNewOrderOpen(false);
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      alert(language === 'el' ? 'Σφάλμα δημιουργίας παραγγελίας' : 'Failed to create order');
+    }
   };
 
-  const handleCreateOrder = (orderData: Omit<KitchenOrder, 'id' | 'teamId' | 'createdAt' | 'status'>) => {
-    const newOrder: KitchenOrder = {
-      ...orderData,
-      id: `order_${Date.now()}`,
-      teamId: currentTeamId,
-      createdAt: new Date().toISOString(),
-      status: 'new',
-    };
-
-    setOrders(prev => [...prev, newOrder]);
-    setIsNewOrderOpen(false);
-  };
-
-  const handleDeleteOrder = (orderId: string) => {
-    if (confirm(language === 'el' ? 'Διαγραφή παραγγελίας;' : 'Delete order?')) {
-      setOrders(prev => prev.filter(o => o.id !== orderId));
-      setSelectedOrder(null);
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm(language === 'el' ? 'Διαγραφή παραγγελίας;' : 'Delete order?')) return;
+    
+    // Optimistic delete
+    const deletedOrder = orders.find(o => o.id === orderId);
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+    setSelectedOrder(null);
+    
+    try {
+      await api.deleteKitchenOrder(orderId);
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+      // Restore on error
+      if (deletedOrder) {
+        setOrders(prev => [...prev, deletedOrder]);
+      }
     }
   };
 
@@ -135,6 +312,17 @@ const KitchenDisplayView: React.FC<KitchenDisplayViewProps> = ({
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <Icon name="monitor" className="w-8 h-8 text-blue-600" />
               Kitchen Display System
+              {/* Realtime Connection Indicator */}
+              {supabase && (
+                <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                  isRealtimeConnected 
+                    ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' 
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                  {isRealtimeConnected ? (language === 'el' ? 'Live' : 'Live') : (language === 'el' ? 'Offline' : 'Offline')}
+                </div>
+              )}
             </h1>
             <div className="flex items-center gap-2 text-sm">
               <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full font-medium">

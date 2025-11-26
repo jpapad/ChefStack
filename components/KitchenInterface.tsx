@@ -31,7 +31,9 @@ import type {
   KitchenOrder,
   RecipeVariation,
   EmailReport,
-  ReportHistory
+  ReportHistory,
+  TeamTask,
+  ChatMessage
 } from '../types';
 import { ALL_PERMISSIONS } from '../types';
 
@@ -142,6 +144,10 @@ interface KitchenInterfaceProps {
   setReports: React.Dispatch<React.SetStateAction<EmailReport[]>>;
   reportHistory: ReportHistory[];
   setReportHistory: React.Dispatch<React.SetStateAction<ReportHistory[]>>;
+  teamTasks: TeamTask[];
+  setTeamTasks: React.Dispatch<React.SetStateAction<TeamTask[]>>;
+  chatMessages: ChatMessage[];
+  setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
 const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
@@ -199,7 +205,11 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     reports,
     setReports,
     reportHistory,
-    setReportHistory
+    setReportHistory,
+    teamTasks,
+    setTeamTasks,
+    chatMessages,
+    setChatMessages
   } = props;
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -1382,8 +1392,8 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             users={teamUsers}
             teams={allTeams}
             currentUserId={user.id}
-            currentTeamId={user.teamId}
-            handoverNotes={handoverNotes.filter(n => n.teamId === user.teamId)}
+            currentTeamId={currentTeamId}
+            handoverNotes={handoverNotes.filter(n => n.teamId === currentTeamId)}
             notifications={collabNotifications}
             onAddHandoverNote={(note) => {
               const newNote: HandoverNote = {
@@ -1437,11 +1447,78 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
             onDeleteNotification={(notificationId) => {
               setCollabNotifications(prev => prev.filter(n => n.id !== notificationId));
             }}
+            tasks={teamTasks.filter(t => t.teamId === currentTeamId)}
+            chatMessages={chatMessages.filter(m => m.teamId === currentTeamId)}
+            onAddTask={(task) => {
+              const newTask: TeamTask = {
+                ...task,
+                id: `task_${Date.now()}`,
+                createdAt: new Date().toISOString(),
+              };
+              setTeamTasks(prev => [...prev, newTask]);
+            }}
+            onUpdateTask={(taskId, updates) => {
+              setTeamTasks(prev =>
+                prev.map(t => t.id === taskId ? { ...t, ...updates } : t)
+              );
+            }}
+            onDeleteTask={(taskId) => {
+              setTeamTasks(prev => prev.filter(t => t.id !== taskId));
+            }}
+            onSendMessage={(message) => {
+              const newMessage: ChatMessage = {
+                ...message,
+                id: `msg_${Date.now()}`,
+                createdAt: new Date().toISOString(),
+              };
+              setChatMessages(prev => [...prev, newMessage]);
+            }}
+            onDeleteMessage={(messageId) => {
+              setChatMessages(prev =>
+                prev.map(m =>
+                  m.id === messageId ? { ...m, isDeleted: true } : m
+                )
+              );
+            }}
+            onReactToMessage={(messageId, emoji) => {
+              setChatMessages(prev =>
+                prev.map(m => {
+                  if (m.id !== messageId) return m;
+                  const reactions = m.reactions || [];
+                  const existingReaction = reactions.find(r => r.emoji === emoji);
+                  if (existingReaction) {
+                    // Toggle reaction
+                    if (existingReaction.userIds.includes(user.id)) {
+                      return {
+                        ...m,
+                        reactions: reactions.map(r =>
+                          r.emoji === emoji
+                            ? { ...r, userIds: r.userIds.filter(id => id !== user.id) }
+                            : r
+                        ).filter(r => r.userIds.length > 0),
+                      };
+                    } else {
+                      return {
+                        ...m,
+                        reactions: reactions.map(r =>
+                          r.emoji === emoji
+                            ? { ...r, userIds: [...r.userIds, user.id] }
+                            : r
+                        ),
+                      };
+                    }
+                  } else {
+                    // Add new reaction
+                    return {
+                      ...m,
+                      reactions: [...reactions, { emoji, userIds: [user.id] }],
+                    };
+                  }
+                })
+              );
+            }}
           />
         );
-      
-      case 'shadcn_demo':
-        return <ShadcnDemo />;
       
       case 'user_manual':
         return <UserManualView withApiKeyCheck={withApiKeyCheck} />;

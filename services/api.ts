@@ -25,7 +25,9 @@ import {
   KitchenOrder,
   RecipeVariation,
   EmailReport,
-  ReportHistory
+  ReportHistory,
+  TeamTask,
+  ChatMessage
 } from '../types';
 import * as mockData from '../data/mockData';
 
@@ -330,6 +332,8 @@ export const api = {
     variations: RecipeVariation[];
     reports: EmailReport[];
     reportHistory: ReportHistory[];
+    teamTasks: TeamTask[];
+    chatMessages: ChatMessage[];
   }> => {
     if (useMockApi) {
       console.warn('Supabase not configured, returning mock data.');
@@ -359,7 +363,9 @@ export const api = {
             orders: mockData.mockOrders,
             variations: mockData.mockVariations,
             reports: mockData.mockReports,
-            reportHistory: mockData.mockReportHistory
+            reportHistory: mockData.mockReportHistory,
+            teamTasks: mockData.mockTeamTasks,
+            chatMessages: mockData.mockChatMessages
           })
         )
       );
@@ -546,7 +552,9 @@ CREATE TABLE haccp_reminders (
         endTime: s.end_time || undefined,
       })),
       shiftSchedules: shiftScheduleRows.map(mapShiftScheduleFromDb),
-      channels: channelRows.map(mapChannelFromDb)
+      channels: channelRows.map(mapChannelFromDb),
+      teamTasks: [],  // TODO: Implement when Supabase tables are created
+      chatMessages: []  // TODO: Implement when Supabase tables are created
     };
 
     return results;
@@ -1735,6 +1743,155 @@ CREATE TABLE haccp_reminders (
 
     if (error) {
       console.error('[api.deleteHaccpLog] error', error);
+      throw error;
+    }
+  },
+
+  // ============================================================
+  // Kitchen Orders (KDS)
+  // ============================================================
+
+  /**
+   * Create new kitchen order
+   */
+  createKitchenOrder: async (order: Omit<KitchenOrder, 'id' | 'createdAt'>): Promise<KitchenOrder> => {
+    if (useMockApi) {
+      const newOrder: KitchenOrder = {
+        ...order,
+        id: `order_${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      console.log('[api.createKitchenOrder] Mock mode - created order:', newOrder);
+      return Promise.resolve(newOrder);
+    }
+    if (!supabase) throwConfigError();
+
+    const payload = {
+      team_id: order.teamId,
+      order_number: order.orderNumber,
+      table_number: order.tableNumber || null,
+      customer_name: order.customerName || null,
+      station: order.station || null,
+      items: order.items,
+      status: order.status,
+      priority: order.priority,
+      source: order.source || 'manual',
+      external_order_id: order.externalOrderId || null,
+      started_at: order.startedAt || null,
+      ready_at: order.readyAt || null,
+      served_at: order.servedAt || null,
+      cancelled_at: order.cancelledAt || null,
+      estimated_time: order.estimatedTime || null,
+      assigned_to: order.assignedTo || null,
+      notes: order.notes || null,
+    };
+
+    const { data, error } = await supabase
+      .from('kitchen_orders')
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[api.createKitchenOrder] error', error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      teamId: data.team_id,
+      orderNumber: data.order_number,
+      tableNumber: data.table_number,
+      customerName: data.customer_name,
+      station: data.station,
+      items: data.items,
+      status: data.status,
+      priority: data.priority,
+      source: data.source,
+      externalOrderId: data.external_order_id,
+      createdAt: data.created_at,
+      startedAt: data.started_at,
+      readyAt: data.ready_at,
+      servedAt: data.served_at,
+      cancelledAt: data.cancelled_at,
+      estimatedTime: data.estimated_time,
+      assignedTo: data.assigned_to,
+      notes: data.notes,
+    };
+  },
+
+  /**
+   * Update kitchen order status and timestamps
+   */
+  updateKitchenOrderStatus: async (
+    orderId: string,
+    status: OrderStatus,
+    updates?: Partial<Pick<KitchenOrder, 'startedAt' | 'readyAt' | 'servedAt' | 'cancelledAt' | 'assignedTo'>>
+  ): Promise<KitchenOrder> => {
+    if (useMockApi) {
+      console.log('[api.updateKitchenOrderStatus] Mock mode - updated order:', orderId, status);
+      // Return mock object - in real app this would come from mock data
+      return Promise.resolve({} as KitchenOrder);
+    }
+    if (!supabase) throwConfigError();
+
+    const payload: any = {
+      status,
+      ...updates,
+    };
+
+    const { data, error } = await supabase
+      .from('kitchen_orders')
+      .update(payload)
+      .eq('id', orderId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[api.updateKitchenOrderStatus] error', error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      teamId: data.team_id,
+      orderNumber: data.order_number,
+      tableNumber: data.table_number,
+      customerName: data.customer_name,
+      station: data.station,
+      items: data.items,
+      status: data.status,
+      priority: data.priority,
+      source: data.source,
+      externalOrderId: data.external_order_id,
+      createdAt: data.created_at,
+      startedAt: data.started_at,
+      readyAt: data.ready_at,
+      servedAt: data.served_at,
+      cancelledAt: data.cancelled_at,
+      estimatedTime: data.estimated_time,
+      assignedTo: data.assigned_to,
+      notes: data.notes,
+    };
+  },
+
+  /**
+   * Delete kitchen order
+   */
+  deleteKitchenOrder: async (orderId: string): Promise<void> => {
+    if (useMockApi) {
+      console.warn('[api.deleteKitchenOrder] Mock mode - no-op.');
+      return;
+    }
+    if (!supabase) throwConfigError();
+
+    const { error } = await supabase
+      .from('kitchen_orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('[api.deleteKitchenOrder] error', error);
       throw error;
     }
   }

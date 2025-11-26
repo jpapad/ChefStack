@@ -157,11 +157,21 @@
 - **AI Coaching**: Get suggestions for supplier negotiations and optimization
 - **Order History**: Link invoices and orders to suppliers
 
-### 📱 Kitchen Service
-- **Order Management**: Track incoming orders during service
-- **Order Status**: Manage orders from received → preparing → ready → served
-- **Kitchen Display System**: Real-time order display for kitchen staff
-- **Priority Management**: Mark urgent orders
+### 📱 Kitchen Display System (KDS) & POS Integration
+- **Real-Time Order Display**: Kanban-style kitchen display for live order management
+- **POS Integration**: Connect any POS system via webhooks (Square, Lightspeed, SoftOne, etc.)
+- **Supabase Realtime**: Live order updates across all kitchen screens simultaneously
+- **Sound Notifications**: Audio alerts for new orders
+- **Browser Notifications**: Desktop notifications for incoming orders
+- **Order Workflow**: New → In Progress → Ready → Served → Cancelled
+- **Priority Management**: Mark urgent orders with visual indicators
+- **Station Routing**: Automatically route orders to correct kitchen stations
+- **Multi-Screen Sync**: All displays update in real-time
+- **Generic Adapter**: Plug-and-play integration with any POS system
+- **Webhook Receiver**: Serverless Edge Function for POS webhooks
+- **Live Connection Indicator**: Visual confirmation of real-time connection
+- **Offline Support**: Manual order entry when POS is unavailable
+- See **[POS Integration Guide](./POS_INTEGRATION.md)** for setup instructions
 
 ### 🔔 Notifications & Messaging
 - **Team Chat**: Communication channels for kitchen teams
@@ -319,6 +329,38 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 2. Create a new API key
 3. Add to `.env.local` as `VITE_GEMINI_API_KEY`
 4. Restart the dev server
+
+### POS Integration Setup (Optional)
+
+**ChefStack KDS can integrate with any POS system!**
+
+#### Quick Setup:
+1. **Deploy Supabase components:**
+   ```bash
+   cd supabase
+   supabase db push                    # Create database tables
+   supabase functions deploy pos-webhook  # Deploy webhook receiver
+   ```
+
+2. **Configure your POS** to send webhooks to:
+   ```
+   https://YOUR_PROJECT.supabase.co/functions/v1/pos-webhook
+   ```
+
+3. **Enable Realtime** in Supabase Dashboard for `kitchen_orders` table
+
+4. **Test integration** with provided test scripts
+
+**Supported POS Systems:**
+- ✅ Generic JSON webhooks (works with most POS)
+- ✅ Square POS (adapter included)
+- 🚧 Lightspeed Restaurant (coming soon)
+- 🚧 SoftOne Greece (coming soon)
+
+**See detailed guides:**
+- **[POS Integration Guide](./POS_INTEGRATION.md)** - Complete integration instructions
+- **[Deployment Guide](./supabase/DEPLOYMENT.md)** - Step-by-step setup
+- **[Testing Guide](./supabase/TESTING.md)** - Test scripts and verification
 
 ---
 

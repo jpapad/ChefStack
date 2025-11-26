@@ -287,7 +287,6 @@ export type View =
   | 'user_manual'
   | 'analytics'
   | 'collaboration'
-  | 'shadcn_demo'
   | 'copilot';
 
 export type LogoPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -682,10 +681,13 @@ export interface KitchenOrder {
   id: string;
   orderNumber: string;
   tableNumber?: string;
+  customerName?: string; // For delivery orders
   station?: string; // e.g., 'hot', 'cold', 'grill', 'pastry'
   items: OrderItem[];
   status: OrderStatus;
   priority: OrderPriority;
+  source?: 'pos' | 'manual' | 'online' | 'tablet'; // Order source
+  externalOrderId?: string; // ID from external system (POS, delivery platform)
   createdAt: string; // ISO timestamp
   startedAt?: string; // When moved to in-progress
   readyAt?: string; // When marked as ready
@@ -844,4 +846,68 @@ export interface ReportSection {
   content: any; // Flexible content based on type
   order: number;
   isVisible: boolean;
+}
+
+// Team Collaboration - Tasks
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled';
+
+export interface TeamTask {
+  id: string;
+  teamId: string;
+  title: string;
+  description?: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  assignedTo: string[]; // User IDs
+  createdBy: string; // User ID
+  createdAt: string;
+  dueDate?: string;
+  completedAt?: string;
+  completedBy?: string; // User ID
+  tags?: string[];
+  relatedRecipeId?: string; // Link to recipe if task is recipe-related
+  relatedMenuId?: string; // Link to menu if task is menu-related
+}
+
+// Team Collaboration - Chat
+export interface ChatMessage {
+  id: string;
+  teamId: string;
+  channelId: string; // 'general' or custom channel
+  senderId: string; // User ID
+  content: string;
+  mentions?: string[]; // User IDs mentioned with @
+  replyToId?: string; // ID of message being replied to
+  attachments?: ChatAttachment[];
+  createdAt: string;
+  editedAt?: string;
+  isDeleted?: boolean;
+  reactions?: ChatReaction[];
+}
+
+export interface ChatAttachment {
+  id: string;
+  name: string;
+  type: 'image' | 'file' | 'recipe' | 'menu';
+  url?: string; // For images/files
+  recipeId?: string; // For recipe references
+  menuId?: string; // For menu references
+  size?: number; // File size in bytes
+}
+
+export interface ChatReaction {
+  emoji: string;
+  userIds: string[]; // Users who reacted
+}
+
+export interface ChatChannel {
+  id: string;
+  teamId: string;
+  name: string;
+  description?: string;
+  isPrivate: boolean;
+  members: string[]; // User IDs
+  createdBy: string;
+  createdAt: string;
 }

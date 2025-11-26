@@ -24,7 +24,9 @@ import {
   KitchenOrder,
   RecipeVariation,
   EmailReport,
-  ReportHistory
+  ReportHistory,
+  TeamTask,
+  ChatMessage
 } from './types';
 import AuthView from './components/auth/AuthView';
 import KitchenInterface from './components/KitchenInterface';
@@ -74,6 +76,8 @@ const AppContent: React.FC = () => {
   const [variations, setVariations] = useState<RecipeVariation[]>([]);
   const [reports, setReports] = useState<EmailReport[]>([]);
   const [reportHistory, setReportHistory] = useState<ReportHistory[]>([]);
+  const [teamTasks, setTeamTasks] = useState<TeamTask[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   // Derived team-scoped data
   const teamRecipes = recipes.filter((r) => r.teamId === currentTeamId);
@@ -110,6 +114,8 @@ const AppContent: React.FC = () => {
         setVariations(data.variations || []);
         setReports(data.reports || []);
         setReportHistory(data.reportHistory || []);
+        setTeamTasks(data.teamTasks || []);
+        setChatMessages(data.chatMessages || []);
 
         // 2. Έλεγξε αν υπάρχει ενεργό session
         if (supabase) {
@@ -334,6 +340,10 @@ const AppContent: React.FC = () => {
       setReports={setReports}
       reportHistory={reportHistory}
       setReportHistory={setReportHistory}
+      teamTasks={teamTasks}
+      setTeamTasks={setTeamTasks}
+      chatMessages={chatMessages}
+      setChatMessages={setChatMessages}
     />
   );
 };

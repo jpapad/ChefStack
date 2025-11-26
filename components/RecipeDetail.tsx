@@ -332,12 +332,11 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
 
   return (
     <>
-      <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-xl h-full overflow-y-auto">
-        <div className="max-w-4xl mx-auto">
+      <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-4 sm:p-6 rounded-2xl shadow-xl h-full overflow-y-auto w-full">
           <button
             type="button"
             onClick={onBack}
-            className="lg:hidden flex items-center mb-4 text-brand-yellow hover:underline"
+            className="flex items-center mb-4 text-brand-yellow hover:bg-brand-yellow/10 px-3 py-2 rounded-lg transition-colors font-semibold"
           >
             <Icon name="arrow-left" className="w-5 h-5 mr-2" />
             {t('recipe_detail_back')}
@@ -801,7 +800,6 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
               </div>
             )}
           </div>
-        </div>
       </div>
 
       {isLabelPreviewOpen && (

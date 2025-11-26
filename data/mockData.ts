@@ -1,5 +1,5 @@
 // Fix: Populated mockData.ts with sample data for the application.
-import { Recipe, IngredientCost, Workstation, PrepTask, PrepTaskStatus, HaccpLog, HaccpLogType, HaccpLogCategoryKey, HaccpReminder, Supplier, InventoryItem, Menu, User, Team, Notification, Message, Shift, ShiftSchedule, Channel, InventoryLocation, InventoryTransaction, HaccpItem, WasteLog, KitchenOrder, RecipeVariation, EmailReport, ReportHistory } from '../types';
+import { Recipe, IngredientCost, Workstation, PrepTask, PrepTaskStatus, HaccpLog, HaccpLogType, HaccpLogCategoryKey, HaccpReminder, Supplier, InventoryItem, Menu, User, Team, Notification, Message, Shift, ShiftSchedule, Channel, InventoryLocation, InventoryTransaction, HaccpItem, WasteLog, KitchenOrder, RecipeVariation, EmailReport, ReportHistory, TeamTask, ChatMessage } from '../types';
 
 export const mockTeams: Team[] = [
     { id: 'team1', name: 'Κεντρική Κουζίνα' },
@@ -828,5 +828,163 @@ export const mockReportHistory: ReportHistory[] = [
         format: 'both',
         status: 'failed',
         errorMessage: 'SMTP connection timeout'
+    }
+];
+
+export const mockTeamTasks: TeamTask[] = [
+    {
+        id: 'task1',
+        teamId: 'team1',
+        title: 'Προετοιμασία Menu Χριστουγέννων',
+        description: 'Σχεδιασμός και δοκιμή νέων πιάτων για τις γιορτές',
+        priority: 'high',
+        status: 'in-progress',
+        assignedTo: ['user1', 'user2'],
+        createdBy: 'user1',
+        createdAt: '2025-11-20T10:00:00Z',
+        dueDate: '2025-12-10T00:00:00Z',
+        tags: ['menu', 'holidays']
+    },
+    {
+        id: 'task2',
+        teamId: 'team1',
+        title: 'Έλεγχος Αποθέματος Κρασιών',
+        description: 'Καταμέτρηση και παραγγελία για το κελάρι',
+        priority: 'medium',
+        status: 'pending',
+        assignedTo: ['user2'],
+        createdBy: 'user1',
+        createdAt: '2025-11-25T14:00:00Z',
+        dueDate: '2025-11-30T00:00:00Z',
+        tags: ['inventory', 'wine']
+    },
+    {
+        id: 'task3',
+        teamId: 'team1',
+        title: 'Training: Νέες Τεχνικές Sous Vide',
+        description: 'Εκπαίδευση ομάδας στη χρήση του νέου εξοπλισμού',
+        priority: 'low',
+        status: 'pending',
+        assignedTo: ['user2', 'user3'],
+        createdBy: 'user1',
+        createdAt: '2025-11-22T09:00:00Z',
+        tags: ['training', 'equipment']
+    },
+    {
+        id: 'task4',
+        teamId: 'team1',
+        title: 'Ενημέρωση Καρτών Συνταγών',
+        description: 'Προσθήκη allergen information σε όλες τις συνταγές',
+        priority: 'urgent',
+        status: 'in-progress',
+        assignedTo: ['user3'],
+        createdBy: 'user2',
+        createdAt: '2025-11-24T11:00:00Z',
+        dueDate: '2025-11-27T00:00:00Z',
+        tags: ['recipes', 'compliance'],
+        relatedRecipeId: '1'
+    },
+    {
+        id: 'task5',
+        teamId: 'team1',
+        title: 'Καθαρισμός Cold Room',
+        description: 'Βαθύς καθαρισμός και αποστείρωση ψυγείων',
+        priority: 'medium',
+        status: 'completed',
+        assignedTo: ['user3'],
+        createdBy: 'user2',
+        createdAt: '2025-11-18T08:00:00Z',
+        completedAt: '2025-11-19T16:00:00Z',
+        completedBy: 'user3',
+        tags: ['haccp', 'cleaning']
+    }
+];
+
+export const mockChatMessages: ChatMessage[] = [
+    {
+        id: 'msg1',
+        teamId: 'team1',
+        channelId: 'general',
+        senderId: 'user1',
+        content: 'Καλημέρα team! Σήμερα έχουμε 80 καλύψεις για το μεσημεριανό. Ας ετοιμάσουμε όλα έγκαιρα! 👨‍🍳',
+        createdAt: '2025-11-26T07:30:00Z',
+        reactions: [
+            { emoji: '👍', userIds: ['user2', 'user3'] },
+            { emoji: '🔥', userIds: ['user2'] }
+        ]
+    },
+    {
+        id: 'msg2',
+        teamId: 'team1',
+        channelId: 'general',
+        senderId: 'user2',
+        content: 'Noted! Το αρνί στο φούρνο από τις 9:00. @Maria έτοιμες οι σαλάτες;',
+        mentions: ['user2'],
+        replyToId: 'msg1',
+        createdAt: '2025-11-26T07:35:00Z'
+    },
+    {
+        id: 'msg3',
+        teamId: 'team1',
+        channelId: 'general',
+        senderId: 'user3',
+        content: 'Όλα έτοιμα! Τα λαχανικά κομμένα και στο cold room.',
+        createdAt: '2025-11-26T07:40:00Z',
+        reactions: [
+            { emoji: '✅', userIds: ['user1', 'user2'] }
+        ]
+    },
+    {
+        id: 'msg4',
+        teamId: 'team1',
+        channelId: 'general',
+        senderId: 'user1',
+        content: 'Perfect! Μην ξεχάσετε να ενημερώσετε το HACCP log για τις θερμοκρασίες.',
+        createdAt: '2025-11-26T08:00:00Z',
+        reactions: [
+            { emoji: '👍', userIds: ['user2', 'user3'] }
+        ]
+    },
+    {
+        id: 'msg5',
+        teamId: 'team1',
+        channelId: 'general',
+        senderId: 'user2',
+        content: 'Έχουμε πρόβλημα με τον προμηθευτή ψαριών - δεν έστειλε τα λαβράκια. Τι κάνουμε;',
+        createdAt: '2025-11-26T09:15:00Z',
+        reactions: [
+            { emoji: '😰', userIds: ['user1'] }
+        ]
+    },
+    {
+        id: 'msg6',
+        teamId: 'team1',
+        channelId: 'general',
+        senderId: 'user1',
+        content: 'Κάνε παραγγελία από τον εφεδρικό προμηθευτή ASAP. Θα βάλουμε τα τσιπούρες ως special του ημέρας.',
+        replyToId: 'msg5',
+        createdAt: '2025-11-26T09:20:00Z'
+    },
+    {
+        id: 'msg7',
+        teamId: 'team1',
+        channelId: 'general',
+        senderId: 'user3',
+        content: '@Chef Τελείωσαν τα φρέσκα βότανα. Χρειαζόμαστε δεντρολίβανο και θυμάρι.',
+        mentions: ['user1'],
+        createdAt: '2025-11-26T10:30:00Z'
+    },
+    {
+        id: 'msg8',
+        teamId: 'team1',
+        channelId: 'general',
+        senderId: 'user2',
+        content: 'Έκανα ήδη παραγγελία σήμερα το πρωί, θα έρθουν στις 14:00 🌿',
+        replyToId: 'msg7',
+        createdAt: '2025-11-26T10:35:00Z',
+        reactions: [
+            { emoji: '❤️', userIds: ['user3'] },
+            { emoji: '👏', userIds: ['user1'] }
+        ]
     }
 ];
