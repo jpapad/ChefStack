@@ -34,10 +34,12 @@ const Header: React.FC<HeaderProps> = ({
   withApiKeyCheck,
   aiGlobalContext
 }) => {
+  // ALL HOOKS MUST BE CALLED IN THE SAME ORDER EVERY RENDER
   const { t } = useTranslation();
-  const [isCoachOpen, setIsCoachOpen] = useState(false);
   const [isDarkMode, toggleDarkMode] = useDarkMode();
+  const [isCoachOpen, setIsCoachOpen] = useState(false);
 
+  // useMemo hooks after useState/custom hooks
   const currentTeam = useMemo(
     () => allTeams.find((t) => t.id === currentTeamId),
     [allTeams, currentTeamId]
@@ -48,11 +50,14 @@ const Header: React.FC<HeaderProps> = ({
     [notifications]
   );
 
+  const currentViewTitle = useMemo(
+    () => t(currentViewTitleKey),
+    [t, currentViewTitleKey]
+  );
+
   const handleOpenNotifications = () => {
     onViewChange('notifications');
   };
-
-  const currentViewTitle = t(currentViewTitleKey);
 
   return (
     <>
