@@ -20,9 +20,11 @@ export function useDarkMode(): [boolean, () => void] {
     if (isDarkMode) {
       root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
+      console.log('✅ Dark mode class added to <html>');
     } else {
       root.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+      console.log('✅ Light mode - dark class removed from <html>');
     }
   }, [isDarkMode]);
 
