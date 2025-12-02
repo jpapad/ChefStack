@@ -2,16 +2,17 @@
 import { useState, useEffect } from 'react';
 
 export function useDarkMode(): [boolean, () => void] {
-  const [isDarkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Set initial state based on localStorage or system preference
-    const isDark =
-      localStorage.getItem('theme') === 'dark' ||
-      (!('theme' in localStorage) &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setDarkMode(isDark);
-  }, []);
+  // Initialize with current state from DOM/localStorage
+  const [isDarkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
+    
+    // Default to system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   useEffect(() => {
     // Apply the theme class to the html element
@@ -26,7 +27,11 @@ export function useDarkMode(): [boolean, () => void] {
   }, [isDarkMode]);
 
   const toggleDarkMode = () => {
-    setDarkMode(prevMode => !prevMode);
+    setDarkMode(prevMode => {
+      const newMode = !prevMode;
+      console.log('🌓 Dark mode toggled:', newMode ? 'dark' : 'light');
+      return newMode;
+    });
   };
 
   return [isDarkMode, toggleDarkMode];

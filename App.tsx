@@ -181,7 +181,9 @@ const AppContent: React.FC = () => {
     pass: string
   ): Promise<boolean> => {
     try {
+      console.log('🔐 Login attempt:', email);
       const { user, teams } = await api.login(email, pass);
+      console.log('✅ Login successful:', user.name, 'Teams:', teams.length);
 
       setCurrentUser(user);
 
@@ -213,16 +215,20 @@ const AppContent: React.FC = () => {
           user.memberships.some((m) => m.teamId === lastUsedTeamId)
         ) {
           setCurrentTeamId(lastUsedTeamId);
+          console.log('📍 Restored last team:', lastUsedTeamId);
         } else {
           setCurrentTeamId(user.memberships[0].teamId);
+          console.log('📍 Using first team:', user.memberships[0].teamId);
         }
       } else {
         setCurrentTeamId(null);
+        console.warn('⚠️ User has no team memberships!');
       }
 
+      console.log('✅ Login flow complete, user should be logged in');
       return true;
     } catch (error: any) {
-      console.error('Login failed via api.login:', error);
+      console.error('❌ Login failed via api.login:', error);
       return false;
     }
   };
@@ -266,7 +272,7 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen.flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg">
         <Icon
           name="loader-2"
           className="w-16 h-16 text-brand-yellow animate-spin mb-4"
