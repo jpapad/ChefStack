@@ -101,6 +101,10 @@ const AutoShoppingList: React.FC<AutoShoppingListProps> = ({
     window.print();
   };
 
+  const handleCopyToClipboard = () => {
+    handleExport();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] print:shadow-none print:max-w-full">

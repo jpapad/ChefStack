@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Menu, Recipe, IngredientCost } from '../../types';
 import { Icon } from '../common/Icon';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 
 interface MenuCostAnalysisProps {
