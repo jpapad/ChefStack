@@ -1,13 +1,15 @@
-// service-worker.js - Enhanced PWA Support
+// service-worker.js - Enhanced PWA Support with Mobile Optimization
 
-const CACHE_NAME = 'chefstack-cache-v2';
-const DYNAMIC_CACHE = 'chefstack-dynamic-v2';
-const API_CACHE = 'chefstack-api-v2';
+const CACHE_NAME = 'chefstack-cache-v3';
+const DYNAMIC_CACHE = 'chefstack-dynamic-v3';
+const API_CACHE = 'chefstack-api-v3';
+const IMAGE_CACHE = 'chefstack-images-v3';
 
 // Essential app shell files
 const APP_SHELL = [
   '/',
   '/index.html',
+  '/styles/mobile.css',
   '/assets/index.css',
   '/assets/index.js',
 ];
@@ -35,7 +37,7 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating service worker...');
-  const cacheWhitelist = [CACHE_NAME, DYNAMIC_CACHE, API_CACHE];
+  const cacheWhitelist = [CACHE_NAME, DYNAMIC_CACHE, API_CACHE, IMAGE_CACHE];
   
   event.waitUntil(
     caches.keys().then((cacheNames) => {
