@@ -43,10 +43,13 @@ Go to **Authentication > Email Templates** in your Supabase dashboard:
 ```html
 <h2>Reset Your Password</h2>
 <p>Click the link below to reset your password:</p>
-<p><a href="{{ .SiteURL }}/reset-password?token={{ .Token }}">Reset Password</a></p>
+<p><a href="{{ .SiteURL }}">Reset Password</a></p>
 <p>Or copy and paste this URL:</p>
-<p>{{ .SiteURL }}/reset-password?token={{ .Token }}</p>
+<p>{{ .SiteURL }}</p>
+<p><small>This link will expire in 60 minutes.</small></p>
 ```
+
+**Note**: The app automatically detects the recovery token in the URL hash and displays the reset form.
 
 ### 2. Site URL Configuration
 
@@ -59,7 +62,8 @@ Go to **Authentication > URL Configuration**:
 2. **Redirect URLs**: Add these patterns:
    - `http://localhost:3000/**` (for development)
    - `https://your-domain.com/**` (for production)
-   - `https://your-domain.com/reset-password` (explicit)
+
+**Important**: Don't add `/reset-password` path - the app is a SPA and handles reset mode automatically by detecting the `type=recovery` parameter in the URL hash.
 
 ### 3. PKCE Flow
 
@@ -87,11 +91,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 ### Reset Password
 1. User clicks link in email
-2. Redirected to `/reset-password` with recovery token in URL hash
-3. Enters new password (minimum 6 characters)
-4. Confirms password
-5. Clicks "Update Password"
-6. Redirected to login screen
+2. Redirected to app root URL with recovery token in URL hash (e.g., `#access_token=...&type=recovery`)
+3. App detects `type=recovery` in hash and shows `ResetPasswordView`
+4. User enters new password (minimum 6 characters)
+5. Confirms password
+6. Clicks "Update Password"
+7. Redirected to login screen
 
 ## Testing
 
