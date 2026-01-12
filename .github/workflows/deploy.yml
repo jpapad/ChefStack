@@ -19,6 +19,7 @@ jobs:
           cache: "npm"
 
       - name: Install deps
+        shell: cmd
         run: npm ci
 
       - name: Build
