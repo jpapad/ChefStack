@@ -29,6 +29,7 @@ import {
   ChatMessage
 } from './types';
 import AuthView from './components/auth/AuthView';
+import ResetPasswordView from './components/auth/ResetPasswordView';
 import KitchenInterface from './components/KitchenInterface';
 import { InstallPrompt } from './components/common/InstallPrompt';
 import { Toaster } from './components/ui/toaster';
@@ -46,7 +47,16 @@ const AppContent: React.FC = () => {
     'currentTeamId',
     null
   );
+  const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
   const { t } = useTranslation();
+
+  // Check if URL contains reset password hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      setIsResetPasswordMode(true);
+    }
+  }, []);
 
   // --- Data State ---
   const [isLoading, setIsLoading] = useState(true);
@@ -250,6 +260,17 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleResetPassword = async (
+    email: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      await api.resetPassword(email);
+      return { success: true, message: t('auth_reset_success') };
+    } catch (error: any) {
+      return { success: false, message: t('auth_reset_error') };
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await api.logout();
@@ -284,9 +305,24 @@ const AppContent: React.FC = () => {
     );
   }
 
+  if (isResetPasswordMode) {
+    return (
+      <ResetPasswordView
+        onComplete={() => {
+          setIsResetPasswordMode(false);
+          window.location.hash = '';
+        }}
+      />
+    );
+  }
+
   if (!currentUser || !currentTeamId) {
     return (
-      <AuthView onAuthSuccess={handleAuthSuccess} onSignUp={handleSignUp} />
+      <AuthView 
+        onAuthSuccess={handleAuthSuccess} 
+        onSignUp={handleSignUp} 
+        onResetPassword={handleResetPassword}
+      />
     );
   }
 

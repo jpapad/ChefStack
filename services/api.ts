@@ -727,6 +727,38 @@ CREATE TABLE haccp_reminders (
     await supabase.auth.signOut();
   },
 
+  resetPassword: async (email: string): Promise<void> => {
+    if (useMockApi) {
+      console.log('[api.resetPassword] Mock mode - email would be sent to:', email);
+      return Promise.resolve();
+    }
+    if (!supabase) throwConfigError();
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${import.meta.env.VITE_PUBLIC_URL || window.location.origin}/reset-password`
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Αποτυχία αποστολής email επαναφοράς κωδικού.');
+    }
+  },
+
+  updatePassword: async (newPassword: string): Promise<void> => {
+    if (useMockApi) {
+      console.log('[api.updatePassword] Mock mode - password would be updated');
+      return Promise.resolve();
+    }
+    if (!supabase) throwConfigError();
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Αποτυχία ενημέρωσης κωδικού.');
+    }
+  },
+
   // --- Recipes ---
   saveRecipe: async (recipeData: Omit<Recipe, 'id'> | Recipe): Promise<Recipe> => {
     if (useMockApi) {
