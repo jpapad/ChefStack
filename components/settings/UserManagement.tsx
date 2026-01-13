@@ -22,7 +22,14 @@ const UserManagement: React.FC<UserManagementProps> = ({
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+    const [showAddUserModal, setShowAddUserModal] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role>('Cook');
+    
+    // Add user form state
+    const [newUserEmail, setNewUserEmail] = useState('');
+    const [newUserName, setNewUserName] = useState('');
+    const [newUserRole, setNewUserRole] = useState<Role>('Cook');
+    const [addUserError, setAddUserError] = useState('');
 
     // Check if current user is admin
     const currentUserMembership = currentUser.memberships.find(m => m.teamId === currentTeamId);
@@ -86,6 +93,51 @@ const UserManagement: React.FC<UserManagementProps> = ({
         }
     };
 
+    const handleAddUser = () => {
+        setAddUserError('');
+        
+        // Validation
+        if (!newUserEmail || !newUserName) {
+            setAddUserError('Παρακαλώ συμπληρώστε όλα τα πεδία.');
+            return;
+        }
+
+        // Check if user already exists
+        const existingUser = allUsers.find(u => u.email.toLowerCase() === newUserEmail.toLowerCase());
+        
+        if (existingUser) {
+            // User exists, check if already in team
+            const alreadyInTeam = existingUser.memberships.some(m => m.teamId === currentTeamId);
+            
+            if (alreadyInTeam) {
+                setAddUserError('Ο χρήστης υπάρχει ήδη στην ομάδα.');
+                return;
+            }
+            
+            // Add to team
+            setAllUsers(prev => prev.map(u => 
+                u.id === existingUser.id 
+                    ? { ...u, memberships: [...u.memberships, { teamId: currentTeamId, role: newUserRole }] }
+                    : u
+            ));
+        } else {
+            // Create new user
+            const newUser: User = {
+                id: `user_${Date.now()}`,
+                name: newUserName,
+                email: newUserEmail,
+                memberships: [{ teamId: currentTeamId, role: newUserRole }]
+            };
+            setAllUsers(prev => [...prev, newUser]);
+        }
+        
+        // Reset form
+        setNewUserEmail('');
+        setNewUserName('');
+        setNewUserRole('Cook');
+        setShowAddUserModal(false);
+    };
+
     const showPermissions = (user: User) => {
         setSelectedUser(user);
         const membership = user.memberships.find(m => m.teamId === currentTeamId);
@@ -108,7 +160,10 @@ const UserManagement: React.FC<UserManagementProps> = ({
                             Ομάδα: {currentTeam?.name} • {teamUsers.length} χρήστες
                         </p>
                     </div>
-                    <button className="flex items-center gap-2 bg-brand-yellow text-brand-dark px-4 py-2 rounded-full hover:opacity-90 transition-opacity font-semibold">
+                    <button 
+                        onClick={() => setShowAddUserModal(true)}
+                        className="flex items-center gap-2 bg-brand-yellow text-brand-dark px-4 py-2 rounded-full hover:opacity-90 transition-opacity font-semibold"
+                    >
                         <Icon name="plus" className="w-5 h-5" />
                         Προσθήκη Χρήστη
                     </button>
@@ -290,6 +345,101 @@ const UserManagement: React.FC<UserManagementProps> = ({
                                 className="w-full bg-brand-dark text-white px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-semibold"
                             >
                                 Κλείσιμο
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add User Modal */}
+            {showAddUserModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full">
+                        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-bold">Προσθήκη Χρήστη</h3>
+                                <button
+                                    onClick={() => {
+                                        setShowAddUserModal(false);
+                                        setAddUserError('');
+                                        setNewUserEmail('');
+                                        setNewUserName('');
+                                        setNewUserRole('Cook');
+                                    }}
+                                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                >
+                                    <Icon name="x" className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="p-6">
+                            {addUserError && (
+                                <div className="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 p-3 rounded-lg mb-4">
+                                    {addUserError}
+                                </div>
+                            )}
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Ονοματεπώνυμο</label>
+                                    <input
+                                        type="text"
+                                        value={newUserName}
+                                        onChange={(e) => setNewUserName(e.target.value)}
+                                        placeholder="π.χ. Γιώργος Παπαδόπουλος"
+                                        className="w-full p-2 rounded-lg bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        value={newUserEmail}
+                                        onChange={(e) => setNewUserEmail(e.target.value)}
+                                        placeholder="π.χ. user@example.com"
+                                        className="w-full p-2 rounded-lg bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Ρόλος</label>
+                                    <select
+                                        value={newUserRole}
+                                        onChange={(e) => setNewUserRole(e.target.value as Role)}
+                                        className="w-full p-2 rounded-lg bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                                    >
+                                        <option value="Admin">{language === 'el' ? ROLE_LABELS['Admin'].el : ROLE_LABELS['Admin'].en}</option>
+                                        <option value="Sous Chef">{language === 'el' ? ROLE_LABELS['Sous Chef'].el : ROLE_LABELS['Sous Chef'].en}</option>
+                                        <option value="Cook">{language === 'el' ? ROLE_LABELS['Cook'].el : ROLE_LABELS['Cook'].en}</option>
+                                        <option value="Trainee">{language === 'el' ? ROLE_LABELS['Trainee'].el : ROLE_LABELS['Trainee'].en}</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {ROLE_PERMISSIONS[newUserRole].length} δικαιώματα
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowAddUserModal(false);
+                                    setAddUserError('');
+                                    setNewUserEmail('');
+                                    setNewUserName('');
+                                    setNewUserRole('Cook');
+                                }}
+                                className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-semibold"
+                            >
+                                Ακύρωση
+                            </button>
+                            <button
+                                onClick={handleAddUser}
+                                className="flex-1 bg-brand-yellow text-brand-dark px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-semibold"
+                            >
+                                Προσθήκη
                             </button>
                         </div>
                     </div>
