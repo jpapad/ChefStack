@@ -48,11 +48,11 @@ export const NAV_CATEGORIES: NavCategory[] = [
     labelKey: 'nav_category_inventory',
     icon: 'package',
     items: [
-      { view: 'shopping_list', labelKey: 'nav_shopping_list', icon: 'shopping-cart' },
+      { view: 'shopping_list', labelKey: 'nav_shopping_list', icon: 'shopping-cart', roles: ['Admin', 'Sous Chef'] },
       { view: 'inventory', labelKey: 'nav_inventory', icon: 'package' },
-      { view: 'inventory_history', labelKey: 'nav_inventory_history', icon: 'history' },
-      { view: 'stock_take', labelKey: 'nav_stock_take', icon: 'clipboard-check' },
-      { view: 'workstations', labelKey: 'nav_workstations', icon: 'clipboard-list' }
+      { view: 'inventory_history', labelKey: 'nav_inventory_history', icon: 'history', roles: ['Admin', 'Sous Chef'] },
+      { view: 'stock_take', labelKey: 'nav_stock_take', icon: 'clipboard-check', roles: ['Admin', 'Sous Chef'] },
+      { view: 'workstations', labelKey: 'nav_workstations', icon: 'clipboard-list', roles: ['Admin', 'Sous Chef'] }
     ]
   },
   {
@@ -60,8 +60,8 @@ export const NAV_CATEGORIES: NavCategory[] = [
     labelKey: 'nav_category_costing',
     icon: 'dollar-sign',
     items: [
-      { view: 'costing', labelKey: 'nav_costing', icon: 'scale' },
-      { view: 'suppliers', labelKey: 'nav_suppliers', icon: 'truck' }
+      { view: 'costing', labelKey: 'nav_costing', icon: 'scale', roles: ['Admin', 'Sous Chef'] },
+      { view: 'suppliers', labelKey: 'nav_suppliers', icon: 'truck', roles: ['Admin', 'Sous Chef'] }
     ]
   },
   {
@@ -69,7 +69,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
     labelKey: 'nav_category_production',
     icon: 'factory',
     items: [
-      { view: 'labels', labelKey: 'nav_labels', icon: 'printer' },
+      { view: 'labels', labelKey: 'nav_labels', icon: 'printer', roles: ['Admin', 'Sous Chef'] },
       { view: 'waste_log', labelKey: 'nav_waste_log', icon: 'trash-2' }
     ]
   },
@@ -94,7 +94,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
     icon: 'wrench',
     items: [
       { view: 'copilot', labelKey: 'nav_copilot', icon: 'sparkles' },
-      { view: 'analytics', labelKey: 'nav_analytics', icon: 'bar-chart-2' }
+      { view: 'analytics', labelKey: 'nav_analytics', icon: 'bar-chart-2', roles: ['Admin', 'Sous Chef'] }
     ]
   },
   {

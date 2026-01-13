@@ -20,18 +20,22 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onSignUp, onResetPas
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    // Simulate API call
-    setTimeout(() => {
-      const success = onAuthSuccess(email, password);
+    
+    try {
+      const success = await onAuthSuccess(email, password);
       if (!success) {
         setError(t('auth_error_credentials'));
       }
+    } catch (error) {
+      console.error('[AuthView] Login error:', error);
+      setError(t('auth_error_credentials'));
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
   
   const handleSignUpSubmit = async (e: React.FormEvent) => {
