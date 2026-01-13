@@ -847,24 +847,79 @@ CREATE TABLE haccp_reminders (
     }
     if (!supabase) throwConfigError();
 
-    // Call Supabase Edge Function to invite user
-    // This will:
-    // 1. Create auth account via Admin API
-    // 2. Send invite email to user
-    // 3. Create/update user record in users table
-    const { data, error } = await supabase.functions.invoke('invite-user', {
-      body: { name, email, teamId, role }
-    });
+    // Try Edge Function first, fallback to direct database operation
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { name, email, teamId, role }
+      });
 
-    if (error) {
-      throw new Error(error.message || 'Αποτυχία πρόσκλησης χρήστη.');
+      if (error) {
+        console.warn('[api.inviteUserToTeam] Edge Function error, falling back to direct DB:', error);
+        throw error; // Will trigger fallback
+      }
+
+      if (data?.error) {
+        console.warn('[api.inviteUserToTeam] Edge Function returned error:', data.error);
+        throw new Error(data.error);
+      }
+
+      return { user: data.user as User, invited: data.invited };
+    } catch (edgeFunctionError) {
+      console.warn('[api.inviteUserToTeam] Edge Function not available, using fallback method');
+      
+      // Fallback: Create user directly in database without auth account
+      // User will need to sign up separately
+      const { data: existingUsers } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email);
+
+      if (existingUsers && existingUsers.length > 0) {
+        // User exists, add to team
+        const user = existingUsers[0];
+        const currentMemberships = (user as any).memberships || [];
+        const alreadyInTeam = currentMemberships.some((m: any) => m.teamId === teamId);
+
+        if (alreadyInTeam) {
+          throw new Error('Ο χρήστης υπάρχει ήδη στην ομάδα.');
+        }
+
+        const updatedMemberships = [...currentMemberships, { teamId, role }];
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({ memberships: updatedMemberships })
+          .eq('id', user.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          throw new Error(updateError.message || 'Αποτυχία προσθήκης χρήστη στην ομάδα.');
+        }
+
+        return { user: updatedUser as User, invited: false };
+      }
+
+      // Create new user in database
+      const newUserData = {
+        name,
+        email,
+        memberships: [{ teamId, role }]
+      };
+
+      const { data: createdUser, error: createError } = await supabase
+        .from('users')
+        .insert(newUserData)
+        .select()
+        .single();
+
+      if (createError) {
+        throw new Error(createError.message || 'Αποτυχία δημιουργίας χρήστη.');
+      }
+
+      // Note: User created in DB but without auth account
+      // They'll need to sign up separately
+      return { user: createdUser as User, invited: false };
     }
-
-    if (data.error) {
-      throw new Error(data.error);
-    }
-
-    return { user: data.user as User, invited: data.invited };
   },
 
   createUser: async (name: string, email: string, teamId: string, role: Role): Promise<User> => {
@@ -907,6 +962,169 @@ CREATE TABLE haccp_reminders (
     }
 
     return updatedUser as User;
+  },
+
+  // --- Team Roles & Permissions ---
+  fetchTeamRoles: async (teamId: string): Promise<string[]> => {
+    if (useMockApi) {
+      console.log('[api.fetchTeamRoles] Mock mode - returning default roles');
+      return Promise.resolve(['Admin', 'Sous Chef', 'Cook', 'Trainee']);
+    }
+    if (!supabase) throwConfigError();
+
+    const { data, error } = await supabase
+      .from('team_roles')
+      .select('role_name')
+      .eq('team_id', teamId)
+      .order('role_name');
+
+    if (error) {
+      console.error('[api.fetchTeamRoles] Error:', error);
+      return ['Admin', 'Sous Chef', 'Cook', 'Trainee']; // Return defaults on error
+    }
+
+    return data.map((r: any) => r.role_name);
+  },
+
+  createTeamRole: async (teamId: string, roleName: string): Promise<void> => {
+    if (useMockApi) {
+      console.log('[api.createTeamRole] Mock mode - role would be created:', roleName);
+      return Promise.resolve();
+    }
+    if (!supabase) throwConfigError();
+
+    const { error } = await supabase
+      .from('team_roles')
+      .insert({
+        team_id: teamId,
+        role_name: roleName,
+        is_custom: true
+      });
+
+    if (error) {
+      throw new Error(error.message || 'Αποτυχία δημιουργίας ρόλου.');
+    }
+  },
+
+  deleteTeamRole: async (teamId: string, roleName: string): Promise<void> => {
+    if (useMockApi) {
+      console.log('[api.deleteTeamRole] Mock mode - role would be deleted:', roleName);
+      return Promise.resolve();
+    }
+    if (!supabase) throwConfigError();
+
+    // Delete role and its permissions
+    await supabase.from('role_permissions').delete().eq('team_id', teamId).eq('role_name', roleName);
+    
+    const { error } = await supabase
+      .from('team_roles')
+      .delete()
+      .eq('team_id', teamId)
+      .eq('role_name', roleName);
+
+    if (error) {
+      throw new Error(error.message || 'Αποτυχία διαγραφής ρόλου.');
+    }
+  },
+
+  fetchRolePermissions: async (teamId: string, roleName: string): Promise<string[]> => {
+    if (useMockApi) {
+      console.log('[api.fetchRolePermissions] Mock mode - returning empty permissions');
+      return Promise.resolve([]);
+    }
+    if (!supabase) throwConfigError();
+
+    const { data, error } = await supabase
+      .from('role_permissions')
+      .select('permission')
+      .eq('team_id', teamId)
+      .eq('role_name', roleName);
+
+    if (error) {
+      console.error('[api.fetchRolePermissions] Error:', error);
+      return [];
+    }
+
+    return data.map((p: any) => p.permission);
+  },
+
+  updateRolePermissions: async (teamId: string, roleName: string, permissions: string[]): Promise<void> => {
+    if (useMockApi) {
+      console.log('[api.updateRolePermissions] Mock mode - permissions would be updated');
+      return Promise.resolve();
+    }
+    if (!supabase) throwConfigError();
+
+    // Delete existing permissions
+    await supabase
+      .from('role_permissions')
+      .delete()
+      .eq('team_id', teamId)
+      .eq('role_name', roleName);
+
+    // Insert new permissions
+    if (permissions.length > 0) {
+      const permissionRecords = permissions.map(permission => ({
+        team_id: teamId,
+        role_name: roleName,
+        permission
+      }));
+
+      const { error } = await supabase
+        .from('role_permissions')
+        .insert(permissionRecords);
+
+      if (error) {
+        throw new Error(error.message || 'Αποτυχία ενημέρωσης δικαιωμάτων.');
+      }
+    }
+  },
+
+  initializeDefaultRoles: async (teamId: string): Promise<void> => {
+    if (useMockApi) {
+      console.log('[api.initializeDefaultRoles] Mock mode - default roles would be initialized');
+      return Promise.resolve();
+    }
+    if (!supabase) throwConfigError();
+
+    // Check if roles already exist
+    const { data: existingRoles } = await supabase
+      .from('team_roles')
+      .select('role_name')
+      .eq('team_id', teamId);
+
+    if (existingRoles && existingRoles.length > 0) {
+      return; // Already initialized
+    }
+
+    // Insert default roles
+    const defaultRoles = ['Admin', 'Sous Chef', 'Cook', 'Trainee'];
+    const roleRecords = defaultRoles.map(role => ({
+      team_id: teamId,
+      role_name: role,
+      is_custom: false
+    }));
+
+    await supabase.from('team_roles').insert(roleRecords);
+
+    // Initialize default permissions (you can customize these)
+    const defaultPermissions = [
+      { role: 'Admin', permissions: ['manage_recipes', 'manage_inventory', 'manage_shifts', 'manage_waste', 'manage_users', 'manage_team'] },
+      { role: 'Sous Chef', permissions: ['manage_recipes', 'manage_inventory', 'manage_shifts', 'manage_waste'] },
+      { role: 'Cook', permissions: [] },
+      { role: 'Trainee', permissions: [] }
+    ];
+
+    for (const { role, permissions } of defaultPermissions) {
+      if (permissions.length > 0) {
+        const permRecords = permissions.map(permission => ({
+          team_id: teamId,
+          role_name: role,
+          permission
+        }));
+        await supabase.from('role_permissions').insert(permRecords);
+      }
+    }
   },
 
   // --- Recipes ---

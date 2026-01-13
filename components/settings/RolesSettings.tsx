@@ -1,55 +1,116 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Role, RolePermissions, ALL_PERMISSIONS, PERMISSION_DESCRIPTIONS, DEFAULT_ROLES, DefaultRole } from '../../types';
 import { useTranslation } from '../../i18n';
 import { Icon } from '../common/Icon';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { api } from '../../services/api';
 
 interface RolesSettingsProps {
     rolePermissions: RolePermissions;
     setRolePermissions: React.Dispatch<React.SetStateAction<RolePermissions>>;
+    currentTeamId: string;
 }
 
-const RolesSettings: React.FC<RolesSettingsProps> = ({ rolePermissions, setRolePermissions }) => {
+const RolesSettings: React.FC<RolesSettingsProps> = ({ rolePermissions, setRolePermissions, currentTeamId }) => {
     const { t, language } = useTranslation();
-    const [customRoles, setCustomRoles] = useLocalStorage<string[]>('customRoles', []);
+    const [customRoles, setCustomRoles] = useState<string[]>([]);
     const [isAddingRole, setIsAddingRole] = useState(false);
     const [newRoleName, setNewRoleName] = useState('');
     const [expandedRole, setExpandedRole] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch team roles and permissions on mount
+    useEffect(() => {
+        const loadRolesAndPermissions = async () => {
+            try {
+                setIsLoading(true);
+                
+                // Initialize default roles if needed
+                await api.initializeDefaultRoles(currentTeamId);
+                
+                // Fetch all roles for this team
+                const roles = await api.fetchTeamRoles(currentTeamId);
+                const custom = roles.filter(r => !DEFAULT_ROLES.includes(r as DefaultRole));
+                setCustomRoles(custom);
+
+                // Fetch permissions for each role
+                const newPermissions: RolePermissions = {};
+                for (const role of roles) {
+                    const permissions = await api.fetchRolePermissions(currentTeamId, role);
+                    newPermissions[role] = permissions as any[];
+                }
+                setRolePermissions(newPermissions);
+            } catch (error) {
+                console.error('[RolesSettings] Error loading roles:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadRolesAndPermissions();
+    }, [currentTeamId]);
 
     const allRoles = [...DEFAULT_ROLES, ...customRoles];
 
-    const handleAddRole = () => {
+    const handleAddRole = async () => {
         if (newRoleName.trim() && !allRoles.includes(newRoleName.trim())) {
-            setCustomRoles([...customRoles, newRoleName.trim()]);
-            setRolePermissions(prev => ({ ...prev, [newRoleName.trim()]: [] }));
-            setNewRoleName('');
-            setIsAddingRole(false);
+            try {
+                await api.createTeamRole(currentTeamId, newRoleName.trim());
+                setCustomRoles([...customRoles, newRoleName.trim()]);
+                setRolePermissions(prev => ({ ...prev, [newRoleName.trim()]: [] }));
+                setNewRoleName('');
+                setIsAddingRole(false);
+            } catch (error: any) {
+                alert(error.message || 'Αποτυχία δημιουργίας ρόλου');
+            }
         }
     };
 
-    const handleDeleteRole = (role: string) => {
+    const handleDeleteRole = async (role: string) => {
         if (DEFAULT_ROLES.includes(role as DefaultRole)) return; // Can't delete default roles
         if (confirm(`Είστε σίγουροι ότι θέλετε να διαγράψετε τον ρόλο "${role}";`)) {
-            setCustomRoles(customRoles.filter(r => r !== role));
-            setRolePermissions(prev => {
-                const newPerms = { ...prev };
-                delete newPerms[role];
-                return newPerms;
-            });
+            try {
+                await api.deleteTeamRole(currentTeamId, role);
+                setCustomRoles(customRoles.filter(r => r !== role));
+                setRolePermissions(prev => {
+                    const newPerms = { ...prev };
+                    delete newPerms[role];
+                    return newPerms;
+                });
+            } catch (error: any) {
+                alert(error.message || 'Αποτυχία διαγραφής ρόλου');
+            }
         }
     };
 
-    const handlePermissionChange = (role: Role, permission: typeof ALL_PERMISSIONS[0], checked: boolean) => {
+    const handlePermissionChange = async (role: Role, permission: typeof ALL_PERMISSIONS[0], checked: boolean) => {
         if (role === 'Admin') return; // Admins cannot be changed
 
-        setRolePermissions(prev => {
-            const currentPermissions = prev[role] || [];
-            const newPermissions = checked
-                ? [...currentPermissions, permission]
-                : currentPermissions.filter(p => p !== permission);
-            return { ...prev, [role]: newPermissions };
-        });
+        const currentPermissions = rolePermissions[role] || [];
+        const newPermissions = checked
+            ? [...currentPermissions, permission]
+            : currentPermissions.filter(p => p !== permission);
+        
+        // Update local state immediately for responsiveness
+        setRolePermissions(prev => ({ ...prev, [role]: newPermissions }));
+
+        // Save to database
+        try {
+            await api.updateRolePermissions(currentTeamId, role, newPermissions);
+        } catch (error: any) {
+            console.error('[RolesSettings] Error updating permissions:', error);
+            // Revert on error
+            setRolePermissions(prev => ({ ...prev, [role]: currentPermissions }));
+            alert(error.message || 'Αποτυχία ενημέρωσης δικαιωμάτων');
+        }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Icon name="loader-2" className="w-8 h-8 animate-spin text-brand-yellow" />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-5xl mx-auto">

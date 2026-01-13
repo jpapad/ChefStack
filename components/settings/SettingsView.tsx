@@ -94,6 +94,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
           <RolesSettings 
             rolePermissions={rolePermissions}
             setRolePermissions={setRolePermissions}
+            currentTeamId={currentTeamId}
           />
         )}
 

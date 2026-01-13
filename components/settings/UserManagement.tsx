@@ -27,8 +27,9 @@ const UserManagement: React.FC<UserManagementProps> = ({
     const [showAddUserModal, setShowAddUserModal] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role>('Cook');
     
-    // Custom roles stored in localStorage
-    const [customRoles, setCustomRoles] = useLocalStorage<string[]>('customRoles', []);
+    // Custom roles loaded from database
+    const [customRoles, setCustomRoles] = useState<string[]>([]);
+    const [isLoadingRoles, setIsLoadingRoles] = useState(true);
     const [isAddingNewRole, setIsAddingNewRole] = useState(false);
     
     // Combine default and custom roles
@@ -40,6 +41,24 @@ const UserManagement: React.FC<UserManagementProps> = ({
     const [newUserRole, setNewUserRole] = useState<Role>('Cook');
     const [addUserError, setAddUserError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Load team roles on mount
+    useEffect(() => {
+        const loadRoles = async () => {
+            try {
+                setIsLoadingRoles(true);
+                const roles = await api.fetchTeamRoles(currentTeamId);
+                const custom = roles.filter(r => !DEFAULT_ROLES.includes(r as DefaultRole));
+                setCustomRoles(custom);
+            } catch (error) {
+                console.error('[UserManagement] Error loading roles:', error);
+            } finally {
+                setIsLoadingRoles(false);
+            }
+        };
+
+        loadRoles();
+    }, [currentTeamId]);
 
     // Check if current user is admin
     const currentUserMembership = currentUser.memberships.find(m => m.teamId === currentTeamId);
@@ -145,7 +164,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
             if (result.invited) {
                 alert(`Επιτυχής πρόσκληση! Στάλθηκε email επιβεβαίωσης στο ${newUserEmail}`);
             } else {
-                alert(`Ο χρήστης προστέθηκε στην ομάδα.`);
+                alert(`Ο χρήστης προστέθηκε στην ομάδα.\n\nΣημείωση: Δεν στάλθηκε email πρόσκλησης. Ο χρήστης θα χρειαστεί να εγγραφεί χειροκίνητα.`);
             }
             
             // Reset form and close modal
@@ -448,10 +467,15 @@ const UserManagement: React.FC<UserManagementProps> = ({
                                             />
                                             <div className="flex gap-2">
                                                 <button
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         if (newUserRole.trim() && !allRoles.includes(newUserRole.trim())) {
-                                                            setCustomRoles([...customRoles, newUserRole.trim()]);
-                                                            setIsAddingNewRole(false);
+                                                            try {
+                                                                await api.createTeamRole(currentTeamId, newUserRole.trim());
+                                                                setCustomRoles([...customRoles, newUserRole.trim()]);
+                                                                setIsAddingNewRole(false);
+                                                            } catch (error: any) {
+                                                                alert(error.message || 'Αποτυχία δημιουργίας ρόλου');
+                                                            }
                                                         }
                                                     }}
                                                     className="text-sm px-3 py-1 bg-brand-yellow text-brand-dark rounded-lg hover:opacity-90"
