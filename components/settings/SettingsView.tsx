@@ -56,8 +56,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
     <div className="h-full flex flex-col gap-6">
       <div className="flex items-center gap-4 border-b border-gray-200/80 dark:border-gray-700/80">
         <TabButton tabId="profile" labelKey="nav_settings_profile" />
-        <isAdmin && <TabButton tabId="users" labelKey="nav_settings_users" />}
-        {TabButton tabId="teams" labelKey="nav_settings_teams" />
+        <TabButton tabId="teams" labelKey="nav_settings_teams" />
+        {isAdmin && <TabButton tabId="users" labelKey="nav_settings_users" />}
         {canManageTeam && <TabButton tabId="roles" labelKey="nav_settings_roles" />}
         {canManageTeam && <TabButton tabId="workspace" labelKey="nav_settings_workspace" />}
       </div>
@@ -77,6 +77,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
             currentTeamId={currentTeamId}
             rolePermissions={rolePermissions}
           />
+        )}
 
         {activeTab === 'users' && isAdmin && (
           <UserManagement
@@ -86,7 +87,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
             allTeams={teams}
             currentTeamId={currentTeamId}
           />
-        )}
         )}
         
         {activeTab === 'roles' && canManageTeam && (
