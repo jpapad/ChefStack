@@ -89,36 +89,66 @@ const UserManagement: React.FC<UserManagementProps> = ({
         u.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleRoleChange = (userId: string, newRole: Role) => {
-        setAllUsers(prev => prev.map(u => {
-            if (u.id === userId) {
-                return {
-                    ...u,
-                    memberships: u.memberships.map(m =>
-                        m.teamId === currentTeamId ? { ...m, role: newRole } : m
-                    )
-                };
-            }
-            return u;
-        }));
+    const handleRoleChange = async (userId: string, newRole: Role) => {
+        try {
+            // Get updated memberships
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+            
+            const updatedMemberships = user.memberships.map(m =>
+                m.teamId === currentTeamId ? { ...m, role: newRole } : m
+            );
+            
+            // Update database
+            await api.updateUserProfile(userId, { memberships: updatedMemberships });
+            
+            // Update local state
+            setAllUsers(prev => prev.map(u => {
+                if (u.id === userId) {
+                    return {
+                        ...u,
+                        memberships: updatedMemberships
+                    };
+                }
+                return u;
+            }));
+        } catch (error) {
+            console.error('[UserManagement] Error updating role:', error);
+            alert('Αποτυχία ενημέρωσης ρόλου. Παρακαλώ δοκιμάστε ξανά.');
+        }
     };
 
-    const handleRemoveUser = (userId: string) => {
+    const handleRemoveUser = async (userId: string) => {
         if (userId === currentUser.id) {
             alert('Δεν μπορείτε να αφαιρέσετε τον εαυτό σας!');
             return;
         }
         
         if (confirm('Είστε σίγουροι ότι θέλετε να αφαιρέσετε αυτόν τον χρήστη από την ομάδα;')) {
-            setAllUsers(prev => prev.map(u => {
-                if (u.id === userId) {
-                    return {
-                        ...u,
-                        memberships: u.memberships.filter(m => m.teamId !== currentTeamId)
-                    };
-                }
-                return u;
-            }));
+            try {
+                // Get updated memberships
+                const user = allUsers.find(u => u.id === userId);
+                if (!user) return;
+                
+                const updatedMemberships = user.memberships.filter(m => m.teamId !== currentTeamId);
+                
+                // Update database
+                await api.updateUserProfile(userId, { memberships: updatedMemberships });
+                
+                // Update local state
+                setAllUsers(prev => prev.map(u => {
+                    if (u.id === userId) {
+                        return {
+                            ...u,
+                            memberships: updatedMemberships
+                        };
+                    }
+                    return u;
+                }));
+            } catch (error) {
+                console.error('[UserManagement] Error removing user:', error);
+                alert('Αποτυχία αφαίρεσης χρήστη. Παρακαλώ δοκιμάστε ξανά.');
+            }
         }
     };
 
