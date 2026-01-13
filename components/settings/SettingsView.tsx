@@ -39,27 +39,28 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
   const isAdmin = currentUserRole === 'Admin';
   const canManageTeam = currentUserRole ? rolePermissions[currentUserRole]?.includes('manage_team') : false;
 
-  const TabButton: React.FC<{ tabId: SettingsTab, labelKey: string }> = ({ tabId, labelKey }) => (
+  const TabButton: React.FC<{ tabId: SettingsTab, labelKey: string, iconName?: string }> = ({ tabId, labelKey, iconName }) => (
     <button
       onClick={() => setActiveTab(tabId)}
-      className={`px-4 py-2 font-semibold text-sm rounded-t-lg border-b-2 ${
+      className={`px-4 py-2 font-semibold text-sm rounded-t-lg border-b-2 transition-all flex items-center gap-2 ${
         activeTab === tabId
           ? 'border-brand-yellow text-light-text-primary dark:text-dark-text-primary'
           : 'border-transparent text-light-text-secondary dark:text-dark-text-secondary hover:border-gray-300 dark:hover:border-gray-600'
       }`}
     >
+      {iconName && <Icon name={iconName} className="w-4 h-4" />}
       {t(labelKey)}
     </button>
   );
 
   return (
     <div className="h-full flex flex-col gap-6">
-      <div className="flex items-center gap-4 border-b border-gray-200/80 dark:border-gray-700/80">
-        <TabButton tabId="profile" labelKey="nav_settings_profile" />
-        <TabButton tabId="teams" labelKey="nav_settings_teams" />
-        {isAdmin && <TabButton tabId="users" labelKey="nav_settings_users" />}
-        {canManageTeam && <TabButton tabId="roles" labelKey="nav_settings_roles" />}
-        {canManageTeam && <TabButton tabId="workspace" labelKey="nav_settings_workspace" />}
+      <div className="flex items-center gap-2 border-b border-gray-200/80 dark:border-gray-700/80 overflow-x-auto">
+        <TabButton tabId="profile" labelKey="nav_settings_profile" iconName="user" />
+        <TabButton tabId="teams" labelKey="nav_settings_teams" iconName="users" />
+        {isAdmin && <TabButton tabId="users" labelKey="nav_settings_users" iconName="user-plus" />}
+        {(isAdmin || canManageTeam) && <TabButton tabId="roles" labelKey="nav_settings_roles" iconName="shield" />}
+        {(isAdmin || canManageTeam) && <TabButton tabId="workspace" labelKey="nav_settings_workspace" iconName="settings" />}
       </div>
 
       <div className="flex-1 min-h-0">
@@ -89,14 +90,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
           />
         )}
         
-        {activeTab === 'roles' && canManageTeam && (
+        {activeTab === 'roles' && (isAdmin || canManageTeam) && (
           <RolesSettings 
             rolePermissions={rolePermissions}
             setRolePermissions={setRolePermissions}
           />
         )}
 
-        {activeTab === 'workspace' && canManageTeam && (
+        {activeTab === 'workspace' && (isAdmin || canManageTeam) && (
           <WorkspaceSettings
             inventoryLocations={inventoryLocations}
             setInventoryLocations={setInventoryLocations}
