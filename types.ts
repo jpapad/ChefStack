@@ -298,7 +298,11 @@ export const LANGUAGE_NAMES: Record<Exclude<LanguageMode, 'both'>, string> = {
   en: 'English',
 };
 
-export type Role = 'Admin' | 'Sous Chef' | 'Cook' | 'Trainee';
+export type Role = string; // Can be default roles or custom roles
+
+// Default/built-in roles
+export const DEFAULT_ROLES = ['Admin', 'Sous Chef', 'Cook', 'Trainee'] as const;
+export type DefaultRole = typeof DEFAULT_ROLES[number];
 
 // Permissions per feature/view
 export type Permission = 
@@ -326,8 +330,8 @@ export type Permission =
   | 'view_pos'
   | 'manage_pos';
 
-// Role definitions with permissions
-export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+// Role definitions with permissions (for default roles only)
+export const ROLE_PERMISSIONS: Record<DefaultRole, Permission[]> = {
   'Admin': [
     'view_dashboard',
     'view_recipes', 'edit_recipes', 'delete_recipes',
@@ -374,7 +378,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ]
 };
 
-export const ROLE_LABELS: Record<Role, { el: string; en: string; color: string }> = {
+// Labels for default roles
+export const ROLE_LABELS: Record<DefaultRole, { el: string; en: string; color: string }> = {
   'Admin': { el: 'Διαχειριστής', en: 'Admin', color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' },
   'Sous Chef': { el: 'Υποσεφ', en: 'Sous Chef', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200' },
   'Cook': { el: 'Μάγειρας', en: 'Cook', color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200' },

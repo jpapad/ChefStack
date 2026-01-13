@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { User, Team, Role, ROLE_PERMISSIONS, ROLE_LABELS, Permission } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { User, Team, Role, ROLE_PERMISSIONS, ROLE_LABELS, Permission, DEFAULT_ROLES, DefaultRole } from '../../types';
 import { useTranslation } from '../../i18n';
 import { Icon } from '../common/Icon';
 import { api } from '../../services/api';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 
 interface UserManagementProps {
     currentUser: User;
@@ -25,6 +26,13 @@ const UserManagement: React.FC<UserManagementProps> = ({
     const [showPermissionsModal, setShowPermissionsModal] = useState(false);
     const [showAddUserModal, setShowAddUserModal] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role>('Cook');
+    
+    // Custom roles stored in localStorage
+    const [customRoles, setCustomRoles] = useLocalStorage<string[]>('customRoles', []);
+    const [isAddingNewRole, setIsAddingNewRole] = useState(false);
+    
+    // Combine default and custom roles
+    const allRoles = [...DEFAULT_ROLES, ...customRoles];
     
     // Add user form state
     const [newUserEmail, setNewUserEmail] = useState('');
@@ -224,8 +232,9 @@ const UserManagement: React.FC<UserManagementProps> = ({
                             {filteredUsers.map(user => {
                                 const membership = user.memberships.find(m => m.teamId === currentTeamId);
                                 const role = membership?.role || 'Cook';
-                                const roleInfo = ROLE_LABELS[role];
-                                const permissions = ROLE_PERMISSIONS[role];
+                                const isDefaultRole = DEFAULT_ROLES.includes(role as DefaultRole);
+                                const roleInfo = isDefaultRole ? ROLE_LABELS[role as DefaultRole] : null;
+                                const permissions = isDefaultRole ? ROLE_PERMISSIONS[role as DefaultRole] : [];
 
                                 return (
                                     <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
@@ -250,14 +259,20 @@ const UserManagement: React.FC<UserManagementProps> = ({
                                                 value={role}
                                                 onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
                                                 disabled={user.id === currentUser.id}
-                                                className={`px-3 py-1 rounded-full text-xs font-semibold ${roleInfo.color} ${
+                                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                    roleInfo?.color || 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200'
+                                                } ${
                                                     user.id === currentUser.id ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
                                                 }`}
                                             >
-                                                <option value="Admin">{language === 'el' ? ROLE_LABELS['Admin'].el : ROLE_LABELS['Admin'].en}</option>
-                                                <option value="Sous Chef">{language === 'el' ? ROLE_LABELS['Sous Chef'].el : ROLE_LABELS['Sous Chef'].en}</option>
-                                                <option value="Cook">{language === 'el' ? ROLE_LABELS['Cook'].el : ROLE_LABELS['Cook'].en}</option>
-                                                <option value="Trainee">{language === 'el' ? ROLE_LABELS['Trainee'].el : ROLE_LABELS['Trainee'].en}</option>
+                                                {DEFAULT_ROLES.map(r => (
+                                                    <option key={r} value={r}>
+                                                        {language === 'el' ? ROLE_LABELS[r as DefaultRole].el : ROLE_LABELS[r as DefaultRole].en}
+                                                    </option>
+                                                ))}
+                                                {customRoles.map(r => (
+                                                    <option key={r} value={r}>{r}</option>
+                                                ))}
                                             </select>
                                         </td>
                                         <td className="px-6 py-4">
@@ -420,18 +435,77 @@ const UserManagement: React.FC<UserManagementProps> = ({
                                 
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Ρόλος</label>
-                                    <select
-                                        value={newUserRole}
-                                        onChange={(e) => setNewUserRole(e.target.value as Role)}
-                                        className="w-full p-2 rounded-lg bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
-                                    >
-                                        <option value="Admin">{language === 'el' ? ROLE_LABELS['Admin'].el : ROLE_LABELS['Admin'].en}</option>
-                                        <option value="Sous Chef">{language === 'el' ? ROLE_LABELS['Sous Chef'].el : ROLE_LABELS['Sous Chef'].en}</option>
-                                        <option value="Cook">{language === 'el' ? ROLE_LABELS['Cook'].el : ROLE_LABELS['Cook'].en}</option>
-                                        <option value="Trainee">{language === 'el' ? ROLE_LABELS['Trainee'].el : ROLE_LABELS['Trainee'].en}</option>
-                                    </select>
+                                    
+                                    {isAddingNewRole ? (
+                                        <div className="space-y-2">
+                                            <input
+                                                type="text"
+                                                value={newUserRole}
+                                                onChange={(e) => setNewUserRole(e.target.value)}
+                                                placeholder="Όνομα νέου ρόλου (π.χ. Pastry Chef)"
+                                                className="w-full p-2 rounded-lg bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        if (newUserRole.trim() && !allRoles.includes(newUserRole.trim())) {
+                                                            setCustomRoles([...customRoles, newUserRole.trim()]);
+                                                            setIsAddingNewRole(false);
+                                                        }
+                                                    }}
+                                                    className="text-sm px-3 py-1 bg-brand-yellow text-brand-dark rounded-lg hover:opacity-90"
+                                                >
+                                                    <Icon name="check" className="w-4 h-4 inline mr-1" />
+                                                    Αποθήκευση
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsAddingNewRole(false);
+                                                        setNewUserRole('Cook');
+                                                    }}
+                                                    className="text-sm px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:opacity-90"
+                                                >
+                                                    <Icon name="x" className="w-4 h-4 inline mr-1" />
+                                                    Ακύρωση
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <select
+                                                value={newUserRole}
+                                                onChange={(e) => setNewUserRole(e.target.value as Role)}
+                                                className="w-full p-2 rounded-lg bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600"
+                                            >
+                                                {DEFAULT_ROLES.map(role => (
+                                                    <option key={role} value={role}>
+                                                        {language === 'el' ? ROLE_LABELS[role as DefaultRole].el : ROLE_LABELS[role as DefaultRole].en}
+                                                    </option>
+                                                ))}
+                                                {customRoles.map(role => (
+                                                    <option key={role} value={role}>
+                                                        {role}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                onClick={() => {
+                                                    setNewUserRole('');
+                                                    setIsAddingNewRole(true);
+                                                }}
+                                                className="text-sm text-brand-yellow hover:underline flex items-center gap-1"
+                                            >
+                                                <Icon name="plus" className="w-4 h-4" />
+                                                Προσθήκη νέου ρόλου
+                                            </button>
+                                        </div>
+                                    )}
+                                    
                                     <p className="text-xs text-gray-500 mt-1">
-                                        {ROLE_PERMISSIONS[newUserRole].length} δικαιώματα
+                                        {DEFAULT_ROLES.includes(newUserRole as DefaultRole) 
+                                            ? `${ROLE_PERMISSIONS[newUserRole as DefaultRole]?.length || 0} δικαιώματα`
+                                            : 'Προσαρμοσμένος ρόλος - ορίστε δικαιώματα μετά'}
                                     </p>
                                 </div>
                             </div>
