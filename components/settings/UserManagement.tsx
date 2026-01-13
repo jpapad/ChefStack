@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Team, Role, ROLE_PERMISSIONS, ROLE_LABELS, Permission } from '../../types';
 import { useTranslation } from '../../i18n';
 import { Icon } from '../common/Icon';
+import { api } from '../../services/api';
 
 interface UserManagementProps {
     currentUser: User;
@@ -30,6 +31,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
     const [newUserName, setNewUserName] = useState('');
     const [newUserRole, setNewUserRole] = useState<Role>('Cook');
     const [addUserError, setAddUserError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Check if current user is admin
     const currentUserMembership = currentUser.memberships.find(m => m.teamId === currentTeamId);
@@ -93,49 +95,62 @@ const UserManagement: React.FC<UserManagementProps> = ({
         }
     };
 
-    const handleAddUser = () => {
+    const handleAddUser = async () => {
         setAddUserError('');
+        setIsSubmitting(true);
         
         // Validation
         if (!newUserEmail || !newUserName) {
             setAddUserError('Παρακαλώ συμπληρώστε όλα τα πεδία.');
+            setIsSubmitting(false);
             return;
         }
 
-        // Check if user already exists
-        const existingUser = allUsers.find(u => u.email.toLowerCase() === newUserEmail.toLowerCase());
-        
-        if (existingUser) {
-            // User exists, check if already in team
-            const alreadyInTeam = existingUser.memberships.some(m => m.teamId === currentTeamId);
-            
-            if (alreadyInTeam) {
-                setAddUserError('Ο χρήστης υπάρχει ήδη στην ομάδα.');
-                return;
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newUserEmail)) {
+            setAddUserError('Παρακαλώ εισάγετε έγκυρη διεύθυνση email.');
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            // Invite user - this creates auth account and sends email
+            const result = await api.inviteUserToTeam(
+                newUserName.trim(),
+                newUserEmail.trim().toLowerCase(),
+                currentTeamId,
+                newUserRole
+            );
+
+            // Update local state
+            const existingUserIndex = allUsers.findIndex(u => u.id === result.user.id);
+            if (existingUserIndex >= 0) {
+                // Update existing user
+                setAllUsers(prev => prev.map(u => u.id === result.user.id ? result.user : u));
+            } else {
+                // Add new user
+                setAllUsers(prev => [...prev, result.user]);
+            }
+
+            // Show success message
+            if (result.invited) {
+                alert(`Επιτυχής πρόσκληση! Στάλθηκε email επιβεβαίωσης στο ${newUserEmail}`);
+            } else {
+                alert(`Ο χρήστης προστέθηκε στην ομάδα.`);
             }
             
-            // Add to team
-            setAllUsers(prev => prev.map(u => 
-                u.id === existingUser.id 
-                    ? { ...u, memberships: [...u.memberships, { teamId: currentTeamId, role: newUserRole }] }
-                    : u
-            ));
-        } else {
-            // Create new user
-            const newUser: User = {
-                id: `user_${Date.now()}`,
-                name: newUserName,
-                email: newUserEmail,
-                memberships: [{ teamId: currentTeamId, role: newUserRole }]
-            };
-            setAllUsers(prev => [...prev, newUser]);
+            // Reset form and close modal
+            setNewUserEmail('');
+            setNewUserName('');
+            setNewUserRole('Cook');
+            setShowAddUserModal(false);
+        } catch (error: any) {
+            console.error('[UserManagement] Error inviting user:', error);
+            setAddUserError(error.message || 'Αποτυχία πρόσκλησης χρήστη. Παρακαλώ δοκιμάστε ξανά.');
+        } finally {
+            setIsSubmitting(false);
         }
-        
-        // Reset form
-        setNewUserEmail('');
-        setNewUserName('');
-        setNewUserRole('Cook');
-        setShowAddUserModal(false);
     };
 
     const showPermissions = (user: User) => {
@@ -437,9 +452,17 @@ const UserManagement: React.FC<UserManagementProps> = ({
                             </button>
                             <button
                                 onClick={handleAddUser}
-                                className="flex-1 bg-brand-yellow text-brand-dark px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-semibold"
+                                disabled={isSubmitting}
+                                className="flex-1 bg-brand-yellow text-brand-dark px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                             >
-                                Προσθήκη
+                                {isSubmitting ? (
+                                    <>
+                                        <Icon name="loader-2" className="w-4 h-4 mr-2 animate-spin" />
+                                        Αποθήκευση...
+                                    </>
+                                ) : (
+                                    'Προσθήκη'
+                                )}
                             </button>
                         </div>
                     </div>

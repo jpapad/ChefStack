@@ -771,6 +771,144 @@ CREATE TABLE haccp_reminders (
     }
   },
 
+  // --- User Management ---
+  updateUserProfile: async (userId: string, updates: Partial<User>): Promise<User> => {
+    if (useMockApi) {
+      console.log('[api.updateUserProfile] Mock mode - user would be updated:', userId, updates);
+      return Promise.resolve({ id: userId, ...updates } as User);
+    }
+    if (!supabase) throwConfigError();
+
+    const dbUpdates: any = {};
+    if (updates.name) dbUpdates.name = updates.name;
+    if (updates.email) dbUpdates.email = updates.email;
+    if (updates.memberships) dbUpdates.memberships = updates.memberships;
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(dbUpdates)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message || 'Αποτυχία ενημέρωσης χρήστη.');
+    }
+
+    return data as User;
+  },
+
+  addUserToTeam: async (userId: string, teamId: string, role: Role): Promise<User> => {
+    if (useMockApi) {
+      console.log('[api.addUserToTeam] Mock mode - user would be added to team:', userId, teamId, role);
+      return Promise.resolve({ id: userId, memberships: [{ teamId, role }] } as User);
+    }
+    if (!supabase) throwConfigError();
+
+    // Get current user
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(fetchError.message || 'Δεν βρέθηκε ο χρήστης.');
+    }
+
+    // Add new membership
+    const currentMemberships = (user as any).memberships || [];
+    const updatedMemberships = [...currentMemberships, { teamId, role }];
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update({ memberships: updatedMemberships })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new Error(updateError.message || 'Αποτυχία προσθήκης χρήστη στην ομάδα.');
+    }
+
+    return updatedUser as User;
+  },
+
+  inviteUserToTeam: async (name: string, email: string, teamId: string, role: Role): Promise<{ user: User; invited: boolean }> => {
+    if (useMockApi) {
+      console.log('[api.inviteUserToTeam] Mock mode - user would be invited:', name, email, teamId, role);
+      const newUser: User = {
+        id: `user_${Date.now()}`,
+        name,
+        email,
+        memberships: [{ teamId, role }]
+      };
+      return Promise.resolve({ user: newUser, invited: true });
+    }
+    if (!supabase) throwConfigError();
+
+    // Call Supabase Edge Function to invite user
+    // This will:
+    // 1. Create auth account via Admin API
+    // 2. Send invite email to user
+    // 3. Create/update user record in users table
+    const { data, error } = await supabase.functions.invoke('invite-user', {
+      body: { name, email, teamId, role }
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Αποτυχία πρόσκλησης χρήστη.');
+    }
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    return { user: data.user as User, invited: data.invited };
+  },
+
+  createUser: async (name: string, email: string, teamId: string, role: Role): Promise<User> => {
+    // This now calls inviteUserToTeam which handles the full invite flow
+    const result = await api.inviteUserToTeam(name, email, teamId, role);
+    return result.user;
+  },
+
+  removeUserFromTeam: async (userId: string, teamId: string): Promise<User> => {
+    if (useMockApi) {
+      console.log('[api.removeUserFromTeam] Mock mode - user would be removed from team:', userId, teamId);
+      return Promise.resolve({ id: userId, memberships: [] } as User);
+    }
+    if (!supabase) throwConfigError();
+
+    // Get current user
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(fetchError.message || 'Δεν βρέθηκε ο χρήστης.');
+    }
+
+    // Remove membership
+    const currentMemberships = (user as any).memberships || [];
+    const updatedMemberships = currentMemberships.filter((m: any) => m.teamId !== teamId);
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update({ memberships: updatedMemberships })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new Error(updateError.message || 'Αποτυχία αφαίρεσης χρήστη από την ομάδα.');
+    }
+
+    return updatedUser as User;
+  },
+
   // --- Recipes ---
   saveRecipe: async (recipeData: Omit<Recipe, 'id'> | Recipe): Promise<Recipe> => {
     if (useMockApi) {
