@@ -33,7 +33,8 @@ jobs:
       - name: Stamp build (commit id)
         shell: cmd
         run: |
-          echo %GITHUB_SHA%> dist\build.txt
+          echo commit=%GITHUB_SHA%> dist\build.txt
+          echo built=%DATE% %TIME%>> dist\build.txt
 
 
       - name: Deploy dist to Caddy root
