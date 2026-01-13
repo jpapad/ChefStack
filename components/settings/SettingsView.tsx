@@ -6,6 +6,7 @@ import TeamForm from './TeamForm';
 import ConfirmationModal from '../common/ConfirmationModal';
 import ProfileSettings from './ProfileSettings';
 import RolesSettings from './RolesSettings';
+import UserManagement from './UserManagement';
 import { useTranslation } from '../../i18n';
 import WorkspaceSettings from './WorkspaceSettings';
 
@@ -24,7 +25,7 @@ interface SettingsViewProps {
   setHaccpItems: React.Dispatch<React.SetStateAction<HaccpItem[]>>;
 }
 
-type SettingsTab = 'profile' | 'teams' | 'roles' | 'workspace';
+type SettingsTab = 'profile' | 'teams' | 'users' | 'roles' | 'workspace';
 
 const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, setTeams, currentUser, currentTeamId, rolePermissions, setRolePermissions, inventoryLocations, setInventoryLocations, haccpItems, setHaccpItems }) => {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
     [currentUser, currentTeamId]
   );
   
+  const isAdmin = currentUserRole === 'Admin';
   const canManageTeam = currentUserRole ? rolePermissions[currentUserRole]?.includes('manage_team') : false;
 
   const TabButton: React.FC<{ tabId: SettingsTab, labelKey: string }> = ({ tabId, labelKey }) => (
@@ -54,7 +56,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
     <div className="h-full flex flex-col gap-6">
       <div className="flex items-center gap-4 border-b border-gray-200/80 dark:border-gray-700/80">
         <TabButton tabId="profile" labelKey="nav_settings_profile" />
-        <TabButton tabId="teams" labelKey="nav_settings_teams" />
+        <isAdmin && <TabButton tabId="users" labelKey="nav_settings_users" />}
+        {TabButton tabId="teams" labelKey="nav_settings_teams" />
         {canManageTeam && <TabButton tabId="roles" labelKey="nav_settings_roles" />}
         {canManageTeam && <TabButton tabId="workspace" labelKey="nav_settings_workspace" />}
       </div>
@@ -74,6 +77,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({ users, setUsers, teams, set
             currentTeamId={currentTeamId}
             rolePermissions={rolePermissions}
           />
+
+        {activeTab === 'users' && isAdmin && (
+          <UserManagement
+            currentUser={currentUser}
+            allUsers={users}
+            setAllUsers={setUsers}
+            allTeams={teams}
+            currentTeamId={currentTeamId}
+          />
+        )}
         )}
         
         {activeTab === 'roles' && canManageTeam && (

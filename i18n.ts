@@ -83,6 +83,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Settings Sub-navigation
     nav_settings_profile: 'Το Προφίλ μου',
     nav_settings_teams: 'Διαχείριση Ομάδας',
+    nav_settings_users: 'Διαχείριση Χρηστών',
     nav_settings_roles: 'Ρόλοι & Δικαιώματα',
     nav_settings_workspace: 'Ρυθμίσεις Εφαρμογής',
     
@@ -599,6 +600,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Settings Sub-navigation
     nav_settings_profile: 'My Profile',
     nav_settings_teams: 'Team Management',
+    nav_settings_users: 'User Management',
     nav_settings_roles: 'Roles & Permissions',
     nav_settings_workspace: 'Workspace Settings',
 

@@ -298,7 +298,88 @@ export const LANGUAGE_NAMES: Record<Exclude<LanguageMode, 'both'>, string> = {
   en: 'English',
 };
 
-export type Role = 'Admin' | 'Sous Chef' | 'Cook';
+export type Role = 'Admin' | 'Sous Chef' | 'Cook' | 'Trainee';
+
+// Permissions per feature/view
+export type Permission = 
+  | 'view_dashboard'
+  | 'view_recipes'
+  | 'edit_recipes'
+  | 'delete_recipes'
+  | 'view_inventory'
+  | 'edit_inventory'
+  | 'view_menu'
+  | 'edit_menu'
+  | 'view_haccp'
+  | 'edit_haccp'
+  | 'view_suppliers'
+  | 'edit_suppliers'
+  | 'view_waste'
+  | 'edit_waste'
+  | 'view_costing'
+  | 'edit_costing'
+  | 'view_shifts'
+  | 'edit_shifts'
+  | 'view_reports'
+  | 'manage_users'
+  | 'manage_team_settings'
+  | 'view_pos'
+  | 'manage_pos';
+
+// Role definitions with permissions
+export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+  'Admin': [
+    'view_dashboard',
+    'view_recipes', 'edit_recipes', 'delete_recipes',
+    'view_inventory', 'edit_inventory',
+    'view_menu', 'edit_menu',
+    'view_haccp', 'edit_haccp',
+    'view_suppliers', 'edit_suppliers',
+    'view_waste', 'edit_waste',
+    'view_costing', 'edit_costing',
+    'view_shifts', 'edit_shifts',
+    'view_reports',
+    'manage_users',
+    'manage_team_settings',
+    'view_pos', 'manage_pos'
+  ],
+  'Sous Chef': [
+    'view_dashboard',
+    'view_recipes', 'edit_recipes',
+    'view_inventory', 'edit_inventory',
+    'view_menu', 'edit_menu',
+    'view_haccp', 'edit_haccp',
+    'view_suppliers',
+    'view_waste', 'edit_waste',
+    'view_costing',
+    'view_shifts', 'edit_shifts',
+    'view_reports',
+    'view_pos'
+  ],
+  'Cook': [
+    'view_dashboard',
+    'view_recipes',
+    'view_inventory',
+    'view_menu',
+    'view_haccp', 'edit_haccp',
+    'view_waste', 'edit_waste',
+    'view_shifts',
+    'view_pos'
+  ],
+  'Trainee': [
+    'view_dashboard',
+    'view_recipes',
+    'view_menu',
+    'view_shifts'
+  ]
+};
+
+export const ROLE_LABELS: Record<Role, { el: string; en: string; color: string }> = {
+  'Admin': { el: 'Διαχειριστής', en: 'Admin', color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' },
+  'Sous Chef': { el: 'Υποσεφ', en: 'Sous Chef', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200' },
+  'Cook': { el: 'Μάγειρας', en: 'Cook', color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200' },
+  'Trainee': { el: 'Μαθητευόμενος', en: 'Trainee', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' }
+};
 
 export interface Team {
   id: string;
