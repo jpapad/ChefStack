@@ -900,7 +900,9 @@ CREATE TABLE haccp_reminders (
       }
 
       // Create new user in database
+      const newUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const newUserData = {
+        id: newUserId,
         name,
         email,
         memberships: [{ teamId, role }]
@@ -913,6 +915,7 @@ CREATE TABLE haccp_reminders (
         .single();
 
       if (createError) {
+        console.error('[api.inviteUserToTeam] Create error:', createError);
         throw new Error(createError.message || 'Αποτυχία δημιουργίας χρήστη.');
       }
 
