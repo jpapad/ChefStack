@@ -80,17 +80,18 @@ serve(async (req: Request) => {
     }
 
     // Create or update user in users table
-    const { data: existingUser } = await supabaseAdmin
+    // First check by email (in case user was created by fallback method)
+    const { data: existingUserByEmail } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('id', userId)
-      .single()
+      .eq('email', email)
+      .maybeSingle()
 
     let userData
 
-    if (existingUser) {
-      // User exists in users table - add to team
-      const currentMemberships = existingUser.memberships || []
+    if (existingUserByEmail) {
+      // User exists with this email
+      const currentMemberships = existingUserByEmail.memberships || []
       const alreadyInTeam = currentMemberships.some((m: any) => m.teamId === teamId)
 
       if (alreadyInTeam) {
@@ -102,22 +103,54 @@ serve(async (req: Request) => {
 
       const updatedMemberships = [...currentMemberships, { teamId, role }]
 
-      const { data: updated, error: updateError } = await supabaseAdmin
-        .from('users')
-        .update({ memberships: updatedMemberships })
-        .eq('id', userId)
-        .select()
-        .single()
+      // If old id is different from auth userId, delete old and create new
+      if (existingUserByEmail.id !== userId) {
+        // Delete old user record (created by fallback)
+        await supabaseAdmin
+          .from('users')
+          .delete()
+          .eq('email', email)
 
-      if (updateError) {
-        console.error('[invite-user] Error updating user:', updateError)
-        return new Response(
-          JSON.stringify({ error: `Failed to update user: ${updateError.message}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        // Create new with correct auth id
+        const { data: created, error: createError } = await supabaseAdmin
+          .from('users')
+          .insert({
+            id: userId,
+            name: name,
+            email: email,
+            memberships: updatedMemberships
+          })
+          .select()
+          .single()
+
+        if (createError) {
+          console.error('[invite-user] Error creating user with auth id:', createError)
+          return new Response(
+            JSON.stringify({ error: `Failed to create user: ${createError.message}` }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        userData = created
+      } else {
+        // Same id, just update memberships
+        const { data: updated, error: updateError } = await supabaseAdmin
+          .from('users')
+          .update({ memberships: updatedMemberships })
+          .eq('id', userId)
+          .select()
+          .single()
+
+        if (updateError) {
+          console.error('[invite-user] Error updating user:', updateError)
+          return new Response(
+            JSON.stringify({ error: `Failed to update user: ${updateError.message}` }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        userData = updated
       }
-
-      userData = updated
     } else {
       // Create new user in users table
       const { data: created, error: createError } = await supabaseAdmin
