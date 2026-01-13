@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS kitchen_orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Team association (multi-tenant)
-  team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  team_id TEXT NOT NULL,
   
   -- Order identification
   order_number TEXT NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS kitchen_orders (
   station TEXT,  -- 'Hot Kitchen', 'Cold Kitchen', 'Bar', 'Pastry', etc.
   status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'in-progress', 'ready', 'served', 'cancelled')),
   priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high')),
-  assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+  assigned_to TEXT REFERENCES users(id) ON DELETE SET NULL,
   
   -- Order items (JSONB for flexibility)
   items JSONB NOT NULL DEFAULT '[]'::jsonb,
