@@ -57,8 +57,8 @@ const AppContent: React.FC = () => {
     if (hash && (hash.includes('type=recovery') || hash.includes('type%3Drecovery'))) {
       console.log('🔐 Password reset mode detected from URL hash');
       setIsResetPasswordMode(true);
-      // Clean the URL after detecting recovery mode
-      // Don't clear immediately, let ResetPasswordView handle the session
+      // Don't clear the hash - Supabase needs it to establish the recovery session
+      // We'll let ResetPasswordView handle the session and clear the hash after success
     }
   }, []);
 

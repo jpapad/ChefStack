@@ -727,6 +727,14 @@ CREATE TABLE haccp_reminders (
     await supabase.auth.signOut();
   },
 
+  getSession: async () => {
+    if (useMockApi) {
+      return { data: { session: null }, error: null };
+    }
+    if (!supabase) throwConfigError();
+    return await supabase.auth.getSession();
+  },
+
   resetPassword: async (email: string): Promise<void> => {
     if (useMockApi) {
       console.log('[api.resetPassword] Mock mode - email would be sent to:', email);
