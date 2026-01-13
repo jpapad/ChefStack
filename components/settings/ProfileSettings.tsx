@@ -11,6 +11,9 @@ interface ProfileSettingsProps {
 const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, setUsers }) => {
     const { t } = useTranslation();
     const [name, setName] = useState(currentUser.name);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,15 +56,54 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, setUsers
                          <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium mb-1">{t('profile_current_password')}</label>
-                                <input type="password" placeholder="••••••••" className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" />
+                                <div className="relative">
+                                    <input 
+                                        type={showCurrentPassword ? "text" : "password"} 
+                                        placeholder="••••••••" 
+                                        className="w-full p-2 pr-10 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" 
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                    >
+                                        <Icon name={showCurrentPassword ? "eye-off" : "eye"} className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
                              <div>
                                 <label className="block text-sm font-medium mb-1">{t('profile_new_password')}</label>
-                                <input type="password" placeholder="••••••••" className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" />
+                                <div className="relative">
+                                    <input 
+                                        type={showNewPassword ? "text" : "password"} 
+                                        placeholder="••••••••" 
+                                        className="w-full p-2 pr-10 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" 
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                    >
+                                        <Icon name={showNewPassword ? "eye-off" : "eye"} className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
                              <div>
                                 <label className="block text-sm font-medium mb-1">{t('profile_confirm_password')}</label>
-                                <input type="password" placeholder="••••••••" className="w-full p-2 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" />
+                                <div className="relative">
+                                    <input 
+                                        type={showConfirmPassword ? "text" : "password"} 
+                                        placeholder="••••••••" 
+                                        className="w-full p-2 pr-10 rounded bg-light-bg dark:bg-dark-bg border border-gray-300 dark:border-gray-600" 
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                    >
+                                        <Icon name={showConfirmPassword ? "eye-off" : "eye"} className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
                          </div>
                     </div>
