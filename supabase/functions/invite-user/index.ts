@@ -1,4 +1,6 @@
+// @ts-ignore: Deno runtime module
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+// @ts-ignore: Deno runtime module
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -6,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -34,7 +36,9 @@ serve(async (req) => {
 
     // Create Supabase Admin client with service role key
     const supabaseAdmin = createClient(
+      // @ts-ignore: Deno.env is available in Deno runtime
       Deno.env.get('SUPABASE_URL') ?? '',
+      // @ts-ignore: Deno.env is available in Deno runtime
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
@@ -46,7 +50,7 @@ serve(async (req) => {
 
     // Check if user already exists in auth
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-    const existingAuthUser = existingUsers?.users?.find(u => u.email === email)
+    const existingAuthUser = existingUsers?.users?.find((u: any) => u.email === email)
 
     let userId: string
 
@@ -150,7 +154,7 @@ serve(async (req) => {
       }
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[invite-user] Unexpected error:', error)
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
