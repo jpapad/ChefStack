@@ -87,8 +87,10 @@ CREATE POLICY "Users can view their team's orders"
   FOR SELECT
   USING (
     team_id IN (
-      SELECT team_id FROM team_members 
-      WHERE user_id = auth.uid()
+      SELECT (membership->>'teamId')::text
+      FROM users u,
+      jsonb_array_elements(u.memberships) AS membership
+      WHERE u.id = auth.uid()::text
     )
   );
 
@@ -98,8 +100,10 @@ CREATE POLICY "Users can create orders for their team"
   FOR INSERT
   WITH CHECK (
     team_id IN (
-      SELECT team_id FROM team_members 
-      WHERE user_id = auth.uid()
+      SELECT (membership->>'teamId')::text
+      FROM users u,
+      jsonb_array_elements(u.memberships) AS membership
+      WHERE u.id = auth.uid()::text
     )
   );
 
@@ -109,8 +113,10 @@ CREATE POLICY "Users can update their team's orders"
   FOR UPDATE
   USING (
     team_id IN (
-      SELECT team_id FROM team_members 
-      WHERE user_id = auth.uid()
+      SELECT (membership->>'teamId')::text
+      FROM users u,
+      jsonb_array_elements(u.memberships) AS membership
+      WHERE u.id = auth.uid()::text
     )
   );
 
@@ -120,8 +126,10 @@ CREATE POLICY "Users can delete their team's orders"
   FOR DELETE
   USING (
     team_id IN (
-      SELECT team_id FROM team_members 
-      WHERE user_id = auth.uid()
+      SELECT (membership->>'teamId')::text
+      FROM users u,
+      jsonb_array_elements(u.memberships) AS membership
+      WHERE u.id = auth.uid()::text
     )
   );
 
