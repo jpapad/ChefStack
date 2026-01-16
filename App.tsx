@@ -134,8 +134,13 @@ const AppContent: React.FC = () => {
         const hasRecoveryInSearch = search && (search.includes('type=recovery') || search.includes('type%3Drecovery'));
         
         if (hasRecoveryInHash || hasRecoveryInSearch) {
-          console.log('🔐 Recovery mode detected - will skip auto-login');
+          console.log('🔐 Recovery mode detected - clearing user state and skipping auto-login');
           setIsResetPasswordMode(true);
+          // Clear any existing user state to force reset form display
+          setCurrentUser(null);
+          setCurrentTeamId(null);
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('currentTeamId');
         }
 
         const data = await api.fetchAllData();
