@@ -75,7 +75,14 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
       setTimeout(() => {
         onComplete();
       }, 2000);
-      }
+    } catch (err: any) {
+      console.error('❌ Password update failed:', err);
+      setError(err.message || 'Αποτυχία ενημέρωσης κωδικού. Παρακαλώ δοκιμάστε ξανά.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Show loading state while checking session
   if (isLoading && !sessionReady) {
     return (
@@ -123,13 +130,7 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
     );
   }
 
-    } catch (err: any) {
-      console.error('❌ Password update failed:', err);
-      setError(err.message || 'Αποτυχία ενημέρωσης κωδικού. Παρακαλώ δοκιμάστε ξανά.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  
 
   return (
     <div className="min-h-screen bg-light-bg dark:bg-dark-bg flex items-center justify-center p-4">
