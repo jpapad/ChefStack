@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reset bridge</title>
+  <style>body{font-family:system-ui, -apple-system, 'Segoe UI', Roboto, Arial;display:flex;align-items:center;justify-content:center;height:100vh;background:#f8fafc;margin:0} .card{background:#fff;padding:24px;border-radius:8px;box-shadow:0 6px 18px rgba(2,6,23,0.08);max-width:720px;width:100%;text-align:center} a.btn{display:inline-block;padding:10px 16px;background:#F59E0B;color:#000;border-radius:6px;text-decoration:none;font-weight:600}</style>
+</head>
+<body>
+  <div class="card">
+    <h2>Reset bridge</h2>
+    <p>Preparing secure password reset. If your browser doesn't redirect automatically, click the button below.</p>
+    <p id="status">Redirecting…</p>
+    <p><a id="go" class="btn" href="#">Go to reset</a></p>
+  </div>
+
+  <script>
+    (function(){
+      function getParam(name){
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+      }
+      const to = getParam('to') || getParam('url') || getParam('confirmation') || '';
+      const statusEl = document.getElementById('status');
+      const goEl = document.getElementById('go');
+      if(!to){
+        statusEl.textContent = 'No confirmation URL provided.';
+        goEl.style.display = 'none';
+        return;
+      }
+      try{
+        const decoded = decodeURIComponent(to);
+        goEl.href = decoded;
+        // Use replace so history doesn't keep the bridge
+        setTimeout(()=>{
+          window.location.replace(decoded);
+        }, 600);
+      }catch(e){
+        try{
+          goEl.href = to;
+          setTimeout(()=> window.location.replace(to), 600);
+        }catch(err){
+          statusEl.textContent = 'Failed to redirect. Click the button below.';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
