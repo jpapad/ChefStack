@@ -55,13 +55,33 @@ const AppContent: React.FC = () => {
   // Check if URL contains reset password hash
   useEffect(() => {
     const hash = window.location.hash;
+    const search = window.location.search;
     console.log('Auth init - window.location.hash:', hash);
-    // Supabase sends hash like: #access_token=xxx&expires_in=xxx&type=recovery
-    if (hash && (hash.includes('type=recovery') || hash.includes('type%3Drecovery'))) {
+    console.log('Auth init - window.location.search:', search);
+
+    // Supabase typically sends recovery in the URL hash like: #access_token=xxx&...&type=recovery
+    // But some setups can return params in the query string. If query contains the access_token and type=recovery,
+    // move them into the hash so supabase-js (detectSessionInUrl) can pick them up.
+    if (search && (search.includes('type=recovery') || search.includes('type%3Drecovery'))) {
+      try {
+        const q = search.startsWith('?') ? search.slice(1) : search;
+        if (q.includes('access_token')) {
+          // Replace hash with query (so supabase can detect session) and remove query from URL
+          window.location.hash = q;
+          const newUrl = window.location.origin + window.location.pathname + window.location.hash;
+          window.history.replaceState(null, '', newUrl);
+          console.log('Auth init - moved recovery query to hash for supabase detection');
+        }
+      } catch (e) {
+        console.warn('Auth init - failed to move query to hash', e);
+      }
+    }
+
+    // Now check the hash for recovery type
+    if (window.location.hash && (window.location.hash.includes('type=recovery') || window.location.hash.includes('type%3Drecovery'))) {
       console.log('🔐 Password reset mode detected from URL hash');
       setIsResetPasswordMode(true);
-      // Don't clear the hash - Supabase needs it to establish the recovery session
-      // We'll let ResetPasswordView handle the session and clear the hash after success
+      // Don't clear the hash - ResetPasswordView will handle the session and clear the hash after success
     }
   }, []);
 

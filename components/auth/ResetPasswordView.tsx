@@ -22,6 +22,22 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
     const checkRecoverySession = async () => {
       try {
         console.log('ResetPasswordView - current URL:', window.location.href);
+        // If Supabase returned recovery params in the query string, move them into the hash so
+        // `supabase.auth.getSession()` can detect the session (detectSessionInUrl=true).
+        const search = window.location.search;
+        if (search && (search.includes('type=recovery') || search.includes('access_token'))) {
+          try {
+            const q = search.startsWith('?') ? search.slice(1) : search;
+            if (q.includes('access_token')) {
+              window.location.hash = q;
+              const newUrl = window.location.origin + window.location.pathname + window.location.hash;
+              window.history.replaceState(null, '', newUrl);
+              console.log('ResetPasswordView - moved recovery query to hash');
+            }
+          } catch (e) {
+            console.warn('ResetPasswordView - failed to move query to hash', e);
+          }
+        }
         // Give Supabase a moment to process the URL hash
         await new Promise(resolve => setTimeout(resolve, 500));
         
