@@ -163,7 +163,15 @@ const AppContent: React.FC = () => {
         setTeamTasks(data.teamTasks || []);
         setChatMessages(data.chatMessages || []);
 
-        // 2. Έλεγξε αν υπάρχει ενεργό session
+        // 2. Check if this is a password reset flow BEFORE checking session
+        // If recovery mode detected, skip auto-login to show reset form instead
+        if (isResetPasswordMode) {
+          console.log('🔐 Recovery mode active - skipping auto-login to show reset form');
+          setIsLoading(false);
+          return;
+        }
+
+        // 3. Έλεγξε αν υπάρχει ενεργό session (only if NOT in reset mode)
         if (supabase) {
           const sessionInfo = await api.getCurrentUserAndTeams();
           if (sessionInfo) {
@@ -220,7 +228,7 @@ const AppContent: React.FC = () => {
     };
 
     fetchDataAndSession();
-  }, []); // 👈 ΜΟΝΟ ΑΥΤΟ — ΚΕΝΟ array
+  }, [isResetPasswordMode]); // 👈 Re-run if reset mode changes
 
   const handleAuthSuccess = async (
     email: string,
