@@ -40,6 +40,14 @@ import { Icon } from './components/common/Icon';
 import { LanguageProvider, useTranslation } from './i18n';
 
 const AppContent: React.FC = () => {
+  // Check for recovery mode FIRST to prevent loading user from localStorage
+  const isRecoveryMode = (() => {
+    const hash = window.location.hash;
+    const search = window.location.search;
+    return (hash && (hash.includes('type=recovery') || hash.includes('type%3Drecovery'))) ||
+           (search && (search.includes('type=recovery') || search.includes('type%3Drecovery')));
+  })();
+
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>(
     'currentUser',
     null
@@ -48,9 +56,18 @@ const AppContent: React.FC = () => {
     'currentTeamId',
     null
   );
-  const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
+  const [isResetPasswordMode, setIsResetPasswordMode] = useState(isRecoveryMode);
   const { t } = useTranslation();
   const { toast } = useToast();
+
+  // Clear user state if recovery mode was detected on init
+  useEffect(() => {
+    if (isRecoveryMode) {
+      console.log('🔐 Recovery mode detected on init - clearing user state');
+      setCurrentUser(null);
+      setCurrentTeamId(null);
+    }
+  }, []); // Run once on mount
 
   // Check if URL contains reset password hash and normalize it
   useEffect(() => {
