@@ -75,6 +75,7 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
       setTimeout(() => {
         onComplete();
       }, 2000);
+      }
   // Show loading state while checking session
   if (isLoading && !sessionReady) {
     return (
