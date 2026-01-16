@@ -55,6 +55,7 @@ const AppContent: React.FC = () => {
   // Check if URL contains reset password hash
   useEffect(() => {
     const hash = window.location.hash;
+    console.log('Auth init - window.location.hash:', hash);
     // Supabase sends hash like: #access_token=xxx&expires_in=xxx&type=recovery
     if (hash && (hash.includes('type=recovery') || hash.includes('type%3Drecovery'))) {
       console.log('🔐 Password reset mode detected from URL hash');

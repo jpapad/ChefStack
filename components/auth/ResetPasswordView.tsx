@@ -21,10 +21,12 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
   useEffect(() => {
     const checkRecoverySession = async () => {
       try {
+        console.log('ResetPasswordView - current URL:', window.location.href);
         // Give Supabase a moment to process the URL hash
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const { data: { session }, error: sessionError } = await api.getSession();
+        console.log('ResetPasswordView - api.getSession result:', { session, sessionError });
         
         if (sessionError || !session) {
           console.error('❌ No active recovery session:', sessionError);
