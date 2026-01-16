@@ -52,7 +52,7 @@ const AppContent: React.FC = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  // Check if URL contains reset password hash
+  // Check if URL contains reset password hash and normalize it
   useEffect(() => {
     const pathname = window.location.pathname;
     const hash = window.location.hash;
@@ -84,13 +84,6 @@ const AppContent: React.FC = () => {
       } catch (e) {
         console.warn('Auth init - failed to move query to hash', e);
       }
-    }
-
-    // Now check the hash for recovery type
-    if (window.location.hash && (window.location.hash.includes('type=recovery') || window.location.hash.includes('type%3Drecovery'))) {
-      console.log('🔐 Password reset mode detected from URL hash');
-      setIsResetPasswordMode(true);
-      // Don't clear the hash - ResetPasswordView will handle the session and clear the hash after success
     }
   }, []);
 
@@ -134,6 +127,17 @@ const AppContent: React.FC = () => {
     const fetchDataAndSession = async () => {
       setIsLoading(true);
       try {
+        // Check for recovery mode FIRST (synchronously, before any async operations)
+        const hash = window.location.hash;
+        const search = window.location.search;
+        const hasRecoveryInHash = hash && (hash.includes('type=recovery') || hash.includes('type%3Drecovery'));
+        const hasRecoveryInSearch = search && (search.includes('type=recovery') || search.includes('type%3Drecovery'));
+        
+        if (hasRecoveryInHash || hasRecoveryInSearch) {
+          console.log('🔐 Recovery mode detected - will skip auto-login');
+          setIsResetPasswordMode(true);
+        }
+
         const data = await api.fetchAllData();
 
         setAllUsers(data.users || []);
@@ -163,9 +167,8 @@ const AppContent: React.FC = () => {
         setTeamTasks(data.teamTasks || []);
         setChatMessages(data.chatMessages || []);
 
-        // 2. Check if this is a password reset flow BEFORE checking session
-        // If recovery mode detected, skip auto-login to show reset form instead
-        if (isResetPasswordMode) {
+        // 2. Skip auto-login if recovery mode was detected above
+        if (hasRecoveryInHash || hasRecoveryInSearch) {
           console.log('🔐 Recovery mode active - skipping auto-login to show reset form');
           setIsLoading(false);
           return;
@@ -228,7 +231,7 @@ const AppContent: React.FC = () => {
     };
 
     fetchDataAndSession();
-  }, [isResetPasswordMode]); // 👈 Re-run if reset mode changes
+  }, []); // 👈 Run once on mount
 
   const handleAuthSuccess = async (
     email: string,
