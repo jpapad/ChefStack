@@ -39,6 +39,25 @@ const throwConfigError = () => {
   );
 };
 
+// Friendly formatter for Supabase auth errors (returns Greek message)
+const formatAuthError = (err: any): string => {
+  if (!err) return 'Δεν ήταν δυνατή η είσοδος. Παρακαλώ δοκιμάστε ξανά.';
+  const msg = (err.message || (err as any).msg || '').toString().toLowerCase();
+
+  if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('email')) {
+    return 'Τα στοιχεία σύνδεσης είναι λανθασμένα. Έλεγχος email και κωδικού.';
+  }
+  if (msg.includes('password')) {
+    return 'Ο κωδικός που δώσατε δεν είναι σωστός.';
+  }
+  if (msg.includes('network') || msg.includes('fetch') || msg.includes('timeout')) {
+    return 'Πρόβλημα σύνδεσης. Έλεγχος δικτύου και προσπάθεια ξανά.';
+  }
+
+  // Fallback to detailed message if present, otherwise generic
+  return err.message || err.error || 'Δεν ήταν δυνατή η είσοδος. Παρακαλώ δοκιμάστε ξανά.';
+};
+
 // Helper για ids
 const generateId = (prefix: string) => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -584,8 +603,12 @@ CREATE TABLE haccp_reminders (
       email,
       password: pass
     });
-    if (authError || !authData.user) {
-      throw new Error(authError?.message || 'Could not sign up user.');
+    if (authError || !authData?.user) {
+      console.error('Supabase auth error during signUp:', authError);
+      const friendly = formatAuthError(authError) || authError?.message || 'Could not sign up user.';
+      const err = new Error(friendly);
+      (err as any).raw = authError;
+      throw err;
     }
 
     const { data: newTeam, error: teamError } = await supabase
@@ -629,13 +652,18 @@ CREATE TABLE haccp_reminders (
 
     if (!supabase) throwConfigError();
 
-    const { data: authData, error: authError } =
-      await supabase.auth.signInWithPassword({
-        email,
-        password: pass
-      });
-    if (authError || !authData.user) {
-      throw new Error(authError?.message || 'Δεν ήταν δυνατή η είσοδος.');
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password: pass
+    });
+
+    if (authError || !authData?.user) {
+      console.error('Supabase auth error during login:', authError);
+      const details = authError?.message || (authError as any)?.details || JSON.stringify(authError);
+      const friendly = formatAuthError(authError) || details || 'Δεν ήταν δυνατή η είσοδος.';
+      const err = new Error(friendly);
+      (err as any).raw = authError;
+      throw err;
     }
 
     const userId = authData.user.id;
@@ -724,7 +752,19 @@ CREATE TABLE haccp_reminders (
   logout: async (): Promise<void> => {
     if (useMockApi) return Promise.resolve();
     if (!supabase) throwConfigError();
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Supabase auth error during signOut:', error);
+        const friendly = formatAuthError(error) || error.message || 'Αποτυχία αποσύνδεσης.';
+        const err = new Error(friendly);
+        (err as any).raw = error;
+        throw err;
+      }
+    } catch (e) {
+      console.error('Unexpected error during signOut:', e);
+      throw e;
+    }
   },
 
   getSession: async () => {
@@ -751,7 +791,11 @@ CREATE TABLE haccp_reminders (
     });
 
     if (error) {
-      throw new Error(error.message || 'Αποτυχία αποστολής email επαναφοράς κωδικού.');
+      console.error('Supabase auth error during resetPassword:', error);
+      const friendly = formatAuthError(error) || error.message || 'Αποτυχία αποστολής email επαναφοράς κωδικού.';
+      const err = new Error(friendly);
+      (err as any).raw = error;
+      throw err;
     }
   },
 
@@ -767,7 +811,11 @@ CREATE TABLE haccp_reminders (
     });
 
     if (error) {
-      throw new Error(error.message || 'Αποτυχία ενημέρωσης κωδικού.');
+      console.error('Supabase auth error during updatePassword:', error);
+      const friendly = formatAuthError(error) || error.message || 'Αποτυχία ενημέρωσης κωδικού.';
+      const err = new Error(friendly);
+      (err as any).raw = error;
+      throw err;
     }
   },
 

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Recipe, Allergen, ALLERGENS_LIST, RECIPE_CATEGORY_KEYS } from '../../types';
 import { Icon } from '../common/Icon';
 import { useTranslation } from '../../i18n';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { callGemini } from '../../src/lib/ai/callGemini';
 
 interface AIMenuGeneratorProps {
   isOpen: boolean;
@@ -31,23 +31,10 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
       return;
     }
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-
-    if (!apiKey) {
-      setError(
-        'Σφάλμα διαμόρφωσης: Δεν έχει οριστεί το VITE_GEMINI_API_KEY στο .env. ' +
-          'Πρόσθεσε το κλειδί σου στο .env και κάνε επανεκκίνηση το dev server.'
-      );
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: MODEL_ID });
-
       const fullPrompt = `
 Είσαι Executive Chef. Θέλω να δημιουργήσεις ΕΝΑ μενού μπουφέ στα Ελληνικά με βάση την παρακάτω περιγραφή:
 "${prompt}"
@@ -96,8 +83,18 @@ const AIMenuGenerator: React.FC<AIMenuGeneratorProps> = ({ isOpen, onClose, onSa
 }
 `;
 
-      const result = await model.generateContent(fullPrompt);
-      let text = result.response.text();
+      // Call via Supabase Edge Function proxy
+      const response = await callGemini({
+        feature: 'menu_generator',
+        prompt: fullPrompt,
+        model: 'gemini-2.0-flash', // Using consistent model (was gemini-flash-latest)
+      });
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      let text = response.text || '';
 
       // Αν τυχόν βάλει ```json ``` γύρω γύρω, τα αφαιρούμε
       text = text.replace(/```json|```/g, '').trim();

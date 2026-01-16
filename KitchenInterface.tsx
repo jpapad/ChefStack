@@ -221,13 +221,8 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
 
   const withApiKeyCheck = (action: () => void) => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-    if (!apiKey || apiKey.trim() === '') {
-      alert(
-        'Πρέπει να ορίσετε το VITE_GEMINI_API_KEY στο αρχείο .env.local και να επανεκκινήσετε τον dev server.'
-      );
-      return;
-    }
+    // No longer checks for VITE_GEMINI_API_KEY - API key is now on backend
+    // All AI features now route through Supabase Edge Functions
     action();
   };
 

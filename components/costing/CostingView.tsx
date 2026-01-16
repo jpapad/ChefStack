@@ -5,6 +5,7 @@ import ConfirmationModal from '../common/ConfirmationModal';
 import IngredientCostForm from './IngredientCostForm';
 import IngredientCostList from './IngredientCostList';
 import { api } from '../../services/api';
+import { callGemini } from '../../src/lib/ai/callGemini';
 
 interface CostingViewProps {
   ingredientCosts: IngredientCost[];
@@ -162,15 +163,6 @@ const CostingView: React.FC<CostingViewProps> = ({
         try {
           setIsAiLoading(true);
 
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY as
-            | string
-            | undefined;
-          if (!apiKey) {
-            throw new Error(
-              'Λείπει το VITE_GEMINI_API_KEY από το .env.local.'
-            );
-          }
-
           const totalItems = ingredientCosts.length;
           const avgCost =
             ingredientCosts.reduce((sum, c) => sum + c.cost, 0) /
@@ -249,38 +241,17 @@ ${focusIngredient}
 Μη γράψεις δοκίμιο – θέλω σύντομα, πρακτικά bullet points.
           `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
-
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }],
-                },
-              ],
-            }),
+          const response = await callGemini({
+            feature: 'costing',
+            prompt,
+            model: 'gemini-2.0-flash',
           });
 
-          if (!response.ok) {
-            const text = await response.text();
-            console.error('Gemini API error (costing):', text);
-            throw new Error('Σφάλμα από το Gemini API.');
+          if (response.error) {
+            throw new Error(response.error);
           }
 
-          const data = await response.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts
-              ?.map((p: any) => p.text)
-              .join('\n') || 'Δεν λήφθηκε απάντηση από το AI.';
+          const text = response.text || 'Δεν λήφθηκε απάντηση από το AI.';
 
           setAiInsights(text);
         } catch (e: any) {

@@ -30,6 +30,7 @@ import BatchActionBar, { BatchAction } from '../common/BatchActionBar';
 import BulkEditModal, { BulkEditField } from '../common/BulkEditModal';
 import { useBatchSelection } from '../../hooks/useBatchSelection';
 import { api } from '../../services/api';
+import { callGemini } from '../../src/lib/ai/callGemini';
 
 interface InventoryViewProps {
   wasteLogs?: WasteLog[];
@@ -499,15 +500,6 @@ const InventoryView: React.FC<InventoryViewProps> = ({
         setAiError(null);
 
         try {
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY as
-            | string
-            | undefined;
-          if (!apiKey) {
-            throw new Error(
-              'Λείπει το VITE_GEMINI_API_KEY από το .env.local.'
-            );
-          }
-
           const total: number = (selectedItem as any).totalQuantity;
 
           const reorderPoint = selectedItem.reorderPoint || 0;
@@ -567,37 +559,17 @@ ${perLocation || '—'}
 Να είσαι σύντομος, πρακτικός και συγκεκριμένος. Χρησιμοποίησε bullets (•) και όχι πολύ θεωρία.
           `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
-
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }]
-                }
-              ]
-            })
+          const response = await callGemini({
+            feature: 'inventory_insights',
+            prompt,
+            model: 'gemini-2.0-flash',
           });
 
-          if (!response.ok) {
-            const text = await response.text();
-            console.error('Gemini API error:', text);
-            throw new Error('Σφάλμα από το Gemini API.');
+          if (response.error) {
+            throw new Error(response.error);
           }
 
-          const data = await response.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts
-              ?.map((p: any) => p.text)
+          const text = response.text
               .join('\n') ||
             'Δεν λήφθηκε απάντηση από το AI.';
 

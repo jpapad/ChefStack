@@ -13,6 +13,7 @@ import {
 import { Icon } from '../common/Icon';
 import AdvancedFilterPanel, { FilterConfig, FilterValue } from '../common/AdvancedFilterPanel';
 import { useFilterPresets } from '../../hooks/useFilterPresets';
+import { callGemini } from '../../src/lib/ai/callGemini';
 
 interface WasteLogViewProps {
   wasteLogs: WasteLog[];
@@ -253,15 +254,6 @@ const WasteLogView: React.FC<WasteLogViewProps> = ({
         setAiError(null);
 
         try {
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY as
-            | string
-            | undefined;
-          if (!apiKey) {
-            throw new Error(
-              'Λείπει το VITE_GEMINI_API_KEY από το .env.local.'
-            );
-          }
-
           const topItems = wasteByItem
             .slice()
             .sort((a, b) => b[1].total - a[1].total)
@@ -315,39 +307,17 @@ ${reasonsSummary || '—'}
 Μη γράψεις δοκίμιο· θέλω συγκεκριμένες, πρακτικές προτάσεις.
           `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
-
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }],
-                },
-              ],
-            }),
+          const response = await callGemini({
+            feature: 'waste_analysis',
+            prompt,
+            model: 'gemini-2.0-flash',
           });
 
-          if (!response.ok) {
-            const text = await response.text();
-            console.error('Gemini API error (waste):', text);
-            throw new Error('Σφάλμα από το Gemini API.');
+          if (response.error) {
+            throw new Error(response.error);
           }
 
-          const data = await response.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts
-              ?.map((p: any) => String(p.text ?? ''))
-              .join('\n') ||
-            'Δεν λήφθηκε απάντηση από το AI.';
+          const text = response.text || 'Δεν λήφθηκε απάντηση από το AI.';
 
           setAiInsights(text);
         } catch (e: any) {

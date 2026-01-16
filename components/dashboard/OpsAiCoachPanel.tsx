@@ -8,6 +8,7 @@ import {
   PrepTask,
 } from '../../types';
 import { Icon } from '../common/Icon';
+import { callGemini } from '../../src/lib/ai/callGemini';
 
 interface OpsAiCoachPanelProps {
   recipes: Recipe[];
@@ -128,13 +129,6 @@ const OpsAiCoachPanel: React.FC<OpsAiCoachPanelProps> = ({
         setAiText(null);
 
         try {
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-          if (!apiKey) {
-            throw new Error(
-              'Λείπει το VITE_GEMINI_API_KEY στο .env.local. Πρόσθεσέ το και κάνε restart τον dev server.'
-            );
-          }
-
           const lowStockPreview = lowStockItems
             .slice(0, 10)
             .map(item => {
@@ -187,32 +181,17 @@ ${lowStockPreview || '—'}
 Να είσαι συγκεκριμένος και πρακτικός, όχι θεωρητικός. Χρησιμοποίησε bullets (•) και σύντομες φράσεις.
           `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
-
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-            }),
+          const response = await callGemini({
+            feature: 'ops_coach',
+            prompt,
+            model: 'gemini-2.0-flash',
           });
 
-          if (!response.ok) {
-            const text = await response.text();
-            console.error('Gemini API error (ops coach):', text);
-            throw new Error('Σφάλμα από το Gemini API.');
+          if (response.error) {
+            throw new Error(response.error);
           }
 
-          const data = await response.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts
-              ?.map((p: any) => p.text)
-              .join('\n') || 'Δεν λήφθηκε απάντηση από το AI.';
+          const text = response.text || 'Δεν λήφθηκε απάντηση από το AI.';
 
           setAiText(text);
         } catch (e: any) {

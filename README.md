@@ -598,11 +598,37 @@ AI-powered kitchen assistant:
 
 ## 🤖 AI Integration
 
-ChefStack leverages **Google Gemini AI** (gemini-2.0-flash model) for intelligent features:
+ChefStack leverages **Google Gemini AI** (gemini-2.0-flash model) for intelligent features.
+
+### 🔐 Secure Backend Architecture
+
+**All AI calls now route through Supabase Edge Functions** for enhanced security:
+
+- ✅ **No API Keys in Frontend**: Gemini API key stored securely on backend
+- ✅ **Authentication Required**: All AI features require valid user session
+- ✅ **Single Proxy Endpoint**: Centralized `gemini-proxy` Edge Function
+- ✅ **Rate Limiting Ready**: Easy to add usage limits per user/team
+- ✅ **Cost Tracking**: Monitor AI usage from Supabase dashboard
 
 ### AI Features
 
-#### 1. **Recipe Image Generation**
+#### 1. **Chef Copilot** (AI Kitchen Assistant)
+- Conversational AI for kitchen operations
+- Analyzes recipes, inventory, menus, waste, HACCP data
+- Provides actionable insights and recommendations
+- 5 quick prompts: food cost, waste, menu engineering, prep planning, HACCP
+
+**Usage**: Dashboard → Chef Copilot panel
+
+#### 2. **Smart Menu Generator**
+- Generate complete menus from text descriptions
+- Creates multiple recipes with ingredients, steps, allergens
+- Customizable for different cuisines and meal types
+- Auto-imports generated recipes
+
+**Usage**: Menu View → "AI Menu Generator" button
+
+#### 3. **Recipe Image Generation**
 - Generate professional food photography for recipes
 - Text-to-image via Gemini
 - Multiple style options
@@ -610,15 +636,7 @@ ChefStack leverages **Google Gemini AI** (gemini-2.0-flash model) for intelligen
 
 **Usage**: Recipe Form → "Generate AI Image" button
 
-#### 2. **Smart Menu Coach**
-- AI analyzes your inventory, recipes, and trends
-- Suggests balanced menu combinations
-- Considers seasonality and cost
-- Provides reasoning for suggestions
-
-**Usage**: Menu View → "AI Menu Coach" button
-
-#### 3. **Waste Analysis**
+#### 4. **Waste Analysis**
 - AI analyzes waste patterns
 - Identifies root causes
 - Suggests reduction strategies
@@ -626,31 +644,31 @@ ChefStack leverages **Google Gemini AI** (gemini-2.0-flash model) for intelligen
 
 **Usage**: Waste Log View → "Analyze with Gemini" button
 
-#### 4. **Supplier Coaching**
-- AI reviews supplier performance
+#### 5. **Costing Insights**
+- AI reviews ingredient costs
 - Suggests negotiation strategies
-- Identifies optimization opportunities
-- Recommends best practices
+- Identifies high-risk items
+- Menu engineering recommendations
 
-**Usage**: Supplier View → AI Coach panel
+**Usage**: Costing View → "AI Costing Insights" button
 
-#### 5. **HACCP Coaching**
+#### 6. **HACCP Coaching**
 - AI provides compliance guidance
+- Analyzes temperature logs
 - Suggests best practices
-- Helps interpret regulations
 - Offers training tips
 
 **Usage**: HACCP View → AI Coach panel
 
-#### 6. **Operations Insights**
+#### 7. **Operations Insights**
 - Dashboard AI coach
 - Daily operational suggestions
 - Efficiency improvements
 - Cost reduction ideas
 
-**Usage**: Dashboard → AI Coach panel
+**Usage**: Dashboard → Ops AI Coach panel
 
-#### 7. **Inventory Optimization**
+#### 8. **Inventory Optimization**
 - AI analyzes stock levels and usage
 - Suggests optimal reorder points
 - Identifies slow-moving items
@@ -658,16 +676,68 @@ ChefStack leverages **Google Gemini AI** (gemini-2.0-flash model) for intelligen
 
 **Usage**: Inventory View → AI Insights panel
 
-### API Key Management
+#### 9. **Shopping Suggestions**
+- AI-powered shopping list optimization
+- Groups items by supplier
+- Suggests bulk purchases
+- Identifies cost savings
 
-ChefStack includes a user-friendly API key management system:
+**Usage**: Shopping List View → AI button
 
-- **No Hard Errors**: Missing API key shows friendly modal, not crashes
-- **Setup Instructions**: Clear guidance on getting Gemini API key
-- **Per-Feature Checks**: Each AI feature validates key independently
-- **Graceful Degradation**: App fully functional without AI features
+### 🚀 Deployment: Gemini API Key Setup
 
-**Implementation**: `withApiKeyCheck` wrapper pattern ensures consistent UX
+**For Production (Supabase Cloud):**
+
+```bash
+# Set as Supabase secret (never in frontend .env!)
+supabase secrets set GEMINI_API_KEY=your_actual_gemini_api_key
+
+# Deploy the Edge Function
+supabase functions deploy gemini-proxy
+
+# Verify deployment
+supabase functions list
+```
+
+**For Local Development (Supabase CLI):**
+
+```bash
+# Create supabase/.env file (gitignored)
+echo "GEMINI_API_KEY=your_dev_gemini_key" > supabase/.env
+
+# Start Supabase locally
+supabase start
+
+# Serve Edge Function locally
+supabase functions serve gemini-proxy --env-file supabase/.env
+```
+
+**Get a Gemini API Key:**
+1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Sign in with Google account
+3. Create API key
+4. Enable "Generative Language API" in Google Cloud Console
+5. Set up billing (free tier available)
+
+### 📖 Documentation
+
+See [`supabase/functions/gemini-proxy/README.md`](supabase/functions/gemini-proxy/README.md) for:
+- Complete API reference
+- Error handling guide
+- Security notes
+- Troubleshooting tips
+- Local development setup
+
+### API Key Management (Legacy - Frontend Only)
+
+**⚠️ Note**: Direct frontend API key usage is deprecated. All new AI features use the backend proxy.
+
+For legacy features still using frontend keys (e.g., AIImageModal):
+- Set `VITE_GEMINI_API_KEY` in `.env.local` (dev only)
+- Shows friendly modal if missing, doesn't crash
+- Graceful degradation: app works without AI
+
+**Migration in progress**: Remaining frontend AI calls will be moved to Edge Functions in future updates.
 
 ---
 

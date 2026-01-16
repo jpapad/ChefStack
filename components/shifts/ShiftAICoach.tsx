@@ -180,11 +180,6 @@ const ShiftAICoach: React.FC<ShiftAICoachProps> = ({
         setAiError(null);
 
         try {
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-          if (!apiKey) {
-            throw new Error('Λείπει το VITE_GEMINI_API_KEY από το .env.local.');
-          }
-
           const topUsers = summary.perUser
             .slice(0, 10)
             .map(
@@ -235,38 +230,17 @@ ${scheduleLines || '—'}
 Να είσαι πρακτικός, με bullets (•) και όχι γενικόλογη θεωρία.
           `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
-
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }]
-                }
-              ]
-            })
+          const { callGemini } = await import('../../src/lib/ai/callGemini');
+          const result = await callGemini({
+            feature: 'ops_coach',
+            prompt,
           });
 
-          if (!response.ok) {
-            const text = await response.text();
-            console.error('Gemini API error (shifts):', text);
-            throw new Error('Σφάλμα από το Gemini API.');
+          if (result.error) {
+            throw new Error(result.error);
           }
 
-          const data = await response.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts
-              ?.map((p: any) => p.text)
-              .join('\n') || 'Δεν λήφθηκε απάντηση από το AI.';
+          const text = result.text || 'Δεν λήφθηκε απάντηση από το AI.';
 
           setAiInsights(text);
         } catch (e: any) {

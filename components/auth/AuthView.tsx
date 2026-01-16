@@ -4,7 +4,7 @@ import { useTranslation } from '../../i18n';
 import { chefStackLogo } from '../../assets';
 
 interface AuthViewProps {
-  onAuthSuccess: (email: string, pass: string) => boolean;
+  onAuthSuccess: (email: string, pass: string) => Promise<boolean>;
   onSignUp: (name: string, email: string, pass: string) => Promise<{ success: boolean; message: string }>;
   onResetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
 }
@@ -17,6 +17,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onSignUp, onResetPas
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [lastError, setLastError] = useState<any>(null);
+  const [showDetails, setShowDetails] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
 
@@ -24,6 +26,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onSignUp, onResetPas
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setLastError(null);
     
     try {
       const success = await onAuthSuccess(email, password);
@@ -32,7 +35,9 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onSignUp, onResetPas
       }
     } catch (error) {
       console.error('[AuthView] Login error:', error);
-      setError(t('auth_error_credentials'));
+      const message = error instanceof Error ? error.message : String(error);
+      setError(message || t('auth_error_credentials'));
+      setLastError(error);
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +89,23 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onSignUp, onResetPas
           <form onSubmit={isForgotPassword ? handleResetPasswordSubmit : (isLoginView ? handleLoginSubmit : handleSignUpSubmit)}>
             {error && <p className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 text-sm font-semibold p-3 rounded-lg mb-6 text-center">{error}</p>}
             {success && <p className="bg-green-100 dark:bg-green-900/50 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 text-sm font-semibold p-3 rounded-lg mb-6 text-center">{success}</p>}
+
+            {lastError && (
+              <div className="mt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowDetails((s) => !s)}
+                  className="text-xs text-brand-yellow hover:underline"
+                >
+                  {showDetails ? 'Απόκρυψη λεπτομερειών' : 'Εμφάνιση λεπτομερειών'}
+                </button>
+                {showDetails && (
+                  <pre className="mt-3 p-3 text-xs text-left max-h-48 overflow-auto bg-black/5 dark:bg-white/5 rounded">
+                    {JSON.stringify(lastError, Object.getOwnPropertyNames(lastError || {}), 2)}
+                  </pre>
+                )}
+              </div>
+            )}
             
             <div className="space-y-6">
               {!isLoginView && !isForgotPassword && (

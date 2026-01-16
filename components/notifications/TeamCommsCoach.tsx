@@ -64,16 +64,6 @@ const TeamCommsCoach: React.FC<TeamCommsCoachProps> = ({
 
     (async () => {
       try {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY as
-          | string
-          | undefined;
-
-        if (!apiKey) {
-          throw new Error(
-            'Λείπει το VITE_GEMINI_API_KEY στο .env.local. Πρόσθεσέ το και κάνε restart τον dev server.'
-          );
-        }
-
         const prompt = `
 Είσαι επικοινωνιολόγος / F&B Manager σε επαγγελματική κουζίνα.
 
@@ -97,38 +87,17 @@ ${recentSummary || '—'}
 3) Αν χρειάζεται, μια μικρή πρόταση για follow-up (π.χ. “αν έχετε ιδέες, γράψτε εδώ”).
         `.trim();
 
-        const model = 'gemini-2.0-flash';
-        const endpoint =
-          'https://generativelanguage.googleapis.com/v1beta/models/' +
-          model +
-          ':generateContent?key=' +
-          encodeURIComponent(apiKey);
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: prompt }]
-              }
-            ]
-          })
+        const { callGemini } = await import('../../src/lib/ai/callGemini');
+        const result = await callGemini({
+          feature: 'ops_coach',
+          prompt,
         });
 
-        if (!response.ok) {
-          const text = await response.text();
-          console.error('Gemini API error (team comms):', text);
-          throw new Error('Σφάλμα από το Gemini API.');
+        if (result.error) {
+          throw new Error(result.error);
         }
 
-        const data = await response.json();
-        const text =
-          data?.candidates?.[0]?.content?.parts
-            ?.map((p: any) => p.text)
-            .join('\n') || 'Δεν λήφθηκε απάντηση από το AI.';
+        const text = result.text || 'Δεν λήφθηκε απάντηση από το AI.';
 
         setAiText(text);
       } catch (e: any) {

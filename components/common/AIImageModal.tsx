@@ -1,11 +1,11 @@
 // components/common/AIImageModal.tsx
 import React, { useEffect, useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import { Icon } from './Icon';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { supabase } from '../../services/supabaseClient';
 
 interface BaseImageForEditing {
   data: string;      // καθαρό base64, χωρίς "data:image/..,"
@@ -49,12 +49,11 @@ const AIImageModal: React.FC<AIImageModalProps> = ({
       return;
     }
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-
-    if (!apiKey) {
+    // Check if Supabase is configured
+    if (!supabase) {
       setError(
-        'Σφάλμα ρυθμίσεων: Δεν βρέθηκε το VITE_GEMINI_API_KEY στο .env. ' +
-          'Πρόσθεσε το κλειδί σου και κάνε restart το dev server.'
+        'Σφάλμα ρυθμίσεων: Το Supabase δεν είναι διαμορφωμένο. ' +
+          'Η δημιουργία εικόνων απαιτεί σύνδεση με το backend.'
       );
       return;
     }
@@ -63,23 +62,23 @@ const AIImageModal: React.FC<AIImageModalProps> = ({
     setError(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey });
-
-      // Για αρχή κάνουμε μόνο text→image.
-      // Αν αργότερα θέλεις πραγματικό "edit" πάνω σε baseImage,
-      // το επεκτείνουμε να στέλνει και την εικόνα σαν input.
-      const response = await ai.models.generateImages({
-        // από το list που έβγαλες: π.χ. "models/imagen-4.0-generate-001"
-        model: 'models/imagen-4.0-generate-001',
-        prompt,
-        config: {
+      // Call the image-proxy Edge Function (backend handles API key)
+      const { data, error: functionError } = await supabase.functions.invoke('image-proxy', {
+        body: {
+          prompt: prompt.trim(),
           numberOfImages: 1,
-          outputMimeType: 'image/png',
         },
       });
 
-      const img = response.generatedImages?.[0]?.image;
-      const imageBytes = img?.imageBytes;
+      if (functionError) {
+        throw new Error(functionError.message || 'Failed to generate image');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      const imageBytes = data?.generatedImages?.[0]?.imageBytes;
 
       if (!imageBytes) {
         throw new Error('Το AI δεν επέστρεψε δεδομένα εικόνας.');
@@ -91,8 +90,6 @@ const AIImageModal: React.FC<AIImageModalProps> = ({
 
       // Επιστρέφουμε ΜΟΝΟ το καθαρό base64, όπως περιμένει το RecipeForm
       onConfirm(imageBytes);
-      // αν ΘΕΛΕΙΣ πρώτα προεπισκόπηση και μετά confirm με κουμπί,
-      // μπορείς να ΜΗΝ καλέσεις εδώ onConfirm και να βάλεις extra κουμπί.
 
       onClose();
     } catch (e: any) {
@@ -107,8 +104,7 @@ const AIImageModal: React.FC<AIImageModalProps> = ({
         raw.includes('403')
       ) {
         setError(
-          'Σφάλμα αυθεντικοποίησης στο Google AI API. Έλεγξε ότι το VITE_GEMINI_API_KEY είναι σωστό ' +
-            'και ότι ο λογαριασμός σου έχει πρόσβαση στα Imagen models.'
+          'Σφάλμα αυθεντικοποίησης. Βεβαιώσου ότι είσαι συνδεδεμένος και ότι το backend είναι διαμορφωμένο σωστά.'
         );
       } else if (raw.includes('429')) {
         setError('Το API έκανε rate limit (429). Δοκίμασε ξανά μετά από λίγο.');

@@ -10,6 +10,7 @@ import {
   Workstation,
 } from '../../types';
 import { Icon } from '../common/Icon';
+import { callGemini } from '../../src/lib/ai/callGemini';
 
 interface ChefCopilotProps {
   recipes: Recipe[];
@@ -197,15 +198,6 @@ const ChefCopilot: React.FC<ChefCopilotProps> = ({
         try {
           setIsLoading(true);
 
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY as
-            | string
-            | undefined;
-          if (!apiKey) {
-            throw new Error(
-              'Λείπει το VITE_GEMINI_API_KEY στο .env.local. Πρόσθεσέ το και κάνε restart τον dev server.'
-            );
-          }
-
           const recipesSummary =
             recipes
               .slice(0, 25)
@@ -274,39 +266,18 @@ ${haccpSummaryText}
 Απόφυγε μεγάλα κατεβατά· χρησιμοποίησε bullets με δυνατά, actionable σημεία.
 `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
-
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }],
-                },
-              ],
-            }),
+          // Call via Supabase Edge Function proxy
+          const response = await callGemini({
+            feature: 'chef_copilot',
+            prompt,
+            model: 'gemini-2.0-flash',
           });
 
-          if (!response.ok) {
-            const text = await response.text();
-            console.error('Gemini API error (ChefCopilot):', text);
-            throw new Error('Σφάλμα από το Gemini API.');
+          if (response.error) {
+            throw new Error(response.error);
           }
 
-          const data: any = await response.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts
-              ?.map((p: any) => p.text)
-              .join('\n') || 'Δεν λήφθηκε απάντηση από το AI.';
-
+          const text = response.text || 'Δεν λήφθηκε απάντηση από το AI.';
           setAiAnswer(text);
         } catch (e: any) {
           console.error('ChefCopilot AI error', e);

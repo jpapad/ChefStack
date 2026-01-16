@@ -218,15 +218,6 @@ const SmartMenuCoach: React.FC<SmartMenuCoachProps> = ({
         try {
           setAiLoading(true);
 
-          const rawKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-          if (typeof rawKey !== 'string' || !rawKey) {
-            throw new Error(
-              'Λείπει το VITE_GEMINI_API_KEY στο .env.local. Πρόσθεσέ το και κάνε restart τον dev server.'
-            );
-          }
-
-          const apiKey: string = rawKey;
-
           const topWasteLines = wasteByItem
             .slice()
             .sort((a, b) => b.totalQty - a.totalQty)
@@ -288,40 +279,18 @@ ${sustainabilityTips.length > 0 ? sustainabilityTips.map(t => `- ${t}`).join('\n
 Μη γράψεις έκθεση· θέλω πρακτικά bullets, σαν σημειώσεις πριν από meeting για menu engineering.
           `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
+            const { callGemini } = await import('../../src/lib/ai/callGemini');
+            const result = await callGemini({
+              feature: 'menu_generator',
+              prompt,
+            });
 
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }],
-                },
-              ],
-            }),
-          });
+            if (result.error) {
+              throw new Error(result.error);
+            }
 
-          if (!response.ok) {
-            const text = await response.text();
-            console.error('Gemini API error (SmartMenuCoach):', text);
-            throw new Error('Σφάλμα από το Gemini API.');
-          }
-
-          const data = await response.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts
-              ?.map((p: any) => p.text)
-              .join('\n') || 'Δεν λήφθηκε απάντηση από το AI.';
-
-          setAiAdvice(text);
+            const text = result.text || 'Δεν λήφθηκε απάντηση από το AI.';
+            setAiAdvice(text);
         } catch (e: any) {
           console.error('AI SmartMenuCoach error', e);
           setAiError(

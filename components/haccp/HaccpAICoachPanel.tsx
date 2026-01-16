@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { HaccpLog } from '../../types';
 import { Icon } from '../common/Icon';
+import { callGemini } from '../../src/lib/ai/callGemini';
 
 interface HaccpAICoachPanelProps {
   haccpLogs: HaccpLog[];
@@ -30,13 +31,6 @@ const HaccpAICoachPanel: React.FC<HaccpAICoachPanelProps> = ({
         try {
           setIsLoading(true);
 
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-          if (!apiKey) {
-            throw new Error(
-              'Λείπει το VITE_GEMINI_API_KEY στο .env.local. Πρόσθεσέ το και κάνε restart τον dev server.'
-            );
-          }
-
           // Δίνουμε στο AI ένα περιορισμένο snapshot των logs (JSON)
           const logsSnapshot = JSON.stringify(haccpLogs.slice(0, 50));
 
@@ -59,25 +53,19 @@ ${logsSnapshot}
 Μίλα πρακτικά, με bullets (•), όχι τεράστια θεωρία.
           `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
+          // Call via Supabase Edge Function proxy
+          const response = await callGemini({
+            feature: 'haccp_coach',
+            prompt,
+            model: 'gemini-2.0-flash',
+          });
 
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }],
-                },
-              ],
-            }),
+          if (response.error) {
+            throw new Error(response.error);
+          }
+
+          const text = response.text || 'Δεν λήφθηκε απάντηση.';
+          setAiText(text);
           });
 
           if (!response.ok) {

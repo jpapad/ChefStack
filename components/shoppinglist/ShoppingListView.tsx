@@ -9,6 +9,7 @@ import {
   WasteLog,
 } from '../../types';
 import { Icon } from '../common/Icon';
+import { callGemini } from '../../src/lib/ai/callGemini';
 
 interface ShoppingListViewProps {
   menus: Menu[];
@@ -132,15 +133,6 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
         try {
           setAiLoading(true);
 
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY as
-            | string
-            | undefined;
-          if (!apiKey) {
-            throw new Error(
-              'Λείπει το VITE_GEMINI_API_KEY στο .env.local. Πρόσθεσέ το και κάνε restart τον dev server.'
-            );
-          }
-
           const itemsToBuy = shoppingList.filter((i) => i.toBuy > 0.0001);
           const totalItems = shoppingList.length;
           const totalToBuy = itemsToBuy.length;
@@ -224,38 +216,17 @@ ${wasteInfo}
 Χρησιμοποίησε bullets (•) και όχι μεγάλες παραγράφους. Να είσαι πρακτικός και συγκεκριμένος, σαν να προετοιμάζεις σημειώσεις πριν τις πρωινές αγορές.
           `.trim();
 
-          const model = 'gemini-2.0-flash';
-          const endpoint =
-            'https://generativelanguage.googleapis.com/v1beta/models/' +
-            model +
-            ':generateContent?key=' +
-            encodeURIComponent(apiKey);
-
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }],
-                },
-              ],
-            }),
+          const response = await callGemini({
+            feature: 'shopping_suggestions',
+            prompt,
+            model: 'gemini-2.0-flash',
           });
 
-          if (!response.ok) {
-            const text = await response.text();
-            console.error('Gemini API error (shopping list coach):', text);
-            throw new Error('Σφάλμα από το Gemini API.');
+          if (response.error) {
+            throw new Error(response.error);
           }
 
-          const data = await response.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts
-              ?.map((p: any) => String(p.text ?? ''))
-              .join('\n') || 'Δεν λήφθηκε απάντηση από το AI.';
+          const text = response.text || 'Δεν λήφθηκε απάντηση από το AI.';
 
           setAiAdvice(text);
         } catch (e: any) {

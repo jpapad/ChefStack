@@ -33,6 +33,7 @@ import ResetPasswordView from './components/auth/ResetPasswordView';
 import KitchenInterface from './components/KitchenInterface';
 import { InstallPrompt } from './components/common/InstallPrompt';
 import { Toaster } from './components/ui/toaster';
+import { useToast } from './hooks/use-toast';
 import { api } from './services/api';
 import { supabase } from './services/supabaseClient';
 import { Icon } from './components/common/Icon';
@@ -49,6 +50,7 @@ const AppContent: React.FC = () => {
   );
   const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
   const { t } = useTranslation();
+  const { toast } = useToast();
 
   // Check if URL contains reset password hash
   useEffect(() => {
@@ -243,7 +245,11 @@ const AppContent: React.FC = () => {
       return true;
     } catch (error: any) {
       console.error('❌ Login failed via api.login:', error);
-      return false;
+      try {
+        toast({ title: t('auth_login_failed_toast') || 'Login failed', description: error?.message || String(error) });
+      } catch {};
+      // Rethrow so the caller (AuthView) can display error details
+      throw error;
     }
   };
 
@@ -260,6 +266,9 @@ const AppContent: React.FC = () => {
       setCurrentTeamId(team.id);
       return { success: true, message: t('signup_success') };
     } catch (error: any) {
+      try {
+        toast({ title: t('auth_signup_failed_toast') || 'Sign up failed', description: error?.message || String(error) });
+      } catch {}
       return { success: false, message: error.message };
     }
   };
@@ -271,7 +280,10 @@ const AppContent: React.FC = () => {
       await api.resetPassword(email);
       return { success: true, message: t('auth_reset_success') };
     } catch (error: any) {
-      return { success: false, message: t('auth_reset_error') };
+      try {
+        toast({ title: t('auth_reset_failed_toast') || 'Reset failed', description: error?.message || String(error) });
+      } catch {}
+      return { success: false, message: error?.message || t('auth_reset_error') };
     }
   };
 
@@ -280,6 +292,9 @@ const AppContent: React.FC = () => {
       await api.logout();
     } catch (e) {
       console.error('Logout error:', e);
+      try {
+        toast({ title: t('auth_logout_failed_toast') || 'Logout failed', description: (e as any)?.message || String(e) });
+      } catch {}
     } finally {
       setCurrentUser(null);
       setCurrentTeamId(null);
