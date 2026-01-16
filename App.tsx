@@ -54,10 +54,19 @@ const AppContent: React.FC = () => {
 
   // Check if URL contains reset password hash
   useEffect(() => {
+    const pathname = window.location.pathname;
     const hash = window.location.hash;
     const search = window.location.search;
+    console.log('Auth init - window.location.pathname:', pathname);
     console.log('Auth init - window.location.hash:', hash);
     console.log('Auth init - window.location.search:', search);
+
+    // Special case: if path is /reset-bridge (without .html), redirect to the static HTML file
+    if (pathname === '/reset-bridge' && search) {
+      console.log('🔀 Redirecting /reset-bridge to /reset-bridge.html');
+      window.location.href = '/reset-bridge.html' + search;
+      return;
+    }
 
     // Supabase typically sends recovery in the URL hash like: #access_token=xxx&...&type=recovery
     // But some setups can return params in the query string. If query contains the access_token and type=recovery,
