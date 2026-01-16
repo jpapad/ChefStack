@@ -31,14 +31,12 @@
       try{
         const decoded = decodeURIComponent(to);
         goEl.href = decoded;
-        // Use replace so history doesn't keep the bridge
-        setTimeout(()=>{
-          window.location.replace(decoded);
-        }, 600);
+        // Immediate redirect - no setTimeout
+        window.location.replace(decoded);
       }catch(e){
         try{
           goEl.href = to;
-          setTimeout(()=> window.location.replace(to), 600);
+          window.location.replace(to);
         }catch(err){
           statusEl.textContent = 'Failed to redirect. Click the button below.';
         }
