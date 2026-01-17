@@ -70,6 +70,7 @@ import { useResponsive } from './hooks/useResponsive';
 import { useTranslation } from './i18n';
 import { api } from './services/api';
 import MobileNavBar from './components/common/MobileNavBar';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 interface KitchenInterfaceProps {
   user: User;
@@ -919,24 +920,27 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     switch (currentView) {
       case 'dashboard':
         return (
-          <DashboardView
-            recipes={teamRecipesForTeam}
-            tasks={teamTasks}
-            haccpLogs={teamHaccpLogs}
-            haccpItems={teamHaccpItems}
-            haccpReminders={teamHaccpReminders}
-            inventory={teamInventory}
-            wasteLogs={teamWasteLogs}
-            messages={teamMessages}
-            channels={teamChannels}
-            onViewChange={handleViewChange}
-            withApiKeyCheck={withApiKeyCheck}
-          />
+          <ErrorBoundary>
+            <DashboardView
+              recipes={teamRecipesForTeam}
+              tasks={teamTasks}
+              haccpLogs={teamHaccpLogs}
+              haccpItems={teamHaccpItems}
+              haccpReminders={teamHaccpReminders}
+              inventory={teamInventory}
+              wasteLogs={teamWasteLogs}
+              messages={teamMessages}
+              channels={teamChannels}
+              onViewChange={handleViewChange}
+              withApiKeyCheck={withApiKeyCheck}
+            />
+          </ErrorBoundary>
         );
       case 'workstations':
         return (
-          <WorkstationView
-            recipes={teamRecipesForTeam}
+          <ErrorBoundary>
+            <WorkstationView
+              recipes={teamRecipesForTeam}
             workstations={teamWorkstations}
             setWorkstations={setWorkstations}
             tasks={teamTasks}

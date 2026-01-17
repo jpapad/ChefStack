@@ -18,7 +18,7 @@ interface RecipeCardProps {
   onBulkSelect?: (id: string) => void;
 }
 
-const RecipeCard: React.FC<RecipeCardProps> = ({ 
+const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ 
   recipe, 
   isSelected, 
   onClick, 
@@ -95,6 +95,8 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+RecipeCard.displayName = 'RecipeCard';
 
 export default RecipeCard;

@@ -16,7 +16,7 @@ interface RecipeGridCardProps {
   onBulkSelect?: (id: string) => void;
 }
 
-const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
+const RecipeGridCard: React.FC<RecipeGridCardProps> = React.memo(({
   recipe,
   isSelected,
   onClick,
@@ -189,6 +189,8 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+RecipeGridCard.displayName = 'RecipeGridCard';
 
 export default RecipeGridCard;

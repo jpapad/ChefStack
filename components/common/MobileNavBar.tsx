@@ -28,11 +28,9 @@ const MobileNavBar: React.FC<MobileNavBarProps> = ({
 
   // Check if user has permission to view this item
   const hasPermission = (item: NavItem): boolean => {
-    if (!item.requiredPermissions || !currentUserRole) return true;
+    if (!item.roles || !currentUserRole) return true;
     if (currentUserRole === 'owner' || currentUserRole === 'admin') return true;
-    return item.requiredPermissions.every(perm =>
-      currentUserRole.permissions?.includes(perm)
-    );
+    return item.roles.includes(currentUserRole);
   };
 
   return (

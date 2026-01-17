@@ -1,4 +1,3 @@
-// components/Header.tsx
 import React, { useMemo, useState } from 'react';
 import {
   User,
@@ -10,6 +9,7 @@ import { useTranslation } from '../i18n';
 import { Icon } from './common/Icon';
 import KitchenAICoachModal from './common/KitchenAICoachModal';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { getAriaLabel } from '../utils/accessibility';
 
 interface HeaderProps {
   currentViewTitleKey: string;
@@ -96,12 +96,12 @@ const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={toggleDarkMode}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label={getAriaLabel.toggleTheme(isDarkMode)}
           >
             {isDarkMode ? (
-              <Icon name="sun" className="w-5 h-5 text-yellow-500" />
+              <Icon name="sun" className="w-5 h-5 text-yellow-500" aria-hidden="true" />
             ) : (
-              <Icon name="moon" className="w-5 h-5 text-slate-700" />
+              <Icon name="moon" className="w-5 h-5 text-slate-700" aria-hidden="true" />
             )}
           </button>
 
@@ -110,10 +110,12 @@ const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={() => setIsCoachOpen(true)}
             className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full border border-purple-400 text-purple-700 text-xs font-semibold hover:bg-purple-50 dark:border-purple-500 dark:text-purple-200 dark:hover:bg-purple-500/10 transition-colors"
+            aria-label="Άνοιγμα Kitchen AI Coach"
           >
             <Icon
               name="sparkles"
               className="w-4 h-4 text-purple-500 dark:text-purple-300"
+              aria-hidden="true"
             />
             <span>Kitchen AI</span>
           </button>
@@ -123,9 +125,9 @@ const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={handleOpenNotifications}
             className="relative p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            title="Ειδοποιήσεις"
+            aria-label={getAriaLabel.notification(unreadCount)}
           >
-            <Icon name="bell" className="w-5 h-5" />
+            <Icon name="bell" className="w-5 h-5" aria-hidden="true" />
             {unreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center">
                 {unreadCount}
