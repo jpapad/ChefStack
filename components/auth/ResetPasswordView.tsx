@@ -54,53 +54,6 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
       setIsLoading(false);
     }
   };
-  if (isLoading && !sessionReady) {
-    return (
-      <div className="min-h-screen bg-light-bg dark:bg-dark-bg flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
-          <Icon name="loader-2" className="w-12 h-12 animate-spin text-brand-yellow mx-auto mb-4" />
-          <p className="text-light-text-secondary dark:text-dark-text-secondary">
-            Επαλήθευση συνδέσμου επαναφοράς...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error if session couldn't be established
-  if (!sessionReady && error) {
-    return (
-      <div className="min-h-screen bg-light-bg dark:bg-dark-bg flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div
-              className="w-24 h-24 mb-4 inline-block"
-              dangerouslySetInnerHTML={{ __html: chefStackLogo }}
-            />
-            <h1 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">
-              Επαναφορά Κωδικού
-            </h1>
-          </div>
-          <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 p-8 rounded-2xl shadow-xl">
-            <p className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 text-sm font-semibold p-3 rounded-lg mb-6 text-center">
-              {error}
-            </p>
-            <button
-              onClick={() => {
-                window.location.hash = '';
-                onComplete();
-              }}
-              className="w-full px-4 py-3 rounded-lg bg-brand-dark text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              Επιστροφή στη σύνδεση
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  
 
   return (
     <div className="min-h-screen bg-light-bg dark:bg-dark-bg flex items-center justify-center p-4">
