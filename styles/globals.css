@@ -27,6 +27,21 @@
     transition: none !important;
   }
   
+  /* Enhanced typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+    letter-spacing: -0.02em;
+  }
+  
+  h1 { @apply text-4xl md:text-5xl font-bold leading-tight; }
+  h2 { @apply text-3xl md:text-4xl font-bold leading-tight; }
+  h3 { @apply text-2xl md:text-3xl font-semibold leading-snug; }
+  h4 { @apply text-xl md:text-2xl font-semibold leading-snug; }
+  
+  p, li {
+    @apply leading-relaxed;
+  }
+  
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
@@ -114,6 +129,29 @@
     @apply bg-green-50/70 dark:bg-green-900/40 
            border border-green-200/80 dark:border-green-700/70 
            rounded-xl p-4;
+  }
+  
+  /* Enhanced card elevation system */
+  .card-elevated-1 {
+    @apply bg-white dark:bg-slate-900 
+           rounded-2xl border border-gray-200/50 dark:border-slate-700/50
+           shadow-sm
+           hover:shadow-md hover:-translate-y-0.5
+           transition-all duration-300;
+  }
+  
+  .card-elevated-2 {
+    @apply bg-white dark:bg-slate-900 
+           rounded-2xl border border-gray-200/50 dark:border-slate-700/50
+           shadow-md
+           hover:shadow-xl hover:-translate-y-1
+           transition-all duration-300;
+  }
+  
+  .card-interactive {
+    @apply card-elevated-1
+           hover:border-brand-yellow/50
+           hover:ring-2 hover:ring-brand-yellow/20;
   }
 
   /* ============================================
@@ -255,6 +293,82 @@
     overflow: visible;
     clip: auto;
     white-space: normal;
+  /* Visual hierarchy utilities */
+  .surface-0 { @apply bg-transparent; }
+  .surface-1 { @apply bg-white/40 dark:bg-slate-900/40; }
+  .surface-2 { @apply bg-white/60 dark:bg-slate-800/60; }
+  .surface-3 { @apply bg-white/80 dark:bg-slate-700/80; }
+  .surface-raised { @apply bg-white dark:bg-slate-800 shadow-xl; }
+  
+  /* Text emphasis levels */
+  .text-emphasis-high { @apply text-gray-900 dark:text-white font-semibold; }
+  .text-emphasis-medium { @apply text-gray-700 dark:text-gray-200; }
+  .text-emphasis-low { @apply text-gray-500 dark:text-gray-400; }
+  
+  /* Scale on hover for interactive elements */
+  .scale-hover {
+    @apply transition-transform duration-200 ease-out
+           hover:scale-105 active:scale-95;
+  }
+  
+  /* Shimmer effect for loading */
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+  
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255,255,255,0.5) 50%,
+      transparent 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  /* Stagger animations for lists */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .stagger-item {
+    animation: fade-in-up 0.4s ease-out backwards;
+  }
+  .stagger-item:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-item:nth-child(2) { animation-delay: 0.1s; }
+  .stagger-item:nth-child(3) { animation-delay: 0.15s; }
+  .stagger-item:nth-child(4) { animation-delay: 0.2s; }
+  .stagger-item:nth-child(5) { animation-delay: 0.25s; }
+  .stagger-item:nth-child(6) { animation-delay: 0.3s; }
+  .stagger-item:nth-child(7) { animation-delay: 0.35s; }
+  .stagger-item:nth-child(8) { animation-delay: 0.4s; }
+  
+  /* Ping animation for empty states */
+  @keyframes ping-slow {
+    75%, 100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+  
+  .animate-ping-slow {
+    animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-yellow to-amber-600;
+  }
+  
   }
   
   .lift-on-hover {

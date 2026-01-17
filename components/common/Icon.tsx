@@ -55,6 +55,8 @@ export type IconName =
   | 'layout-dashboard'
   | 'file-up'
   | 'history'
+  | 'trending-up'
+  | 'trending-down'
   | 'help-circle'
   | 'thumbs-up'
   | 'thumbs-down'
@@ -119,6 +121,8 @@ const ICONS: Record<IconName, React.ReactNode> = {
     'layout-dashboard': <><rect x="3" y="3" width="7" height="9" /><rect x="14" y="3" width="7" height="5" /><rect x="14" y="12" width="7" height="9" /><rect x="3" y="16" width="7" height="5" /></>,
     'file-up': <><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><path d="M12 12v6" /><path d="m15 15-3-3-3 3" /></>,
     'history': <><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></>,
+    'trending-up': <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></>,
+    'trending-down': <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" /></>,
     'help-circle': <><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></>,
     'thumbs-up': <><path d="M7 10v12" /><path d="M18 10V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v6H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2.76a2 2 0 0 1 1.79 1.11L12 22h7a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-3z" /></>,
     'thumbs-down': <><path d="M17 14V2" /><path d="M6 14v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-2.76a2 2 0 0 1-1.79-1.11L12 2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1z" /></>,

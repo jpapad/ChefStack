@@ -33,8 +33,21 @@ const MobileNavBar: React.FC<MobileNavBarProps> = ({
     return item.roles.includes(currentUserRole);
   };
 
+  // Handle navigation with haptic feedback
+  const handleNavClick = (view: View) => {
+    // Haptic feedback for supported browsers (PWA)
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10); // 10ms subtle vibration
+    }
+    onViewChange(view);
+  };
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-dark-bg border-t border-gray-200 dark:border-gray-700 safe-bottom">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-dark-bg/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 safe-bottom shadow-lg"
+      role="navigation"
+      aria-label="Κύρια πλοήγηση"
+    >
       <div className="flex justify-around items-center h-16">
         {primaryNavItems.map((item) => {
           if (!hasPermission(item)) return null;
@@ -44,16 +57,28 @@ const MobileNavBar: React.FC<MobileNavBarProps> = ({
           return (
             <button
               key={item.view}
-              onClick={() => onViewChange(item.view)}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+              onClick={() => handleNavClick(item.view)}
+              className={`flex flex-col items-center justify-center flex-1 min-h-[60px] p-3 transition-all duration-200 ${
                 isActive
-                  ? 'text-brand-yellow'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-brand-yellow'
+                  ? 'text-brand-yellow scale-110'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-brand-yellow hover:scale-105'
               }`}
               aria-label={t(item.labelKey)}
+              aria-current={isActive ? 'page' : undefined}
             >
-              <Icon name={item.icon} className="w-6 h-6 mb-1" />
-              <span className="text-xs font-medium">{t(item.labelKey)}</span>
+              <div className={`transition-transform ${isActive ? 'scale-110' : ''}`}>
+                <Icon name={item.icon} className="w-6 h-6 mb-1" aria-hidden="true" />
+              </div>
+              <span className={`text-xs font-medium transition-opacity ${
+                isActive ? 'opacity-100' : 'opacity-80'
+              }`}>
+                {t(item.labelKey)}
+              </span>
+              
+              {/* Active indicator */}
+              {isActive && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-brand-yellow animate-pulse" />
+              )}
             </button>
           );
         })}
