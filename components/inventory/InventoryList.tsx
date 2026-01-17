@@ -6,6 +6,7 @@ import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { useTranslation } from '../../i18n';
+import { NoInventoryEmptyState } from '../common/EmptyState';
 
 interface InventoryListProps {
   inventory: (InventoryItem & { supplierName: string, totalQuantity: number })[];
@@ -66,6 +67,8 @@ const InventoryList: React.FC<InventoryListProps> = ({
        <div className="flex-1 overflow-y-auto -mr-2 pr-2">
         {isLoading ? (
           <InventoryListSkeleton count={8} />
+        ) : inventory.length === 0 ? (
+          <NoInventoryEmptyState onAddItem={onAdd} />
         ) : (
           <div className="space-y-3">
             {inventory.map(item => {

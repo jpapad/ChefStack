@@ -54,7 +54,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({
   return (
     <div
       onClick={handleClick}
-      className={`relative flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 border ${
+      className={`stagger-item card-interactive relative flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 border ${
         isSelected && !isBookMode && !isBulkMode
           ? 'bg-brand-yellow/20 dark:bg-brand-yellow/30 border-brand-yellow/50'
           : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'

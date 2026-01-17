@@ -16,6 +16,7 @@ import FilterPanel, { FilterOptions } from './common/FilterPanel';
 import { useTranslation } from '../i18n';
 import { exportRecipesToJSON, exportRecipesToCSV } from '../utils/recipeExport';
 import { BulkActionsToolbar } from './common/BulkActionsToolbar';
+import { NoRecipesEmptyState, NoResultsEmptyState } from './common/EmptyState';
 
 interface RecipeListProps {
   recipes: Recipe[];
@@ -492,10 +493,26 @@ const RecipeList: React.FC<RecipeListProps> = ({
               ))}
             </div>
           )
+        ) : searchTerm || filters.categories.length > 0 || filters.allergens.length > 0 ? (
+          <NoResultsEmptyState
+            searchTerm={searchTerm}
+            onClearFilters={() => {
+              onSearchChange('');
+              setFilters({
+                categories: [],
+                allergens: [],
+                difficulties: [],
+                prepTimeRange: null,
+                costRange: null,
+                ratingRange: null,
+                vegetarian: null,
+                vegan: null,
+                tags: []
+              });
+            }}
+          />
         ) : (
-          <div className="flex items-center justify-center h-full text-light-text-secondary dark:text-dark-text-secondary">
-            <p>{t('recipes_not_found')}</p>
-          </div>
+          <NoRecipesEmptyState onCreateRecipe={onStartCreateRecipe} />
         )}
       </div>
 

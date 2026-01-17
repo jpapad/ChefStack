@@ -31,6 +31,7 @@ import BulkEditModal, { BulkEditField } from '../common/BulkEditModal';
 import { useBatchSelection } from '../../hooks/useBatchSelection';
 import { api } from '../../services/api';
 import { callGemini } from '../../src/lib/ai/callGemini';
+import { NoInventoryEmptyState } from '../common/EmptyState';
 
 interface InventoryViewProps {
   wasteLogs?: WasteLog[];

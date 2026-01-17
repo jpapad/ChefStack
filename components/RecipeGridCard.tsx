@@ -3,6 +3,7 @@ import { Recipe } from '../types';
 import { Icon } from './common/Icon';
 import StarRating from './common/StarRating';
 import { useTranslation } from '../i18n';
+import { Badge, StatusBadge } from './common/Badge';
 
 interface RecipeGridCardProps {
   recipe: Recipe;
@@ -67,7 +68,7 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = React.memo(({
 
   return (
     <div
-      className={`relative group rounded-2xl overflow-hidden border shadow-sm transition-all cursor-pointer
+      className={`stagger-item card-elevated-1 relative group rounded-2xl overflow-hidden border shadow-sm transition-all cursor-pointer
       ${
         isSelected && !isBookMode && !isBulkMode
           ? 'border-brand-yellow ring-2 ring-brand-yellow/40'
@@ -106,9 +107,10 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = React.memo(({
 
         {/* Κατηγορία επάνω δεξιά */}
         {recipe.category && (
-          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-[10px] text-white flex items-center gap-1">
-            <Icon name="tag" className="w-3 h-3" />
-            {t(`recipe_category_${recipe.category}`)}
+          <div className="absolute top-2 right-2">
+            <Badge variant="default" size="sm">
+              {t(`recipe_category_${recipe.category}`)}
+            </Badge>
           </div>
         )}
       </div>
@@ -129,10 +131,9 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = React.memo(({
 
           {/* Price badge */}
           {typeof recipe.price === 'number' && recipe.price > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-200 flex-shrink-0">
-              <Icon name="euro" className="w-3 h-3" />
+            <Badge variant="success" size="sm" icon="euro">
               {recipe.price.toFixed(2)}
-            </span>
+            </Badge>
           )}
         </div>
 
@@ -172,17 +173,18 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = React.memo(({
         {allergens.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 mt-0.5">
             {visibleAllergens.map((a) => (
-              <span
+              <Badge
                 key={a}
-                className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-900/40 text-[9px] text-red-700 dark:text-red-200"
+                variant="danger"
+                size="sm"
               >
                 {a}
-              </span>
+              </Badge>
             ))}
             {extraAllergens > 0 && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-900/40 text-[9px] text-red-700 dark:text-red-200">
+              <Badge variant="danger" size="sm">
                 +{extraAllergens}
-              </span>
+              </Badge>
             )}
           </div>
         )}

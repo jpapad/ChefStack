@@ -17,6 +17,7 @@ import TopRecipesWidget from './TopRecipesWidget';
 import InventoryAlertsWidget from './InventoryAlertsWidget';
 import { HaccpDashboardWidget } from '../haccp/HaccpDashboardWidget';
 import { useTranslation } from '../../i18n';
+import { EnhancedKPICard, KPICardGrid } from '../common/EnhancedKPICard';
 
 interface DashboardViewProps {
   recipes: Recipe[];
@@ -299,90 +300,47 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Right column: KPIs + Activity + AI card */}
         <div className="xl:col-span-1 flex flex-col gap-4">
-          {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-          <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-1">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              Συνταγές
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold">{totalRecipes}</span>
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              Δες, επεξεργάσου ή δημιούργησε νέες συνταγές.
-            </p>
-          </div>
+          {/* KPIs with EnhancedKPICard */}
+          <KPICardGrid>
+            <EnhancedKPICard
+              title="Συνταγές"
+              value={totalRecipes}
+              icon="book-open"
+              variant="default"
+              description="Δες, επεξεργάσου ή δημιούργησε νέες συνταγές"
+            />
 
-          <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-1">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <Icon name="alert-triangle" className="w-3.5 h-3.5 text-amber-500" />
-              Χαμηλό απόθεμα
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold">
-                {lowStockItems.length}
-              </span>
-            </div>
-            <ul className="mt-1 space-y-1 text-[11px] text-slate-600 dark:text-slate-300">
-              {lowStockItems.map((item) => {
-                const totalQty = (item.locations || []).reduce(
-                  (sum, l) => sum + (l.quantity || 0),
-                  0
-                );
-                return (
-                  <li key={item.id} className="flex justify-between gap-2">
-                    <span className="truncate">{item.name}</span>
-                    <span className="font-medium">
-                      {totalQty} {item.unit}
-                    </span>
-                  </li>
-                );
-              })}
-              {lowStockItems.length === 0 && (
-                <li className="text-slate-400">Όλα οκ προς το παρόν.</li>
-              )}
-            </ul>
-          </div>
+            <EnhancedKPICard
+              title="Χαμηλό απόθεμα"
+              value={lowStockItems.length}
+              icon="alert-triangle"
+              variant="warning"
+              description={lowStockItems.length > 0 
+                ? lowStockItems.slice(0, 2).map(item => {
+                    const totalQty = (item.locations || []).reduce(
+                      (sum, l) => sum + (l.quantity || 0),
+                      0
+                    );
+                    return `${item.name}: ${totalQty} ${item.unit}`;
+                  }).join(', ')
+                : 'Όλα οκ προς το παρόν'
+              }
+            />
 
-          <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-1">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <Icon name="droplets" className="w-3.5 h-3.5 text-rose-500" />
-              Πρόσφατες φθορές
-            </span>
-            <ul className="mt-1 space-y-1 text-[11px] text-slate-600 dark:text-slate-300">
-              {recentWasteLogs.length > 0 ? (
-                recentWasteLogs.map((log) => {
-                  const ts =
-                    log.timestamp instanceof Date
-                      ? log.timestamp
-                      : new Date(log.timestamp as any);
-                  return (
-                    <li key={log.id} className="flex flex-col">
-                      <div className="flex justify-between gap-2">
-                        <span className="truncate">{log.reason}</span>
-                        <span className="font-medium">
-                          {log.quantity} {log.unit}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-slate-400">
-                        {ts.toLocaleDateString('el-GR')}{' '}
-                        {ts.toLocaleTimeString('el-GR', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </li>
-                  );
-                })
-              ) : (
-                <li className="text-slate-400">Δεν υπάρχουν καταχωρήσεις.</li>
-              )}
-            </ul>
-          </div>
-        </div>
+            <EnhancedKPICard
+              title="Πρόσφατες φθορές"
+              value={recentWasteLogs.length}
+              icon="droplets"
+              variant="danger"
+              description={recentWasteLogs.length > 0
+                ? `Τελευταία: ${recentWasteLogs[0].reason}`
+                : 'Δεν υπάρχουν καταχωρήσεις'
+              }
+            />
+          </KPICardGrid>
 
         {/* Activity feed */}
-        <div className="rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-2">
+        <div className="card-elevated-1 rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-white/50 dark:border-slate-800/70 shadow-sm p-4 flex flex-col gap-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold flex items-center gap-1">
               <Icon name="activity" className="w-3.5 h-3.5 text-violet-500" />
@@ -433,7 +391,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* AI Daily Briefing */}
-        <div className="rounded-3xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200/70 dark:border-violet-700/70 shadow-sm p-4 flex flex-col gap-2">
+        <div className="card-elevated-1 rounded-3xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200/70 dark:border-violet-700/70 shadow-sm p-4 flex flex-col gap-2">
           <span className="text-xs font-semibold flex items-center gap-2 text-violet-700 dark:text-violet-200">
             <span className="inline-flex items-center justify-center w-7 h-7 rounded-2xl bg-white/80 dark:bg-violet-900 text-violet-600 dark:text-violet-100 shadow-sm">
               <Icon name="sparkles" className="w-4 h-4" />
