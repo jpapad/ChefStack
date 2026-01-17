@@ -22,7 +22,7 @@ const MobileNavBar: React.FC<MobileNavBarProps> = ({
     ALL_NAV_ITEMS.find(item => item.view === 'dashboard')!,
     ALL_NAV_ITEMS.find(item => item.view === 'recipes')!,
     ALL_NAV_ITEMS.find(item => item.view === 'inventory')!,
-    ALL_NAV_ITEMS.find(item => item.view === 'menu')!,
+    ALL_NAV_ITEMS.find(item => item.view === 'menus')!,
     ALL_NAV_ITEMS.find(item => item.view === 'settings')!,
   ].filter(Boolean);
 

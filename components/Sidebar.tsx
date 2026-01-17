@@ -4,7 +4,7 @@ import { View, User, Role, Team } from '../types';
 import { useTranslation } from '../i18n';
 import { chefStackLogo } from '../assets';
 
-type NavItem = { view: View; labelKey: string; icon: IconName; roles?: Role[] };
+export type NavItem = { view: View; labelKey: string; icon: IconName; roles?: Role[] };
 
 type NavCategory = {
   id: string;
