@@ -42,40 +42,6 @@
   <body class="bg-light-bg dark:bg-dark-bg font-sans" style="-webkit-tap-highlight-color: transparent; touch-action: pan-x pan-y;">
     <div id="root"></div>
 
-    <!-- CRITICAL: Set recovery flag BEFORE React loads -->
-    <script>
-      (function() {
-        const hash = window.location.hash;
-        const searchParams = new URLSearchParams(window.location.search);
-        const hashParams = new URLSearchParams(hash.replace('#', ''));
-        
-        // Check if localStorage has recovery flag (more persistent than sessionStorage)
-        const hasLocalStorageFlag = localStorage.getItem('chefstack_recovery_mode') === 'true';
-        if (hasLocalStorageFlag) {
-          console.log('🔐 [index.html] Recovery flag found in localStorage - copying to sessionStorage');
-          sessionStorage.setItem('chefstack_recovery_mode', 'true');
-        }
-        
-        // Check for #recovery in hash (our custom marker)
-        if (hash.includes('#recovery') || hash.includes('recovery')) {
-          console.log('🔐 [index.html] #recovery detected in hash - setting flags');
-          sessionStorage.setItem('chefstack_recovery_mode', 'true');
-          localStorage.setItem('chefstack_recovery_mode', 'true');
-        }
-        
-        // Check for recovery parameter in URL
-        else if (searchParams.get('recovery') === 'true' || 
-            searchParams.get('type') === 'recovery' || 
-            hashParams.get('type') === 'recovery' ||
-            window.location.search.includes('type=recovery') ||
-            window.location.hash.includes('type=recovery')) {
-          console.log('🔐 [index.html] Recovery mode detected - setting flags');
-          sessionStorage.setItem('chefstack_recovery_mode', 'true');
-          localStorage.setItem('chefstack_recovery_mode', 'true');
-        }
-      })();
-    </script>
-
     <!-- ΜΟΝΟ αυτό το script χρειάζεσαι για Vite + React -->
    <script type="module" src="/index.tsx"></script>
   </body>

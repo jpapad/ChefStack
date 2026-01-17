@@ -40,6 +40,10 @@ import { Icon } from './components/common/Icon';
 import { LanguageProvider, useTranslation } from './i18n';
 
 const AppContent: React.FC = () => {
+  // Check for password reset code in URL BEFORE any state initialization
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasResetCode = urlParams.has('code') && urlParams.has('type') && urlParams.get('type') === 'recovery';
+  
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>(
     'currentUser',
     null
@@ -48,20 +52,30 @@ const AppContent: React.FC = () => {
     'currentTeamId',
     null
   );
-  const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
+  const [isResetPasswordMode, setIsResetPasswordMode] = useState(hasResetCode);
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  // SIMPLE: Just listen for Supabase's PASSWORD_RECOVERY event
+  // Listen for Supabase auth events
   useEffect(() => {
     if (!supabase) return;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      console.log('🔐 Auth event:', event);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔐 Auth event:', event, 'Session user:', session?.user?.id);
+      
+      // Check if this is a recovery session by looking at the URL when SIGNED_IN happens
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasCode = urlParams.has('code');
+      const isRecoveryType = urlParams.get('type') === 'recovery';
       
       if (event === 'PASSWORD_RECOVERY') {
-        console.log('🔐 Password recovery detected - showing reset form');
+        console.log('🔐 PASSWORD_RECOVERY event - showing reset form');
         setIsResetPasswordMode(true);
+      } else if (event === 'SIGNED_IN' && hasCode && isRecoveryType) {
+        console.log('🔐 SIGNED_IN with recovery code - showing reset form');
+        setIsResetPasswordMode(true);
+        // Clear the code from URL after detecting it
+        window.history.replaceState(null, '', window.location.pathname);
       } else if (event === 'SIGNED_OUT') {
         setIsResetPasswordMode(false);
       }
