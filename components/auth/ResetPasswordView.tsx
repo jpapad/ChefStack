@@ -13,56 +13,8 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isLoading, setIsLoading] = useState(true);  // Start loading while checking session
-  const [sessionReady, setSessionReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
-
-  // Wait for Supabase to process the recovery hash and establish the session
-  useEffect(() => {
-    const checkRecoverySession = async () => {
-      try {
-        console.log('ResetPasswordView - current URL:', window.location.href);
-        // If Supabase returned recovery params in the query string, move them into the hash so
-        // `supabase.auth.getSession()` can detect the session (detectSessionInUrl=true).
-        const search = window.location.search;
-        if (search && (search.includes('type=recovery') || search.includes('access_token'))) {
-          try {
-            const q = search.startsWith('?') ? search.slice(1) : search;
-            if (q.includes('access_token')) {
-              window.location.hash = q;
-              const newUrl = window.location.origin + window.location.pathname + window.location.hash;
-              window.history.replaceState(null, '', newUrl);
-              console.log('ResetPasswordView - moved recovery query to hash');
-            }
-          } catch (e) {
-            console.warn('ResetPasswordView - failed to move query to hash', e);
-          }
-        }
-        // Give Supabase a moment to process the URL hash
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const { data: { session }, error: sessionError } = await api.getSession();
-        console.log('ResetPasswordView - api.getSession result:', { session, sessionError });
-        
-        if (sessionError || !session) {
-          console.error('❌ No active recovery session:', sessionError);
-          setError('Ο σύνδεσμος επαναφοράς κωδικού δεν είναι έγκυρος ή έχει λήξει. Παρακαλώ ζητήστε νέο σύνδεσμο.');
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log('✅ Recovery session established successfully');
-        setSessionReady(true);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('❌ Error checking recovery session:', err);
-        setError('Σφάλμα κατά τον έλεγχο της συνεδρίας. Παρακαλώ δοκιμάστε ξανά.');
-        setIsLoading(false);
-      }
-    };
-
-    checkRecoverySession();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,15 +33,14 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
 
     setIsLoading(true);
     try {
-      console.log('🔐 Attempting to update password...');
+      console.log('🔐 Updating password...');
       await api.updatePassword(newPassword);
       console.log('✅ Password updated successfully');
       setSuccess('Ο κωδικός ενημερώθηκε επιτυχώς! Μεταφορά στη σελίδα σύνδεσης...');
       
-      // Clear the hash from URL
-      window.location.hash = '';
+      // Sign out and redirect to login
+      await api.logout();
       
-      // Redirect to login after 2 seconds
       setTimeout(() => {
         onComplete();
       }, 2000);
@@ -100,8 +51,6 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
       setIsLoading(false);
     }
   };
-
-  // Show loading state while checking session
   if (isLoading && !sessionReady) {
     return (
       <div className="min-h-screen bg-light-bg dark:bg-dark-bg flex items-center justify-center p-4">

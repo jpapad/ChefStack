@@ -25,7 +25,7 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
       auth: {
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: true, // Let Supabase do its job
         flowType: 'pkce',
         redirectTo: getRedirectUrl()
       }

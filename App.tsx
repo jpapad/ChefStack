@@ -40,14 +40,6 @@ import { Icon } from './components/common/Icon';
 import { LanguageProvider, useTranslation } from './i18n';
 
 const AppContent: React.FC = () => {
-  // Check for recovery mode FIRST to prevent loading user from localStorage
-  const isRecoveryMode = (() => {
-    const hash = window.location.hash;
-    const search = window.location.search;
-    return (hash && (hash.includes('type=recovery') || hash.includes('type%3Drecovery'))) ||
-           (search && (search.includes('type=recovery') || search.includes('type%3Drecovery')));
-  })();
-
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>(
     'currentUser',
     null
@@ -56,52 +48,26 @@ const AppContent: React.FC = () => {
     'currentTeamId',
     null
   );
-  const [isResetPasswordMode, setIsResetPasswordMode] = useState(isRecoveryMode);
+  const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  // Clear user state if recovery mode was detected on init
+  // SIMPLE: Just listen for Supabase's PASSWORD_RECOVERY event
   useEffect(() => {
-    if (isRecoveryMode) {
-      console.log('🔐 Recovery mode detected on init - clearing user state');
-      setCurrentUser(null);
-      setCurrentTeamId(null);
-    }
-  }, []); // Run once on mount
+    if (!supabase) return;
 
-  // Check if URL contains reset password hash and normalize it
-  useEffect(() => {
-    const pathname = window.location.pathname;
-    const hash = window.location.hash;
-    const search = window.location.search;
-    console.log('Auth init - window.location.pathname:', pathname);
-    console.log('Auth init - window.location.hash:', hash);
-    console.log('Auth init - window.location.search:', search);
-
-    // Special case: if path is /reset-bridge (without .html), redirect to the static HTML file
-    if (pathname === '/reset-bridge' && search) {
-      console.log('🔀 Redirecting /reset-bridge to /reset-bridge.html');
-      window.location.href = '/reset-bridge.html' + search;
-      return;
-    }
-
-    // Supabase typically sends recovery in the URL hash like: #access_token=xxx&...&type=recovery
-    // But some setups can return params in the query string. If query contains the access_token and type=recovery,
-    // move them into the hash so supabase-js (detectSessionInUrl) can pick them up.
-    if (search && (search.includes('type=recovery') || search.includes('type%3Drecovery'))) {
-      try {
-        const q = search.startsWith('?') ? search.slice(1) : search;
-        if (q.includes('access_token')) {
-          // Replace hash with query (so supabase can detect session) and remove query from URL
-          window.location.hash = q;
-          const newUrl = window.location.origin + window.location.pathname + window.location.hash;
-          window.history.replaceState(null, '', newUrl);
-          console.log('Auth init - moved recovery query to hash for supabase detection');
-        }
-      } catch (e) {
-        console.warn('Auth init - failed to move query to hash', e);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      console.log('🔐 Auth event:', event);
+      
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('🔐 Password recovery detected - showing reset form');
+        setIsResetPasswordMode(true);
+      } else if (event === 'SIGNED_OUT') {
+        setIsResetPasswordMode(false);
       }
-    }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // --- Data State ---
@@ -144,22 +110,6 @@ const AppContent: React.FC = () => {
     const fetchDataAndSession = async () => {
       setIsLoading(true);
       try {
-        // Check for recovery mode FIRST (synchronously, before any async operations)
-        const hash = window.location.hash;
-        const search = window.location.search;
-        const hasRecoveryInHash = hash && (hash.includes('type=recovery') || hash.includes('type%3Drecovery'));
-        const hasRecoveryInSearch = search && (search.includes('type=recovery') || search.includes('type%3Drecovery'));
-        
-        if (hasRecoveryInHash || hasRecoveryInSearch) {
-          console.log('🔐 Recovery mode detected - clearing user state and skipping auto-login');
-          setIsResetPasswordMode(true);
-          // Clear any existing user state to force reset form display
-          setCurrentUser(null);
-          setCurrentTeamId(null);
-          localStorage.removeItem('currentUser');
-          localStorage.removeItem('currentTeamId');
-        }
-
         const data = await api.fetchAllData();
 
         setAllUsers(data.users || []);
@@ -189,14 +139,7 @@ const AppContent: React.FC = () => {
         setTeamTasks(data.teamTasks || []);
         setChatMessages(data.chatMessages || []);
 
-        // 2. Skip auto-login if recovery mode was detected above
-        if (hasRecoveryInHash || hasRecoveryInSearch) {
-          console.log('🔐 Recovery mode active - skipping auto-login to show reset form');
-          setIsLoading(false);
-          return;
-        }
-
-        // 3. Έλεγξε αν υπάρχει ενεργό session (only if NOT in reset mode)
+        // Έλεγξε αν υπάρχει ενεργό session
         if (supabase) {
           const sessionInfo = await api.getCurrentUserAndTeams();
           if (sessionInfo) {
@@ -253,7 +196,7 @@ const AppContent: React.FC = () => {
     };
 
     fetchDataAndSession();
-  }, []); // 👈 Run once on mount
+  }, []); // Run once on mount
 
   const handleAuthSuccess = async (
     email: string,
@@ -392,7 +335,6 @@ const AppContent: React.FC = () => {
       <ResetPasswordView
         onComplete={() => {
           setIsResetPasswordMode(false);
-          window.location.hash = '';
         }}
       />
     );

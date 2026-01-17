@@ -782,8 +782,8 @@ CREATE TABLE haccp_reminders (
     }
     if (!supabase) throwConfigError();
 
-    // Redirect to root URL - app will detect type=recovery in hash and show ResetPasswordView
-    const redirectUrl = import.meta.env.VITE_PUBLIC_URL || window.location.origin;
+    // SIMPLE: Just use the app's URL - Supabase will add type=recovery automatically
+    const redirectUrl = window.location.origin;
     console.log('[api.resetPassword] Sending reset email with redirectTo:', redirectUrl);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
