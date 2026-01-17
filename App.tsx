@@ -41,8 +41,9 @@ import { LanguageProvider, useTranslation } from './i18n';
 
 const AppContent: React.FC = () => {
   // Check for password reset code in URL BEFORE any state initialization
+  // Supabase uses 'code' param ONLY for recovery flow, not for regular login
   const urlParams = new URLSearchParams(window.location.search);
-  const hasResetCode = urlParams.has('code') && urlParams.has('type') && urlParams.get('type') === 'recovery';
+  const hasResetCode = urlParams.has('code');
   
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>(
     'currentUser',
@@ -63,16 +64,16 @@ const AppContent: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('🔐 Auth event:', event, 'Session user:', session?.user?.id);
       
-      // Check if this is a recovery session by looking at the URL when SIGNED_IN happens
+      // Check if this is a recovery session by looking for 'code' param
+      // Supabase ONLY uses code param for password recovery, not regular login
       const urlParams = new URLSearchParams(window.location.search);
       const hasCode = urlParams.has('code');
-      const isRecoveryType = urlParams.get('type') === 'recovery';
       
       if (event === 'PASSWORD_RECOVERY') {
         console.log('🔐 PASSWORD_RECOVERY event - showing reset form');
         setIsResetPasswordMode(true);
-      } else if (event === 'SIGNED_IN' && hasCode && isRecoveryType) {
-        console.log('🔐 SIGNED_IN with recovery code - showing reset form');
+      } else if (event === 'SIGNED_IN' && hasCode) {
+        console.log('🔐 SIGNED_IN with code param (recovery flow) - showing reset form');
         setIsResetPasswordMode(true);
         // Clear the code from URL after detecting it
         window.history.replaceState(null, '', window.location.pathname);
