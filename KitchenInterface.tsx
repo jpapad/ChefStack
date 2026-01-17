@@ -66,8 +66,10 @@ import QuickSearchModal from './components/common/QuickSearchModal';
 
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useResponsive } from './hooks/useResponsive';
 import { useTranslation } from './i18n';
 import { api } from './services/api';
+import MobileNavBar from './components/common/MobileNavBar';
 
 interface KitchenInterfaceProps {
   user: User;
@@ -170,6 +172,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage('sidebarCollapsed', false);
+  const { isMobile, isTablet, isDesktop, deviceType } = useResponsive();
 
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [recipeToEdit, setRecipeToEdit] = useState<Recipe | null>(null);
@@ -1123,16 +1126,20 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
 
   return (
     <div className="flex h-screen bg-light-bg dark:bg-dark-bg text-light-text-primary dark:text-dark-text-primary">
-      <Sidebar
-        currentView={currentView}
-        onViewChange={handleViewChange}
-        user={user}
-        onLogout={onLogout}
-        currentTeam={currentTeam}
-        currentUserRole={currentUserRole}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
-      />
+      {/* Desktop & Tablet Sidebar - hidden on mobile */}
+      {!isMobile && (
+        <Sidebar
+          currentView={currentView}
+          onViewChange={handleViewChange}
+          user={user}
+          onLogout={onLogout}
+          currentTeam={currentTeam}
+          currentUserRole={currentUserRole}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        />
+      )}
+      
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
           currentViewTitleKey={currentViewTitleKey}
@@ -1143,7 +1150,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
           notifications={teamNotifications}
           onViewChange={handleViewChange}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto ${isMobile ? 'pb-20' : ''}`}>
           {renderContent()}
         </main>
       </div>
@@ -1215,6 +1222,15 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
           setCurrentView('recipes');
         }}
       />
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <MobileNavBar
+          currentView={currentView}
+          onViewChange={handleViewChange}
+          currentUserRole={currentUserRole}
+        />
+      )}
     </div>
   );
 };
