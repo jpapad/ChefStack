@@ -7,7 +7,26 @@
     @apply bg-light-bg dark:bg-dark-bg font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
+  
+  /* Smooth transitions for dark mode */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Exclude fast-changing elements from transition */
+  .no-transition,
+  .animate-spin,
+  .animate-pulse,
+  input,
+  textarea,
+  select {
+    transition: none !important;
+  }
+  
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
