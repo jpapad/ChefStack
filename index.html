@@ -42,6 +42,19 @@
   <body class="bg-light-bg dark:bg-dark-bg font-sans" style="-webkit-tap-highlight-color: transparent; touch-action: pan-x pan-y;">
     <div id="root"></div>
 
+    <!-- CRITICAL: Detect password reset BEFORE Supabase processes the code -->
+    <script>
+      (function() {
+        // Check URL for code param (password reset flow)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('code')) {
+          console.log('🔐 [index.html] Password reset code detected - setting flag');
+          // Set flag BEFORE React/Supabase loads
+          sessionStorage.setItem('chefstack_password_reset', 'true');
+        }
+      })();
+    </script>
+
     <!-- ΜΟΝΟ αυτό το script χρειάζεσαι για Vite + React -->
    <script type="module" src="/index.tsx"></script>
   </body>

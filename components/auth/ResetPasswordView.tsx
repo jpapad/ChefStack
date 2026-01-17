@@ -38,6 +38,9 @@ const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({ onComplete }) => 
       console.log('✅ Password updated successfully');
       setSuccess('Ο κωδικός ενημερώθηκε επιτυχώς! Μεταφορά στη σελίδα σύνδεσης...');
       
+      // Clear password reset flag
+      sessionStorage.removeItem('chefstack_password_reset');
+      
       // Sign out and redirect to login
       await api.logout();
       

@@ -40,10 +40,11 @@ import { Icon } from './components/common/Icon';
 import { LanguageProvider, useTranslation } from './i18n';
 
 const AppContent: React.FC = () => {
-  // Check for password reset code in URL BEFORE any state initialization
-  // Supabase uses 'code' param ONLY for recovery flow, not for regular login
+  // Check for password reset flag set by index.html BEFORE Supabase processed the code
+  const hasResetFlag = sessionStorage.getItem('chefstack_password_reset') === 'true';
+  // Also check URL in case we're here directly
   const urlParams = new URLSearchParams(window.location.search);
-  const hasResetCode = urlParams.has('code');
+  const hasCodeParam = urlParams.has('code');
   
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>(
     'currentUser',
@@ -53,7 +54,7 @@ const AppContent: React.FC = () => {
     'currentTeamId',
     null
   );
-  const [isResetPasswordMode, setIsResetPasswordMode] = useState(hasResetCode);
+  const [isResetPasswordMode, setIsResetPasswordMode] = useState(hasResetFlag || hasCodeParam);
   const { t } = useTranslation();
   const { toast } = useToast();
 
@@ -64,21 +65,19 @@ const AppContent: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('🔐 Auth event:', event, 'Session user:', session?.user?.id);
       
-      // Check if this is a recovery session by looking for 'code' param
-      // Supabase ONLY uses code param for password recovery, not regular login
-      const urlParams = new URLSearchParams(window.location.search);
-      const hasCode = urlParams.has('code');
+      // Check for password reset flag
+      const hasFlag = sessionStorage.getItem('chefstack_password_reset') === 'true';
       
       if (event === 'PASSWORD_RECOVERY') {
         console.log('🔐 PASSWORD_RECOVERY event - showing reset form');
         setIsResetPasswordMode(true);
-      } else if (event === 'SIGNED_IN' && hasCode) {
-        console.log('🔐 SIGNED_IN with code param (recovery flow) - showing reset form');
+      } else if (event === 'SIGNED_IN' && hasFlag) {
+        console.log('🔐 SIGNED_IN with password reset flag - showing reset form');
         setIsResetPasswordMode(true);
-        // Clear the code from URL after detecting it
-        window.history.replaceState(null, '', window.location.pathname);
       } else if (event === 'SIGNED_OUT') {
         setIsResetPasswordMode(false);
+        // Clear flag on logout
+        sessionStorage.removeItem('chefstack_password_reset');
       }
     });
 
