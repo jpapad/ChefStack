@@ -384,21 +384,20 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
     <button
       type="button"
       onClick={() => setActiveTab(tab)}
-      className={`px-4 py-2 font-semibold text-sm rounded-full flex items-center gap-2 ${
+      className={`relative px-6 py-3 font-semibold text-sm transition-all flex items-center gap-2 ${
         activeTab === tab
-          ? 'bg-brand-dark text-white'
-          : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20'
+          ? 'text-brand-yellow'
+          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
       }`}
     >
       {label}
       {badge !== undefined && badge > 0 && (
-        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-          activeTab === tab 
-            ? 'bg-white/20 text-white' 
-            : 'bg-brand-yellow text-slate-900'
-        }`}>
+        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-brand-yellow text-slate-900">
           {badge}
         </span>
+      )}
+      {activeTab === tab && (
+        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-yellow rounded-full" />
       )}
     </button>
   );
@@ -458,14 +457,12 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
                 className="w-full md:w-1/3 h-48 object-cover rounded-xl shadow-lg"
               />
             ) : (
-              <div className="w-full md:w-1/3 h-48 rounded-xl shadow-lg bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center text-center px-4">
+              <div className="w-full md:w-1/3 h-48 rounded-xl shadow-lg bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 flex items-center justify-center relative overflow-hidden">
                 <Icon
-                  name="image"
-                  className="w-8 h-8 mb-2 text-slate-400 dark:text-slate-500"
+                  name="utensils"
+                  className="w-16 h-16 text-white/30"
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {t('recipe_detail_no_image') || 'Χωρίς εικόνα συνταγής'}
-                </p>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
             )}
 
@@ -519,30 +516,35 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
               </p>
 
               {/* Rating Section */}
-              <div className="mb-4 p-4 bg-white dark:bg-slate-800 rounded-xl border-2 border-yellow-400 dark:border-yellow-500 shadow-md">
+              <div className="mb-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
-                      {t('recipe_rating_your_rating') || 'Your Rating:'}
-                    </span>
-                    <StarRating
-                      rating={userRating}
-                      onRate={handleRate}
-                      size="md"
-                    />
-                  </div>
-                  {averageRating > 0 && (
-                    <div className="flex items-center gap-3 sm:ml-auto pl-4 sm:pl-0 border-l-2 sm:border-l-0 sm:border-l-2 border-yellow-400 dark:border-yellow-500">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                        {t('recipe_rating_average') || 'Team Average:'}
+                    <Icon name="star" className="w-5 h-5 text-yellow-500" />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                        {t('recipe_rating_your_rating') || 'Η Βαθμολογία Σας'}
                       </span>
                       <StarRating
-                        rating={averageRating}
-                        size="sm"
-                        readonly
-                        showCount
-                        count={recipe.ratings?.length}
+                        rating={userRating}
+                        onRate={handleRate}
+                        size="md"
                       />
+                    </div>
+                  </div>
+                  {averageRating > 0 && (
+                    <div className="flex items-center gap-3 sm:ml-auto pl-4 sm:pl-0 border-l-2 border-yellow-300 dark:border-yellow-700">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                          {t('recipe_rating_average') || 'Μέσος Όρος'}
+                        </span>
+                        <StarRating
+                          rating={averageRating}
+                          size="md"
+                          readonly
+                          showCount
+                          count={recipe.ratings?.length}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
