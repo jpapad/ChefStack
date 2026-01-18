@@ -114,7 +114,7 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
 
   // Handle favorite toggle
   const handleToggleFavorite = () => {
-    if (!onUpdateRecipes) return;
+    if (!onUpdateRecipes || !allRecipes) return;
     const updated = allRecipes.map(r =>
       r.id === recipe.id ? { ...r, isFavorite: !r.isFavorite } : r
     );
@@ -129,7 +129,7 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
 
   // Handle recipe duplication
   const handleDuplicate = () => {
-    if (!canManage || !onUpdateRecipes) return;
+    if (!canManage || !onUpdateRecipes || !allRecipes) return;
     const duplicated = duplicateRecipe(recipe, currentUser.id);
     onUpdateRecipes([...allRecipes, duplicated]);
     toast({
@@ -206,7 +206,7 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
 
       const cost = recipeToCost.ingredients.reduce((total, ing) => {
         if (ing.isSubRecipe && ing.recipeId) {
-          const subRecipe = allRecipes.find((r) => r.id === ing.recipeId);
+          const subRecipe = (allRecipes || []).find((r) => r.id === ing.recipeId);
           if (!subRecipe) return total;
 
           const subRecipeCost = calculate(subRecipe);
