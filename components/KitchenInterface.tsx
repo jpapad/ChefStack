@@ -996,7 +996,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     const teamMenusFiltered = menus.filter((m) => m.teamId === currentTeamId);
     const teamMessages = messages.filter((m) => (m as any).teamId === currentTeamId);
     const teamShifts = shifts.filter((s) => s.teamId === currentTeamId);
-    const teamUsers = allUsers.filter((u) => u.memberships.some((m) => m.teamId === currentTeamId));
+    const teamUsers = allUsers.filter((u) => (u.memberships || []).some((m) => m.teamId === currentTeamId));
     const teamShiftSchedules = shiftSchedules.filter(
       (s) => s.teamId === currentTeamId
     );
