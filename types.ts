@@ -103,6 +103,26 @@ export interface RecipeComment {
   updatedAt?: string;
 }
 
+export type ScheduleRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
+
+export interface RecipeSchedule {
+  id: string;
+  recipeId: string;
+  teamId: string;
+  scheduledDate: string; // ISO date string
+  scheduledTime?: string; // Optional time (e.g., "14:30")
+  servings?: number; // Override recipe default
+  notes?: string;
+  recurrence?: ScheduleRecurrence;
+  recurrenceEndDate?: string; // When recurrence stops
+  assignedTo?: string[]; // User IDs assigned to prepare
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  notificationSent?: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Recipe {
   id: string;
   name: string;
