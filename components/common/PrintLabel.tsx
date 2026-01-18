@@ -17,7 +17,7 @@ const PrintLabel: React.FC<PrintLabelProps> = ({ recipe }) => {
   // A simple way to check if an ingredient might be an allergen.
   // In a real app, this would be more robust, linking ingredients to an allergen database.
   const isAllergen = (ingredientName: string) => {
-    return recipe.allergens.some(allergen => 
+    return (recipe.allergens || []).some(allergen => 
       ingredientName.toLowerCase().includes(allergen.toLowerCase().substring(0, 4))
     );
   };
