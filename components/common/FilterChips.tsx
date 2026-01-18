@@ -82,7 +82,7 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
   ];
 
   const isActive = (filter: ActiveFilter) => {
-    return activeFilters.some(
+    return (activeFilters || []).some(
       af => af.type === filter.type && af.value === filter.value
     );
   };
