@@ -145,6 +145,16 @@ const translations: Record<Language, Record<string, string>> = {
     recipe_rating_your_rating: 'Η Βαθμολογία Σας:',
     recipe_rating_average: 'Μέσος Όρος Ομάδας:',
     recipe_rating_no_ratings: 'Δεν υπάρχουν ακόμα βαθμολογίες',
+    recipe_duplicated: 'Η συνταγή αντιγράφηκε επιτυχώς',
+    recipe_added_to_favorites: 'Προστέθηκε στα αγαπημένα',
+    recipe_removed_from_favorites: 'Αφαιρέθηκε από τα αγαπημένα',
+    add_favorite: 'Προσθήκη στα Αγαπημένα',
+    remove_favorite: 'Αφαίρεση από Αγαπημένα',
+    duplicate: 'Αντιγραφή',
+    cooking_mode: 'Λειτουργία Μαγειρέματος',
+    smart_scaling: 'Έξυπνη Κλιμάκωση',
+    smart_scaling_applied: 'Η έξυπνη κλιμάκωση εφαρμόστηκε',
+    error_permission_denied: 'Δεν έχετε δικαίωμα για αυτή την ενέργεια',
     
     // Dashboard
     dashboard_top_recipes: 'Κορυφαίες Συνταγές',
@@ -662,6 +672,16 @@ const translations: Record<Language, Record<string, string>> = {
     recipe_rating_your_rating: 'Your Rating:',
     recipe_rating_average: 'Team Average:',
     recipe_rating_no_ratings: 'No ratings yet',
+    recipe_duplicated: 'Recipe duplicated successfully',
+    recipe_added_to_favorites: 'Added to favorites',
+    recipe_removed_from_favorites: 'Removed from favorites',
+    add_favorite: 'Add to Favorites',
+    remove_favorite: 'Remove from Favorites',
+    duplicate: 'Duplicate',
+    cooking_mode: 'Cooking Mode',
+    smart_scaling: 'Smart Scaling',
+    smart_scaling_applied: 'Smart scaling applied',
+    error_permission_denied: 'You don\'t have permission for this action',
     
     // Dashboard
     dashboard_top_recipes: 'Top Recipes',

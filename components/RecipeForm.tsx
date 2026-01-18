@@ -6,7 +6,10 @@ import {
   ALLERGENS_LIST,
   RECIPE_CATEGORY_KEYS,
   Unit,
-  RecipeStep
+  RecipeStep,
+  RecipeDifficulty,
+  RecipeSeason,
+  IngredientLibrary
 } from '../types';
 import { Icon } from './common/Icon';
 import AIImageModal from './common/AIImageModal';
@@ -17,10 +20,13 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { IngredientAutocomplete } from './common/IngredientAutocomplete';
+import { suggestTags, calculateDifficulty } from '../utils/recipeHelpers';
 
 interface RecipeFormProps {
   recipeToEdit?: Recipe | null;
   allRecipes: Recipe[];
+  ingredientLibrary?: IngredientLibrary[];
   onSave: (recipe: Omit<Recipe, 'id'> | Recipe) => void;
   onCancel: () => void;
   withApiKeyCheck: (action: () => void) => void;
@@ -42,7 +48,12 @@ const initialRecipeState: Omit<Recipe, 'id'> = {
   steps: [{ id: `step${Date.now()}`, type: 'step', content: '' }],
   allergens: [],
   teamId: '',
-  yield: { quantity: 1, unit: 'kg' }
+  yield: { quantity: 1, unit: 'kg' },
+  tags: [],
+  difficulty: undefined,
+  cuisine: undefined,
+  seasons: [],
+  isFavorite: false
 };
 
 const RecipeForm: React.FC<RecipeFormProps> = ({
@@ -50,6 +61,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
   onCancel,
   recipeToEdit,
   allRecipes,
+  ingredientLibrary = [],
   withApiKeyCheck
 }) => {
   const { toast } = useToast();
@@ -65,6 +77,8 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
     }
     return initialRecipeState;
   });
+  
+  const [tagInput, setTagInput] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAiImageModalOpen, setIsAiImageModalOpen] = useState(false);
@@ -217,6 +231,46 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
         ingredients: prev.ingredients.filter((_, i) => i !== index)
       }));
     }
+  };
+  
+  // --- Tag Handlers ---
+  const addTag = () => {
+    if (tagInput.trim() && !recipe.tags?.includes(tagInput.trim())) {
+      setRecipe((prev) => ({
+        ...prev,
+        tags: [...(prev.tags || []), tagInput.trim()]
+      }));
+      setTagInput('');
+    }
+  };
+  
+  const removeTag = (tag: string) => {
+    setRecipe((prev) => ({
+      ...prev,
+      tags: prev.tags?.filter(t => t !== tag) || []
+    }));
+  };
+  
+  const autoGenerateTags = () => {
+    const suggested = suggestTags(recipe as Recipe);
+    setRecipe((prev) => ({
+      ...prev,
+      tags: [...new Set([...(prev.tags || []), ...suggested])]
+    }));
+    toast({
+      title: 'Tags προστέθηκαν αυτόματα',
+      variant: 'success'
+    });
+  };
+  
+  // --- Move ingredient handlers for IngredientAutocomplete ---
+  const moveIngredient = (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= recipe.ingredients.length) return;
+    
+    const newIngredients = [...recipe.ingredients];
+    [newIngredients[index], newIngredients[newIndex]] = [newIngredients[newIndex], newIngredients[index]];
+    setRecipe((prev) => ({ ...prev, ingredients: newIngredients }));
   };
 
   // --- Step Handlers ---
@@ -566,6 +620,107 @@ const RecipeForm: React.FC<RecipeFormProps> = ({
                   </div>
                 </>
               )}
+              
+              {/* Tags */}
+              <div className="space-y-2 col-span-2">
+                <Label>Tags</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="π.χ. Γρήγορο, Καλοκαιρινό..."
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={addTag} variant="outline" size="sm">
+                    <Icon name="plus" className="w-4 h-4" />
+                  </Button>
+                  <Button type="button" onClick={autoGenerateTags} variant="outline" size="sm" title="Αυτόματα tags">
+                    <Icon name="sparkles" className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {recipe.tags?.map(tag => (
+                    <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 bg-brand-yellow/20 text-brand-dark rounded-full text-xs">
+                      {tag}
+                      <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-600">
+                        <Icon name="x" className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Difficulty */}
+              <div className="space-y-2">
+                <Label>Δυσκολία</Label>
+                <Select
+                  value={recipe.difficulty || ''}
+                  onValueChange={(value) => setRecipe(prev => ({
+                    ...prev,
+                    difficulty: value as RecipeDifficulty | undefined
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε δυσκολία" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">--</SelectItem>
+                    <SelectItem value="easy">Εύκολο</SelectItem>
+                    <SelectItem value="medium">Μέτριο</SelectItem>
+                    <SelectItem value="hard">Δύσκολο</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Cuisine */}
+              <div className="space-y-2">
+                <Label>Κουζίνα</Label>
+                <Input
+                  type="text"
+                  placeholder="π.χ. Ελληνική, Ιταλική..."
+                  value={recipe.cuisine || ''}
+                  onChange={(e) => setRecipe(prev => ({ ...prev, cuisine: e.target.value }))}
+                />
+              </div>
+              
+              {/* Seasons */}
+              <div className="space-y-2 col-span-2">
+                <Label>Εποχές</Label>
+                <div className="flex flex-wrap gap-2">
+                  {(['spring', 'summer', 'fall', 'winter'] as RecipeSeason[]).map(season => {
+                    const labels = { spring: 'Άνοιξη', summer: 'Καλοκαίρι', fall: 'Φθινόπωρο', winter: 'Χειμώνας' };
+                    const isSelected = recipe.seasons?.includes(season);
+                    return (
+                      <button
+                        key={season}
+                        type="button"
+                        onClick={() => {
+                          const seasons = recipe.seasons || [];
+                          setRecipe(prev => ({
+                            ...prev,
+                            seasons: isSelected 
+                              ? seasons.filter(s => s !== season)
+                              : [...seasons, season]
+                          }));
+                        }}
+                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-brand-yellow text-brand-dark'
+                            : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {labels[season]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               </div>
             </CardContent>
           </Card>

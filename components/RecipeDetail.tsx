@@ -27,6 +27,10 @@ import {
   getNutritionCoverage,
   getMissingNutritionIngredients
 } from '../utils/nutritionCalculator';
+import { CookingMode } from './common/CookingMode';
+import { SmartScaling } from './common/SmartScaling';
+import { duplicateRecipe, smartRound } from '../utils/recipeHelpers';
+import { useToast } from '../hooks/use-toast';
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -37,6 +41,7 @@ interface RecipeDetailProps {
   onSaveRecipe: (recipe: Recipe) => void; // For AI updates
   onDelete: (recipe: Recipe) => void;
   onSelectRecipe: (id: string) => void; // For navigating to sub-recipes
+  onUpdateRecipes?: (recipes: Recipe[]) => void; // For favorites and duplication
   currentUser: User;
   currentUserRole?: Role;
   rolePermissions: RolePermissions;
@@ -55,6 +60,7 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
   onSaveRecipe,
   onDelete,
   onSelectRecipe,
+  onUpdateRecipes,
   currentUser,
   currentUserRole,
   rolePermissions,
@@ -62,10 +68,13 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
   withApiKeyCheck
 }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('ingredients');
   const [servings, setServings] = useState(recipe.servings);
   const [isLabelPreviewOpen, setIsLabelPreviewOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCookingModeOpen, setIsCookingModeOpen] = useState(false);
+  const [showSmartScaling, setShowSmartScaling] = useState(false);
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiContent, setAiContent] = useState('');
@@ -86,6 +95,33 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
     ? rolePermissions[currentUserRole]?.includes('manage_recipes')
     : false;
 
+  // Handle favorite toggle
+  const handleToggleFavorite = () => {
+    if (!onUpdateRecipes) return;
+    const updated = allRecipes.map(r =>
+      r.id === recipe.id ? { ...r, isFavorite: !r.isFavorite } : r
+    );
+    onUpdateRecipes(updated);
+    toast({
+      title: recipe.isFavorite 
+        ? t('recipe_removed_from_favorites') 
+        : t('recipe_added_to_favorites'),
+      variant: 'success'
+    });
+  };
+
+  // Handle recipe duplication
+  const handleDuplicate = () => {
+    if (!canManage || !onUpdateRecipes) return;
+    const duplicated = duplicateRecipe(recipe, currentUser.id);
+    onUpdateRecipes([...allRecipes, duplicated]);
+    toast({
+      title: t('recipe_duplicated'),
+      description: duplicated.name,
+      variant: 'success'
+    });
+  };
+
   const scalingFactor = useMemo(
     () => servings / recipe.servings,
     [servings, recipe.servings]
@@ -96,6 +132,16 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
       recipe.ingredients.map((ing) => ({
         ...ing,
         quantity: ing.quantity * scalingFactor
+      })),
+    [recipe.ingredients, scalingFactor]
+  );
+  
+  // Smart rounded ingredients
+  const smartScaledIngredients = useMemo(
+    () =>
+      recipe.ingredients.map((ing) => ({
+        ...ing,
+        quantity: smartRound(ing.quantity * scalingFactor, ing.unit)
       })),
     [recipe.ingredients, scalingFactor]
   );
@@ -478,6 +524,47 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
 
               {canManage && (
                 <div className="mt-4 pt-4 border-t border-gray-200/80 dark:border-gray-700/80 flex flex-wrap items-center gap-2">
+                  {/* Cooking Mode Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCookingModeOpen(true)}
+                    className="flex items-center gap-2 text-sm font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-3 py-1.5 rounded-full hover:bg-green-200 dark:hover:bg-green-900 lift-on-hover"
+                  >
+                    <Icon name="play" className="w-4 h-4" /> {t('cooking_mode')}
+                  </button>
+                  
+                  {/* Smart Scaling Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowSmartScaling(!showSmartScaling)}
+                    className="flex items-center gap-2 text-sm font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900 lift-on-hover"
+                  >
+                    <Icon name="scale" className="w-4 h-4" /> {t('smart_scaling')}
+                  </button>
+                  
+                  {/* Favorite Toggle */}
+                  <button
+                    type="button"
+                    onClick={handleToggleFavorite}
+                    className={`flex items-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-full lift-on-hover ${
+                      recipe.isFavorite
+                        ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    <Icon name="star" className="w-4 h-4" /> 
+                    {recipe.isFavorite ? t('remove_favorite') : t('add_favorite')}
+                  </button>
+                  
+                  {/* Duplicate Button */}
+                  <button
+                    type="button"
+                    onClick={handleDuplicate}
+                    className="flex items-center gap-2 text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 lift-on-hover"
+                  >
+                    <Icon name="copy" className="w-4 h-4" /> {t('duplicate')}
+                  </button>
+                  
                   <button
                     type="button"
                     onClick={() =>
@@ -832,6 +919,43 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
         showConfirmButton={!isAiLoading && !!aiContent}
         onConfirm={handleConfirmAiChanges}
       />
+      
+      {/* Cooking Mode */}
+      {isCookingModeOpen && (
+        <CookingMode
+          recipe={recipe}
+          servings={servings}
+          scaledIngredients={smartScaledIngredients}
+          onClose={() => setIsCookingModeOpen(false)}
+        />
+      )}
+      
+      {/* Smart Scaling Panel */}
+      {showSmartScaling && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="relative">
+              <button
+                onClick={() => setShowSmartScaling(false)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 z-10"
+              >
+                <Icon name="x" className="w-5 h-5" />
+              </button>
+              <SmartScaling
+                recipe={recipe}
+                currentServings={servings}
+                onServingsChange={setServings}
+                onApplySmartRound={() => {
+                  toast({
+                    title: t('smart_scaling_applied'),
+                    variant: 'success'
+                  });
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

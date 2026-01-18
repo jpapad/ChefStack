@@ -1,5 +1,5 @@
 // Fix: Populated mockData.ts with sample data for the application.
-import { Recipe, IngredientCost, Workstation, PrepTask, PrepTaskStatus, HaccpLog, HaccpLogType, HaccpLogCategoryKey, HaccpReminder, Supplier, InventoryItem, Menu, User, Team, Notification, Message, Shift, ShiftSchedule, Channel, InventoryLocation, InventoryTransaction, HaccpItem, WasteLog, KitchenOrder, RecipeVariation, EmailReport, ReportHistory, TeamTask, ChatMessage } from '../types';
+import { Recipe, IngredientCost, Workstation, PrepTask, PrepTaskStatus, HaccpLog, HaccpLogType, HaccpLogCategoryKey, HaccpReminder, Supplier, InventoryItem, Menu, User, Team, Notification, Message, Shift, ShiftSchedule, Channel, InventoryLocation, InventoryTransaction, HaccpItem, WasteLog, KitchenOrder, RecipeVariation, EmailReport, ReportHistory, TeamTask, ChatMessage, IngredientLibrary } from '../types';
 
 export const mockTeams: Team[] = [
     { id: 'team1', name: 'Κεντρική Κουζίνα' },
@@ -986,5 +986,159 @@ export const mockChatMessages: ChatMessage[] = [
             { emoji: '❤️', userIds: ['user3'] },
             { emoji: '👏', userIds: ['user1'] }
         ]
+    }
+];
+
+// Ingredient Library - Common ingredients with nutrition data
+export const mockIngredientLibrary: IngredientLibrary[] = [
+    {
+        id: 'lib1',
+        name: 'Κοτόπουλο Φιλέτο',
+        name_en: 'Chicken Breast',
+        commonUnits: ['g', 'kg', 'τεμ'],
+        defaultUnit: 'g',
+        category: 'meat',
+        allergens: [],
+        nutritionPer100g: { calories: 165, protein: 31, carbs: 0, fat: 3.6, isCalculated: false }
+    },
+    {
+        id: 'lib2',
+        name: 'Μοσχαρίσιο Κρέας',
+        name_en: 'Beef',
+        commonUnits: ['g', 'kg'],
+        defaultUnit: 'g',
+        category: 'meat',
+        allergens: ['meat'],
+        nutritionPer100g: { calories: 250, protein: 26, carbs: 0, fat: 15, isCalculated: false }
+    },
+    {
+        id: 'lib3',
+        name: 'Ντομάτα',
+        name_en: 'Tomato',
+        commonUnits: ['g', 'kg', 'τεμ'],
+        defaultUnit: 'g',
+        category: 'vegetable',
+        allergens: [],
+        nutritionPer100g: { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, isCalculated: false }
+    },
+    {
+        id: 'lib4',
+        name: 'Κρεμμύδι',
+        name_en: 'Onion',
+        commonUnits: ['g', 'kg', 'τεμ'],
+        defaultUnit: 'g',
+        category: 'vegetable',
+        allergens: [],
+        nutritionPer100g: { calories: 40, protein: 1.1, carbs: 9.3, fat: 0.1, isCalculated: false }
+    },
+    {
+        id: 'lib5',
+        name: 'Ελαιόλαδο',
+        name_en: 'Olive Oil',
+        commonUnits: ['ml', 'L', 'κ.σ.'],
+        defaultUnit: 'ml',
+        category: 'oil',
+        allergens: [],
+        nutritionPer100g: { calories: 884, protein: 0, carbs: 0, fat: 100, isCalculated: false }
+    },
+    {
+        id: 'lib6',
+        name: 'Σκόρδο',
+        name_en: 'Garlic',
+        commonUnits: ['g', 'τεμ'],
+        defaultUnit: 'g',
+        category: 'spice',
+        allergens: [],
+        nutritionPer100g: { calories: 149, protein: 6.4, carbs: 33, fat: 0.5, isCalculated: false }
+    },
+    {
+        id: 'lib7',
+        name: 'Φέτα',
+        name_en: 'Feta Cheese',
+        commonUnits: ['g', 'kg'],
+        defaultUnit: 'g',
+        category: 'dairy',
+        allergens: ['milk'],
+        nutritionPer100g: { calories: 264, protein: 14, carbs: 4.1, fat: 21, isCalculated: false }
+    },
+    {
+        id: 'lib8',
+        name: 'Γάλα',
+        name_en: 'Milk',
+        commonUnits: ['ml', 'L'],
+        defaultUnit: 'ml',
+        category: 'dairy',
+        allergens: ['milk'],
+        nutritionPer100g: { calories: 42, protein: 3.4, carbs: 5, fat: 1, isCalculated: false }
+    },
+    {
+        id: 'lib9',
+        name: 'Αυγό',
+        name_en: 'Egg',
+        commonUnits: ['τεμ', 'g'],
+        defaultUnit: 'τεμ',
+        category: 'dairy',
+        allergens: ['eggs'],
+        nutritionPer100g: { calories: 155, protein: 13, carbs: 1.1, fat: 11, isCalculated: false }
+    },
+    {
+        id: 'lib10',
+        name: 'Αλεύρι Για Όλες τις Χρήσεις',
+        name_en: 'All-Purpose Flour',
+        commonUnits: ['g', 'kg'],
+        defaultUnit: 'g',
+        category: 'grain',
+        allergens: ['gluten'],
+        nutritionPer100g: { calories: 364, protein: 10, carbs: 76, fat: 1, isCalculated: false }
+    },
+    {
+        id: 'lib11',
+        name: 'Ρύζι',
+        name_en: 'Rice',
+        commonUnits: ['g', 'kg'],
+        defaultUnit: 'g',
+        category: 'grain',
+        allergens: [],
+        nutritionPer100g: { calories: 130, protein: 2.7, carbs: 28, fat: 0.3, isCalculated: false }
+    },
+    {
+        id: 'lib12',
+        name: 'Πατάτα',
+        name_en: 'Potato',
+        commonUnits: ['g', 'kg', 'τεμ'],
+        defaultUnit: 'g',
+        category: 'vegetable',
+        allergens: [],
+        nutritionPer100g: { calories: 77, protein: 2, carbs: 17, fat: 0.1, isCalculated: false }
+    },
+    {
+        id: 'lib13',
+        name: 'Καρότο',
+        name_en: 'Carrot',
+        commonUnits: ['g', 'kg', 'τεμ'],
+        defaultUnit: 'g',
+        category: 'vegetable',
+        allergens: [],
+        nutritionPer100g: { calories: 41, protein: 0.9, carbs: 10, fat: 0.2, isCalculated: false }
+    },
+    {
+        id: 'lib14',
+        name: 'Ψάρι Φιλέτο (Λαβράκι)',
+        name_en: 'Sea Bass Fillet',
+        commonUnits: ['g', 'kg', 'τεμ'],
+        defaultUnit: 'g',
+        category: 'fish',
+        allergens: ['fish'],
+        nutritionPer100g: { calories: 97, protein: 18, carbs: 0, fat: 2.5, isCalculated: false }
+    },
+    {
+        id: 'lib15',
+        name: 'Ντοματάκια Κόκκινα',
+        name_en: 'Cherry Tomatoes',
+        commonUnits: ['g', 'kg', 'τεμ'],
+        defaultUnit: 'g',
+        category: 'vegetable',
+        allergens: [],
+        nutritionPer100g: { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, isCalculated: false }
     }
 ];

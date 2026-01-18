@@ -78,6 +78,19 @@ export interface NutritionInfo {
   isCalculated: boolean; // true if auto-calculated, false if manually entered
 }
 
+export type RecipeDifficulty = 'easy' | 'medium' | 'hard';
+export type RecipeSeason = 'spring' | 'summer' | 'fall' | 'winter';
+
+export interface RecipeVersion {
+  id: string;
+  recipeId: string;
+  version: number;
+  changes: Partial<Recipe>;
+  changedBy: string;
+  changedAt: string;
+  comment?: string;
+}
+
 export interface Recipe {
   id: string;
   name: string;
@@ -96,6 +109,17 @@ export interface Recipe {
   yield?: { quantity: number; unit: Unit }; // e.g. This recipe produces 1kg of sauce
   ratings?: RecipeRating[]; // Team member ratings
   nutrition?: NutritionInfo; // Nutritional information per serving
+  // 🆕 New fields for enhanced functionality
+  tags?: string[]; // ["summer", "quick", "grilled", "kid-friendly"]
+  difficulty?: RecipeDifficulty;
+  cuisine?: string; // "Mediterranean", "Asian", "Greek Traditional"
+  seasons?: RecipeSeason[];
+  currentVersion?: number;
+  versions?: RecipeVersion[];
+  isFavorite?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
 }
 
 export interface IngredientCost {
@@ -103,6 +127,20 @@ export interface IngredientCost {
   name: string;
   cost: number; // Cost per purchaseUnit
   purchaseUnit: PurchaseUnit;
+  teamId: string;
+}
+
+export type IngredientCategory = 'meat' | 'fish' | 'vegetable' | 'fruit' | 'dairy' | 'grain' | 'spice' | 'sauce' | 'oil' | 'other';
+
+export interface IngredientLibrary {
+  id: string;
+  name: string;
+  name_en: string;
+  commonUnits: Unit[];
+  defaultUnit: Unit;
+  category: IngredientCategory;
+  allergens: Allergen[];
+  nutritionPer100g?: NutritionInfo;
   teamId: string;
 }
 

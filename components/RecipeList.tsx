@@ -17,6 +17,9 @@ import { useTranslation } from '../i18n';
 import { exportRecipesToJSON, exportRecipesToCSV } from '../utils/recipeExport';
 import { BulkActionsToolbar } from './common/BulkActionsToolbar';
 import { NoRecipesEmptyState, NoResultsEmptyState } from './common/EmptyState';
+import { EnhancedRecipeCard } from './common/EnhancedRecipeCard';
+import { FilterChips, QuickFilters, ActiveFilter } from './common/FilterChips';
+import { duplicateRecipe } from '../utils/recipeHelpers';
 
 interface RecipeListProps {
   recipes: Recipe[];
@@ -95,10 +98,82 @@ const RecipeList: React.FC<RecipeListProps> = ({
   // Bulk operations state
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  
+  // Active filters for FilterChips
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
+  
+  // Update active filters when filters change
+  React.useEffect(() => {
+    const active: ActiveFilter[] = [];
+    
+    filters.difficulties.forEach(d => {
+      active.push({ type: 'difficulty', value: d, label: d === 'easy' ? 'Εύκολα' : d === 'medium' ? 'Μέτρια' : 'Δύσκολα' });
+    });
+    
+    filters.allergens.forEach(a => {
+      active.push({ type: 'allergen', value: a, label: `Χωρίς ${a}` });
+    });
+    
+    filters.categories.forEach(c => {
+      active.push({ type: 'category', value: c, label: t(`recipe_category_${c}`) });
+    });
+    
+    if (filters.prepTimeRange) {
+      active.push({ 
+        type: 'prepTime', 
+        value: 'time', 
+        label: `${filters.prepTimeRange[0]}-${filters.prepTimeRange[1]} λεπτά` 
+      });
+    }
+    
+    if (filters.vegetarian) {
+      active.push({ type: 'vegetarian', value: 'vegetarian', label: 'Χορτοφαγικά' });
+    }
+    
+    if (filters.vegan) {
+      active.push({ type: 'vegan', value: 'vegan', label: 'Vegan' });
+    }
+    
+    setActiveFilters(active);
+  }, [filters, t]);
 
   const canManage = currentUserRole
     ? rolePermissions[currentUserRole]?.includes('manage_recipes')
     : false;
+
+  // Handle favorite toggle
+  const handleToggleFavorite = (recipeId: string) => {
+    const updatedRecipes = recipes.map(r =>
+      r.id === recipeId ? { ...r, isFavorite: !r.isFavorite } : r
+    );
+    onUpdateRecipes(updatedRecipes);
+    toast({
+      title: recipes.find(r => r.id === recipeId)?.isFavorite 
+        ? t('recipe_removed_from_favorites') 
+        : t('recipe_added_to_favorites'),
+      variant: 'success'
+    });
+  };
+
+  // Handle recipe duplication
+  const handleDuplicateRecipe = (recipe: Recipe) => {
+    if (!canManage) {
+      toast({
+        title: t('error_permission_denied'),
+        variant: 'danger'
+      });
+      return;
+    }
+    
+    const userId = 'current-user'; // TODO: Get from auth context
+    const duplicated = duplicateRecipe(recipe, userId);
+    onUpdateRecipes([...recipes, duplicated]);
+    toast({
+      title: t('recipe_duplicated'),
+      description: duplicated.name,
+      variant: 'success'
+    });
+  };
 
   const handleCategoryCheckboxChange = (
     category: RecipeCategoryKey | 'All',
@@ -121,6 +196,14 @@ const RecipeList: React.FC<RecipeListProps> = ({
   // Apply advanced filters
   const filteredRecipes = React.useMemo(() => {
     let result = [...recipes];
+    
+    // Tags filter
+    if (filters.tags && filters.tags.length > 0) {
+      result = result.filter(r => {
+        const recipeTags = r.tags || [];
+        return filters.tags!.some(tag => recipeTags.includes(tag));
+      });
+    }
     
     // Category filter (already applied via activeCategory, but check advanced filters too)
     if (filters.categories.length > 0) {
@@ -384,6 +467,71 @@ const RecipeList: React.FC<RecipeListProps> = ({
             isExpanded={isFilterExpanded}
             onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
           />
+          
+          {/* Quick Filters */}
+          <QuickFilters
+            onQuickFilter={(type) => {
+              if (type === 'easy') {
+                setFilters({ ...filters, difficulties: ['easy'] });
+              } else if (type === 'quick') {
+                setFilters({ ...filters, prepTimeRange: [0, 30] });
+              } else if (type === 'vegetarian') {
+                setFilters({ ...filters, vegetarian: true });
+              } else if (type === 'seasonal') {
+                // Auto-detect current season (simplified)
+                const month = new Date().getMonth();
+                let season: 'spring' | 'summer' | 'fall' | 'winter' = 'summer';
+                if (month >= 2 && month <= 4) season = 'spring';
+                else if (month >= 5 && month <= 7) season = 'summer';
+                else if (month >= 8 && month <= 10) season = 'fall';
+                else season = 'winter';
+                // Would filter by season if recipes had seasons field
+                toast({ title: `Φίλτρο για ${season}`, variant: 'info' });
+              } else if (type === 'allergen-free') {
+                setFilters({ ...filters, allergens: [] });
+              }
+            }}
+          />
+          
+          {/* Active Filters */}
+          {(filters.difficulties.length > 0 || 
+            filters.allergens.length > 0 || 
+            filters.categories.length > 0 ||
+            filters.prepTimeRange !== null ||
+            filters.vegetarian ||
+            filters.vegan) && (
+            <FilterChips
+              filters={activeFilters}
+              onRemoveFilter={(filter) => {
+                if (filter.type === 'difficulty') {
+                  setFilters({ ...filters, difficulties: filters.difficulties.filter(d => d !== filter.value) });
+                } else if (filter.type === 'allergen') {
+                  setFilters({ ...filters, allergens: filters.allergens.filter(a => a !== filter.value) });
+                } else if (filter.type === 'category') {
+                  setFilters({ ...filters, categories: filters.categories.filter(c => c !== filter.value) });
+                } else if (filter.type === 'prepTime') {
+                  setFilters({ ...filters, prepTimeRange: null });
+                } else if (filter.type === 'vegetarian') {
+                  setFilters({ ...filters, vegetarian: null });
+                } else if (filter.type === 'vegan') {
+                  setFilters({ ...filters, vegan: null });
+                }
+              }}
+              onClearAll={() => {
+                setFilters({
+                  categories: [],
+                  allergens: [],
+                  difficulties: [],
+                  prepTimeRange: null,
+                  costRange: null,
+                  ratingRange: null,
+                  vegetarian: null,
+                  vegan: null,
+                  tags: []
+                });
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -483,12 +631,15 @@ const RecipeList: React.FC<RecipeListProps> = ({
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {sortedRecipes.map((recipe) => (
-                <ModernRecipeCard
+                <EnhancedRecipeCard
                   key={recipe.id}
                   recipe={recipe}
-                  mode="thumbnail"
-                  onView={() => onSelectRecipe(recipe.id)}
-                  onEdit={() => onSelectRecipe(recipe.id)}
+                  isSelected={selectedRecipeId === recipe.id}
+                  onClick={() => onSelectRecipe(recipe.id)}
+                  onEdit={canManage ? () => onSelectRecipe(recipe.id) : undefined}
+                  onDuplicate={canManage ? () => handleDuplicateRecipe(recipe) : undefined}
+                  onToggleFavorite={() => handleToggleFavorite(recipe.id)}
+                  showQuickActions={canManage}
                 />
               ))}
             </div>
