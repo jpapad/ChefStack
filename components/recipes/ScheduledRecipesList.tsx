@@ -106,7 +106,7 @@ export const ScheduledRecipesList: React.FC<ScheduledRecipesListProps> = ({
   if (schedules.length === 0) {
     return (
       <div className="text-center py-12">
-        <Icon name="calendar-x" className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <Icon name="calendar" className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-gray-400">
           {t('no_scheduled_recipes')}
         </p>
@@ -187,7 +187,7 @@ export const ScheduledRecipesList: React.FC<ScheduledRecipesListProps> = ({
                       )}
                       {schedule.recurrence && schedule.recurrence !== 'none' && (
                         <span className="flex items-center gap-1">
-                          <Icon name="repeat" className="w-4 h-4" />
+                          <Icon name="refresh-cw" className="w-4 h-4" />
                           {t(`recurrence_${schedule.recurrence}`)}
                         </span>
                       )}
@@ -195,14 +195,14 @@ export const ScheduledRecipesList: React.FC<ScheduledRecipesListProps> = ({
 
                     {schedule.notes && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        <Icon name="file-text" className="w-3 h-3 inline mr-1" />
+                        <Icon name="file" className="w-3 h-3 inline mr-1" />
                         {schedule.notes}
                       </p>
                     )}
 
                     {assignedUsers.length > 0 && (
                       <div className="flex items-center gap-2 mb-2">
-                        <Icon name="user-check" className="w-4 h-4 text-gray-500" />
+                        <Icon name="user-plus" className="w-4 h-4 text-gray-500" />
                         <div className="flex flex-wrap gap-1">
                           {assignedUsers.map((user) => (
                             <span
@@ -238,7 +238,7 @@ export const ScheduledRecipesList: React.FC<ScheduledRecipesListProps> = ({
                         className="p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
                         title={t('mark_completed')}
                       >
-                        <Icon name="check-circle" className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <Icon name="check-circle-2" className="w-5 h-5 text-green-600 dark:text-green-400" />
                       </button>
                     )}
                     {(schedule.status === 'pending' || schedule.status === 'in_progress') && (
@@ -247,7 +247,7 @@ export const ScheduledRecipesList: React.FC<ScheduledRecipesListProps> = ({
                         className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                         title={t('cancel')}
                       >
-                        <Icon name="x-circle" className="w-5 h-5 text-red-600 dark:text-red-400" />
+                        <Icon name="x" className="w-5 h-5 text-red-600 dark:text-red-400" />
                       </button>
                     )}
                     <button

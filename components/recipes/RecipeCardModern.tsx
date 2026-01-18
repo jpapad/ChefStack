@@ -77,7 +77,7 @@ export const RecipeCardModern: React.FC<RecipeCardModernProps> = React.memo(({
           </>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 flex items-center justify-center">
-            <Icon name="chef-hat" className="w-16 h-16 text-white/30" />
+            <Icon name="utensils" className="w-16 h-16 text-white/30" />
           </div>
         )}
 
@@ -87,7 +87,7 @@ export const RecipeCardModern: React.FC<RecipeCardModernProps> = React.memo(({
             <span className="text-white text-sm font-medium">
               {t(`recipe_category_${recipe.category}`)}
             </span>
-            <Icon name="edit-3" className="w-3 h-3 text-white/70" />
+            <Icon name="edit" className="w-3 h-3 text-white/70" />
           </div>
         </div>
 
@@ -138,7 +138,7 @@ export const RecipeCardModern: React.FC<RecipeCardModernProps> = React.memo(({
           {/* Cook Time */}
           {recipe.cookTime > 0 && (
             <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <Icon name="flame" className="w-4 h-4" />
+              <Icon name="thermometer" className="w-4 h-4" />
               <span className="text-sm">
                 {recipe.cookTime}′ {t('cook')}
               </span>
@@ -156,7 +156,7 @@ export const RecipeCardModern: React.FC<RecipeCardModernProps> = React.memo(({
           {/* Difficulty */}
           {recipe.difficulty && (
             <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <Icon name="zap" className="w-4 h-4" />
+              <Icon name="trending-up" className="w-4 h-4" />
               <span className="text-sm">{t(`difficulty_${recipe.difficulty}`)}</span>
             </div>
           )}
@@ -210,7 +210,7 @@ export const RecipeCardModern: React.FC<RecipeCardModernProps> = React.memo(({
         {recipe.allergens && recipe.allergens.length > 0 && (
           <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-2 flex-wrap">
-              <Icon name="alert-triangle" className="w-4 h-4 text-orange-500" />
+              <Icon name="alert-circle" className="w-4 h-4 text-orange-500" />
               <span className="text-xs text-slate-500 dark:text-slate-400">
                 {recipe.allergens.slice(0, 3).join(', ')}
                 {recipe.allergens.length > 3 && ` +${recipe.allergens.length - 3}`}

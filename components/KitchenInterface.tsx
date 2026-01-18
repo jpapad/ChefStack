@@ -34,7 +34,8 @@ import type {
   ReportHistory,
   TeamTask,
   ChatMessage,
-  RecipeComment
+  RecipeComment,
+  RecipeSchedule
 } from '../types';
 import { ALL_PERMISSIONS } from '../types';
 
@@ -151,6 +152,8 @@ interface KitchenInterfaceProps {
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   recipeComments: RecipeComment[];
   setRecipeComments: React.Dispatch<React.SetStateAction<RecipeComment[]>>;
+  recipeSchedules: RecipeSchedule[];
+  setRecipeSchedules: React.Dispatch<React.SetStateAction<RecipeSchedule[]>>;
 }
 
 const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
