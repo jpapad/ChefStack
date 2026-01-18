@@ -33,7 +33,7 @@ export const RecipeComments: React.FC<RecipeCommentsProps> = ({
   const [mentionSearch, setMentionSearch] = useState('');
 
   const getUserName = (userId: string) => {
-    return users.find(u => u.id === userId)?.name || 'Unknown User';
+    return users?.find(u => u.id === userId)?.name || 'Unknown User';
   };
 
   const formatDate = (dateString: string) => {
@@ -117,7 +117,7 @@ export const RecipeComments: React.FC<RecipeCommentsProps> = ({
   };
 
   const filteredUsers = mentionSearch
-    ? users.filter(u => 
+    ? (users || []).filter(u => 
         u.name.toLowerCase().includes(mentionSearch.toLowerCase()) &&
         u.id !== currentUser.id
       )

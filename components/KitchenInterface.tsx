@@ -1147,6 +1147,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                 onSaveRecipe={handleSaveRecipe}
                 onDelete={handleDeleteRecipe}
                 onSelectRecipe={setSelectedRecipeId}
+                onUpdateRecipes={setRecipes}
                 currentUser={user}
                 currentUserRole={currentUserRole}
                 language={language}
