@@ -35,12 +35,12 @@ export const VersionCompare: React.FC<VersionCompareProps> = ({
   };
 
   const getDifferences = () => {
-    const changesA = new Set(olderVersion.changes);
-    const changesB = new Set(newerVersion.changes);
+    const changesA = new Set(olderVersion.changes || []);
+    const changesB = new Set(newerVersion.changes || []);
     
-    const added = newerVersion.changes.filter(change => !changesA.has(change));
-    const removed = olderVersion.changes.filter(change => !changesB.has(change));
-    const common = olderVersion.changes.filter(change => changesB.has(change));
+    const added = (newerVersion.changes || []).filter(change => !changesA.has(change));
+    const removed = (olderVersion.changes || []).filter(change => !changesB.has(change));
+    const common = (olderVersion.changes || []).filter(change => changesB.has(change));
 
     return { added, removed, common };
   };

@@ -30,7 +30,7 @@ export const RecipeVersionHistory: React.FC<RecipeVersionHistoryProps> = ({
   );
 
   const getUserName = (userId: string) => {
-    return users.find(u => u.id === userId)?.name || 'Unknown User';
+    return (users || []).find(u => u.id === userId)?.name || 'Unknown User';
   };
 
   const formatDate = (dateString: string) => {
@@ -222,7 +222,7 @@ export const RecipeVersionHistory: React.FC<RecipeVersionHistoryProps> = ({
 
                   {/* Changes Preview */}
                   <div className="space-y-1">
-                    {version.changes.slice(0, isExpanded ? undefined : 3).map((change, i) => (
+                    {(version.changes || []).slice(0, isExpanded ? undefined : 3).map((change, i) => (
                       <div 
                         key={i}
                         className="flex items-start gap-2 text-sm p-2 rounded hover:bg-accent/30"
@@ -234,12 +234,12 @@ export const RecipeVersionHistory: React.FC<RecipeVersionHistoryProps> = ({
                         <span className="flex-1">{change}</span>
                       </div>
                     ))}
-                    {!isExpanded && version.changes.length > 3 && (
+                    {!isExpanded && (version.changes || []).length > 3 && (
                       <button
                         onClick={() => setExpandedVersionId(version.id)}
                         className="text-xs text-primary hover:underline ml-6"
                       >
-                        +{version.changes.length - 3} ακόμα αλλαγές
+                        +{(version.changes || []).length - 3} ακόμα αλλαγές
                       </button>
                     )}
                   </div>
