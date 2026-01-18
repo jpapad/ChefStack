@@ -996,11 +996,14 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     const teamMenusFiltered = menus.filter((m) => m.teamId === currentTeamId);
     const teamMessages = messages.filter((m) => (m as any).teamId === currentTeamId);
     const teamShifts = shifts.filter((s) => s.teamId === currentTeamId);
-    const teamUsers = allUsers.filter((u) => u.teamId === currentTeamId);
+    const teamUsers = allUsers.filter((u) => u.memberships.some((m) => m.teamId === currentTeamId));
     const teamShiftSchedules = shiftSchedules.filter(
       (s) => s.teamId === currentTeamId
     );
     const teamChannels = allChannels.filter((c) => c.teamId === currentTeamId);
+    const teamRecipeComments = recipeComments.filter(
+      (c) => teamRecipesFiltered.some((r) => r.id === c.recipeId)
+    );
 
     if (currentView === 'recipes') {
       const recipesForCategoryFilter = teamRecipesFiltered.filter((recipe) => {
@@ -1150,7 +1153,7 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                 rolePermissions={rolePermissions}
                 withApiKeyCheck={withApiKeyCheck}
                 users={teamUsers}
-                comments={recipeComments}
+                comments={teamRecipeComments}
                 onAddComment={handleAddComment}
                 onUpvoteComment={handleUpvoteComment}
                 onReplyComment={handleReplyComment}
