@@ -4,6 +4,7 @@ import { Icon } from './common/Icon';
 import StarRating from './common/StarRating';
 import { useTranslation } from '../i18n';
 
+// MODERN CARD DESIGN v2.0 - Large image with gradient overlay
 interface RecipeGridCardProps {
   recipe: Recipe;
   isSelected: boolean;

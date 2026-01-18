@@ -34,7 +34,7 @@ import { duplicateRecipe, smartRound, createRecipeVersion } from '../utils/recip
 import { useToast } from '../hooks/use-toast';
 import { RecipeVersionHistory } from './common/RecipeVersionHistory';
 import { VersionCompare } from './common/VersionCompare';
-import { RecipeVersion, RecipeComment } from '../types';
+import { RecipeVersion } from '../types';
 import { RecipeComments } from './common/RecipeComments';
 
 interface RecipeDetailProps {

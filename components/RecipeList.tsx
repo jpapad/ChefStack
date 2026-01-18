@@ -619,12 +619,21 @@ const RecipeList: React.FC<RecipeListProps> = ({
           recipeViewMode === 'list' ? (
             <div className="space-y-3">
               {sortedRecipes.map((recipe) => (
-                <ModernRecipeCard
+                <RecipeGridCard
                   key={recipe.id}
                   recipe={recipe}
-                  mode="full"
-                  onView={() => onSelectRecipe(recipe.id)}
-                  onEdit={() => onSelectRecipe(recipe.id)}
+                  isSelected={selectedRecipeId === recipe.id}
+                  onClick={() => onSelectRecipe(recipe.id)}
+                  isBookMode={isBookMode}
+                  isBookSelected={bookSelectedIds.includes(recipe.id)}
+                  onBookSelect={onBookSelect}
+                  isBulkMode={showBulkActions}
+                  isBulkSelected={selectedRecipeIds.includes(recipe.id)}
+                  onBulkSelect={(id) => {
+                    setSelectedRecipeIds(prev =>
+                      prev.includes(id) ? prev.filter(rid => rid !== id) : [...prev, id]
+                    );
+                  }}
                 />
               ))}
             </div>
