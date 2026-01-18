@@ -201,7 +201,7 @@ const RecipeList: React.FC<RecipeListProps> = ({
     if (filters.tags && filters.tags.length > 0) {
       result = result.filter(r => {
         const recipeTags = r.tags || [];
-        return filters.tags!.some(tag => recipeTags.includes(tag));
+        return (filters.tags || []).some(tag => recipeTags.includes(tag));
       });
     }
     
@@ -214,7 +214,7 @@ const RecipeList: React.FC<RecipeListProps> = ({
     if (filters.allergens.length > 0) {
       result = result.filter(r => {
         const recipeAllergens = r.allergens || [];
-        return !filters.allergens.some(a => recipeAllergens.includes(a));
+        return !(filters.allergens || []).some(a => recipeAllergens.includes(a));
       });
     }
     
