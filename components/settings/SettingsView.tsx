@@ -172,7 +172,7 @@ const TeamManagement: React.FC<TeamManagementProps> = ({ users, setUsers, teams,
                     </button>
                  </div>
                  <div className="flex-1 overflow-y-auto -mr-2 pr-2 space-y-2">
-                    {teams.filter(t => currentUser.memberships.some(m => m.teamId === t.id)).map(team => (
+                    {teams.filter(t => (currentUser.memberships || []).some(m => m.teamId === t.id)).map(team => (
                         <div key={team.id} onClick={() => setSelectedTeamId(team.id)} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer group border ${selectedTeamId === team.id ? 'bg-brand-yellow/20 border-brand-yellow/50' : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
                             <span className="font-bold">{team.name}</span>
                             {canManage && (

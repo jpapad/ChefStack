@@ -79,7 +79,7 @@ const ShiftsView: React.FC<ShiftsViewProps> = ({ shifts, setShifts, shiftSchedul
   const canManage = currentUserRole ? rolePermissions[currentUserRole]?.includes('manage_shifts') : false;
 
   const teamMembers = useMemo(() =>
-    allUsers.filter(u => u.memberships.some(m => m.teamId === currentTeamId))
+    allUsers.filter(u => (u.memberships || []).some(m => m.teamId === currentTeamId))
       .sort((a, b) => a.name.localeCompare(b.name)),
     [allUsers, currentTeamId]
   );

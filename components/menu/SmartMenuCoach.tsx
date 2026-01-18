@@ -95,7 +95,7 @@ const SmartMenuCoach: React.FC<SmartMenuCoachProps> = ({
       const costIngredientNames = new Set(ingredientCosts.map(ic => ic.name.toLowerCase()));
       const recipesWithoutCosts = recipes.filter(r => {
         if (!r.ingredients || r.ingredients.length === 0) return false;
-        return r.ingredients.some(ing => !costIngredientNames.has(ing.name.toLowerCase()));
+        return (r.ingredients || []).some(ing => !costIngredientNames.has(ing.name.toLowerCase()));
       });
 
       if (recipesWithoutCosts.length > 0) {
@@ -141,7 +141,7 @@ const SmartMenuCoach: React.FC<SmartMenuCoachProps> = ({
     const seasonalIngredients = seasonalSuggestions.map(s => s.toLowerCase());
     const recipesWithSeasonal = recipes.filter(r => {
       if (!r.ingredients || r.ingredients.length === 0) return false;
-      return r.ingredients.some(ing => 
+      return (r.ingredients || []).some(ing => 
         seasonalIngredients.some(si => ing.name.toLowerCase().includes(si))
       );
     });

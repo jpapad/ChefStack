@@ -80,7 +80,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
 
     // Get team users
     const teamUsers = allUsers.filter(u => 
-        u.memberships.some(m => m.teamId === currentTeamId)
+        (u.memberships || []).some(m => m.teamId === currentTeamId)
     );
 
     // Filter by search

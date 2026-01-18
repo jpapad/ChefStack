@@ -21,7 +21,7 @@ const TeamMembers: React.FC<TeamMembersProps> = ({ team, allUsers, setAllUsers, 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const teamMembers = useMemo(() => {
-    return allUsers.filter(u => u.memberships.some(m => m.teamId === team.id));
+    return allUsers.filter(u => (u.memberships || []).some(m => m.teamId === team.id));
   }, [allUsers, team.id]);
   
   const canManage = currentUserRole ? rolePermissions[currentUserRole]?.includes('manage_team') : false;
@@ -39,7 +39,7 @@ const TeamMembers: React.FC<TeamMembersProps> = ({ team, allUsers, setAllUsers, 
         
         if (existingUser) {
             // User exists, add them to the team if they aren't already a member
-            if (existingUser.memberships.some(m => m.teamId === team.id)) {
+            if ((existingUser.memberships || []).some(m => m.teamId === team.id)) {
                 alert('A user with this email is already in this team.');
                 return;
             }
