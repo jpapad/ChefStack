@@ -3,7 +3,6 @@ import { Recipe } from '../types';
 import { Icon } from './common/Icon';
 import StarRating from './common/StarRating';
 import { useTranslation } from '../i18n';
-import { Badge, StatusBadge } from './common/Badge';
 
 interface RecipeGridCardProps {
   recipe: Recipe;
@@ -28,7 +27,10 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = React.memo(({
   isBulkSelected = false,
   onBulkSelect
 }) => {
-  const { t } = useTranslation();
+  const { language, t } = useTranslation();
+
+  const displayName = language === 'en' && recipe.name_en ? recipe.name_en : recipe.name;
+  const secondaryName = language === 'en' ? recipe.name : recipe.name_en;
 
   // Calculate average rating
   const averageRating = useMemo(() => {
@@ -37,20 +39,11 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = React.memo(({
     return sum / recipe.ratings.length;
   }, [recipe.ratings]);
 
-  const handleBookToggle = (e: React.MouseEvent | React.ChangeEvent) => {
-    e.stopPropagation();
-    onBookSelect(recipe.id);
-  };
-
-  const handleBulkToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onBulkSelect) {
-      onBulkSelect(recipe.id);
-    }
-  };
+  const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+  const hasImage = !!recipe.imageUrl;
 
   const handleCardClick = () => {
-    if (isBookMode) {
+    if (isBookMode && onBookSelect) {
       onBookSelect(recipe.id);
     } else if (isBulkMode && onBulkSelect) {
       onBulkSelect(recipe.id);
@@ -59,133 +52,180 @@ const RecipeGridCard: React.FC<RecipeGridCardProps> = React.memo(({
     }
   };
 
-  const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
-  const hasImage = !!recipe.imageUrl;
-
-  const allergens = Array.isArray(recipe.allergens) ? recipe.allergens : [];
-  const visibleAllergens = allergens.slice(0, 2);
-  const extraAllergens = allergens.length - visibleAllergens.length;
-
   return (
     <div
-      className={`stagger-item card-elevated-1 relative group rounded-2xl overflow-hidden border shadow-sm transition-all cursor-pointer
-      ${
-        isSelected && !isBookMode && !isBulkMode
-          ? 'border-brand-yellow ring-2 ring-brand-yellow/40'
-          : 'border-slate-100 dark:border-slate-800 hover:border-brand-yellow/70 hover:shadow-md'
-      } ${(isBookSelected || isBulkSelected) ? 'ring-2 ring-brand-yellow/60' : ''}`}
+      className={`stagger-item group rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer
+        ${isSelected && !isBookMode && !isBulkMode
+          ? 'ring-2 ring-brand-yellow shadow-2xl scale-[1.02]'
+          : 'hover:shadow-xl hover:scale-[1.02]'
+        }
+        ${(isBookSelected || isBulkSelected) ? 'ring-2 ring-brand-yellow shadow-xl' : ''}
+      `}
       onClick={handleCardClick}
     >
-      {/* Εικόνα */}
-      <div className="relative h-28 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+      {/* Large Image Header with Gradient Overlay */}
+      <div className="relative h-48 w-full overflow-hidden">
         {hasImage ? (
-          <img
-            src={recipe.imageUrl}
-            alt={recipe.name}
-            className="w-full h-full object-cover transform group-hover:scale-[1.03] transition-transform"
-          />
+          <>
+            <img
+              src={recipe.imageUrl}
+              alt={displayName}
+              className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Icon name="utensils" className="w-6 h-6 text-slate-400" />
+          <div className="w-full h-full bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 flex items-center justify-center">
+            <Icon name="utensils" className="w-16 h-16 text-white/30" />
           </div>
         )}
 
-        {/* Book mode or bulk mode checkbox επάνω αριστερά */}
-        {(isBookMode || isBulkMode) && (
-          <button
-            type="button"
-            onClick={isBookMode ? handleBookToggle : handleBulkToggle}
-            className="absolute top-2 left-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-black/60 text-white border border-white/40"
-          >
-            {(isBookSelected || isBulkSelected) ? (
-              <Icon name="check" className="w-3 h-3" />
-            ) : (
-              <Icon name="plus" className="w-3 h-3" />
-            )}
-          </button>
-        )}
-
-        {/* Κατηγορία επάνω δεξιά */}
-        {recipe.category && (
-          <div className="absolute top-2 right-2">
-            <Badge variant="default" size="sm">
+        {/* Category Badge - Top Right */}
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 flex items-center gap-2">
+            <span className="text-white text-sm font-medium">
               {t(`recipe_category_${recipe.category}`)}
-            </Badge>
+            </span>
+            <Icon name="edit" className="w-3 h-3 text-white/70" />
           </div>
-        )}
-      </div>
-
-      {/* Περιεχόμενο */}
-      <div className="p-2.5 flex flex-col gap-1.5 bg-white dark:bg-slate-900">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="font-semibold text-[13px] leading-tight truncate">
-              {recipe.name}
-            </p>
-            {recipe.name_en && (
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                {recipe.name_en}
-              </p>
-            )}
-          </div>
-
-          {/* Price badge */}
-          {typeof recipe.price === 'number' && recipe.price > 0 && (
-            <Badge variant="success" size="sm" icon="euro">
-              {recipe.price.toFixed(2)}
-            </Badge>
-          )}
         </div>
 
-        {/* Meta: χρόνοι + μερίδες + rating */}
-        <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-600 dark:text-slate-300">
-          {totalTime > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10">
-              <Icon name="timer" className="w-3 h-3" />
-              {totalTime}′
-            </span>
+        {/* Book/Bulk Mode Checkbox - Top Left */}
+        {(isBookMode || isBulkMode) && (
+          <div className="absolute top-3 left-3">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+              (isBookSelected || isBulkSelected)
+                ? 'bg-brand-yellow text-black'
+                : 'bg-black/50 backdrop-blur-sm border border-white/30 text-white'
+            }`}>
+              {(isBookSelected || isBulkSelected) ? (
+                <Icon name="check" className="w-4 h-4" />
+              ) : (
+                <Icon name="plus" className="w-4 h-4" />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Title Overlay at Bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="text-white text-2xl font-bold leading-tight mb-1 drop-shadow-lg">
+            {displayName}
+          </h3>
+          {secondaryName && (
+            <p className="text-white/80 text-sm drop-shadow">
+              {secondaryName}
+            </p>
           )}
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="bg-white dark:bg-slate-900 p-4">
+        {/* Metadata Row */}
+        <div className="flex items-center gap-4 mb-3 flex-wrap">
+          {/* Prep Time */}
+          {recipe.prepTime > 0 && (
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Icon name="clock" className="w-4 h-4" />
+              <span className="text-sm">
+                {recipe.prepTime}′ {t('prep')}
+              </span>
+            </div>
+          )}
+
+          {/* Cook Time */}
+          {recipe.cookTime > 0 && (
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Icon name="thermometer" className="w-4 h-4" />
+              <span className="text-sm">
+                {recipe.cookTime}′ {t('cook')}
+              </span>
+            </div>
+          )}
+
+          {/* Servings */}
           {recipe.servings && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10">
-              <Icon name="users" className="w-3 h-3" />
-              {recipe.servings}
-            </span>
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Icon name="users" className="w-4 h-4" />
+              <span className="text-sm">{recipe.servings}</span>
+            </div>
           )}
-          {recipe.yield && typeof recipe.yield.quantity === 'number' && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10">
-              <Icon name="scale" className="w-3 h-3" />
-              {recipe.yield.quantity}
-              {recipe.yield.unit}
-            </span>
+
+          {/* Difficulty */}
+          {recipe.difficulty && (
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Icon name="trending-up" className="w-4 h-4" />
+              <span className="text-sm">{t(`difficulty_${recipe.difficulty}`)}</span>
+            </div>
           )}
+
+          {/* Rating */}
           {averageRating > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-50 dark:bg-yellow-900/30">
+            <div className="ml-auto">
               <StarRating
                 rating={averageRating}
                 size="sm"
                 readonly
+                showCount
+                count={recipe.ratings?.length}
               />
-            </span>
+            </div>
           )}
         </div>
 
+        {/* Description */}
+        {recipe.description && (
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+            {recipe.description}
+          </p>
+        )}
+
+        {/* Ingredients Preview */}
+        {recipe.ingredients && recipe.ingredients.length > 0 && (
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-3">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
+              {t('ingredients')} ({recipe.ingredients.length})
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {recipe.ingredients.slice(0, 4).map((ing, idx) => (
+                <span
+                  key={idx}
+                  className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                >
+                  {ing.name}
+                </span>
+              ))}
+              {recipe.ingredients.length > 4 && (
+                <span className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                  +{recipe.ingredients.length - 4} {t('more')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Allergens */}
-        {allergens.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1 mt-0.5">
-            {visibleAllergens.map((a) => (
-              <Badge
-                key={a}
-                variant="danger"
-                size="sm"
-              >
-                {a}
-              </Badge>
-            ))}
-            {extraAllergens > 0 && (
-              <Badge variant="danger" size="sm">
-                +{extraAllergens}
-              </Badge>
-            )}
+        {recipe.allergens && recipe.allergens.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Icon name="alert-circle" className="w-4 h-4 text-orange-500" />
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {recipe.allergens.slice(0, 3).join(', ')}
+                {recipe.allergens.length > 3 && ` +${recipe.allergens.length - 3}`}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Price Badge */}
+        {typeof recipe.price === 'number' && recipe.price > 0 && (
+          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+              <Icon name="euro" className="w-4 h-4" />
+              <span className="font-semibold">{recipe.price.toFixed(2)}</span>
+            </div>
           </div>
         )}
       </div>
