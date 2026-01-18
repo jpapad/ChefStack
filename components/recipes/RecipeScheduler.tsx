@@ -150,7 +150,7 @@ export const RecipeScheduler: React.FC<RecipeSchedulerProps> = ({
           {/* Recurrence */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <Icon name="refresh-cw" className="w-4 h-4 inline mr-1" />
+              <Icon name="rotate-cw" className="w-4 h-4 inline mr-1" />
               {t('recurrence')}
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -188,7 +188,7 @@ export const RecipeScheduler: React.FC<RecipeSchedulerProps> = ({
           {/* Assign To */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <Icon name="user-plus" className="w-4 h-4 inline mr-1" />
+              <Icon name="users" className="w-4 h-4 inline mr-1" />
               {t('assign_to')} ({t('optional')})
             </label>
             <div className="flex flex-wrap gap-2">
@@ -215,7 +215,7 @@ export const RecipeScheduler: React.FC<RecipeSchedulerProps> = ({
           {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <Icon name="file" className="w-4 h-4 inline mr-1" />
+              <Icon name="message-square" className="w-4 h-4 inline mr-1" />
               {t('notes')} ({t('optional')})
             </label>
             <textarea

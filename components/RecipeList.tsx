@@ -17,7 +17,7 @@ import { useTranslation } from '../i18n';
 import { exportRecipesToJSON, exportRecipesToCSV } from '../utils/recipeExport';
 import { BulkActionsToolbar } from './common/BulkActionsToolbar';
 import { NoRecipesEmptyState, NoResultsEmptyState } from './common/EmptyState';
-import { EnhancedRecipeCard } from './common/EnhancedRecipeCard';
+import { ActiveRecipeCard as RecipeGridCard } from './recipes/RecipeCardSwitcher';
 import { FilterChips, QuickFilters, ActiveFilter } from './common/FilterChips';
 import { duplicateRecipe } from '../utils/recipeHelpers';
 
@@ -631,15 +631,17 @@ const RecipeList: React.FC<RecipeListProps> = ({
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {sortedRecipes.map((recipe) => (
-                <EnhancedRecipeCard
+                <RecipeGridCard
                   key={recipe.id}
                   recipe={recipe}
                   isSelected={selectedRecipeId === recipe.id}
                   onClick={() => onSelectRecipe(recipe.id)}
-                  onEdit={canManage ? () => onSelectRecipe(recipe.id) : undefined}
-                  onDuplicate={canManage ? () => handleDuplicateRecipe(recipe) : undefined}
-                  onToggleFavorite={() => handleToggleFavorite(recipe.id)}
-                  showQuickActions={canManage}
+                  isBookMode={isBookMode}
+                  isBookSelected={bookSelectedIds.has(recipe.id)}
+                  onBookSelect={handleBookSelect}
+                  isBulkMode={isBulkMode}
+                  isBulkSelected={bulkSelectedIds.has(recipe.id)}
+                  onBulkSelect={handleBulkSelect}
                 />
               ))}
             </div>

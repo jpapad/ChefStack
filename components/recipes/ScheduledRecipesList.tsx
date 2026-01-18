@@ -187,7 +187,7 @@ export const ScheduledRecipesList: React.FC<ScheduledRecipesListProps> = ({
                       )}
                       {schedule.recurrence && schedule.recurrence !== 'none' && (
                         <span className="flex items-center gap-1">
-                          <Icon name="refresh-cw" className="w-4 h-4" />
+                          <Icon name="rotate-cw" className="w-4 h-4" />
                           {t(`recurrence_${schedule.recurrence}`)}
                         </span>
                       )}
@@ -195,14 +195,14 @@ export const ScheduledRecipesList: React.FC<ScheduledRecipesListProps> = ({
 
                     {schedule.notes && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        <Icon name="file" className="w-3 h-3 inline mr-1" />
+                        <Icon name="message-square" className="w-3 h-3 inline mr-1" />
                         {schedule.notes}
                       </p>
                     )}
 
                     {assignedUsers.length > 0 && (
                       <div className="flex items-center gap-2 mb-2">
-                        <Icon name="user-plus" className="w-4 h-4 text-gray-500" />
+                        <Icon name="users" className="w-4 h-4 text-gray-500" />
                         <div className="flex flex-wrap gap-1">
                           {assignedUsers.map((user) => (
                             <span
