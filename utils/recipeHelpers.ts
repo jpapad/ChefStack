@@ -1,4 +1,4 @@
-import { Recipe } from '../types';
+import { Recipe, RecipeVersion } from '../types';
 
 /**
  * Δημιουργεί αντίγραφο συνταγής με νέο ID και καθαρό state
@@ -32,29 +32,21 @@ export const duplicateRecipe = (recipe: Recipe, userId: string): Omit<Recipe, 'i
  */
 export const createRecipeVersion = (
   recipe: Recipe,
-  changes: Partial<Recipe>,
+  changes: string[],
   userId: string,
   comment?: string
-): Recipe => {
-  const newVersion = (recipe.currentVersion || 1) + 1;
-  
-  const versionRecord: Recipe['versions'][0] = {
+): RecipeVersion => {
+  const versionRecord: RecipeVersion = {
     id: `ver_${Date.now()}`,
     recipeId: recipe.id,
     version: recipe.currentVersion || 1,
-    changes,
+    changes, // Array of change descriptions
     changedBy: userId,
     changedAt: new Date().toISOString(),
     comment
   };
 
-  return {
-    ...recipe,
-    ...changes,
-    currentVersion: newVersion,
-    versions: [...(recipe.versions || []), versionRecord],
-    updatedAt: new Date().toISOString()
-  };
+  return versionRecord;
 };
 
 /**

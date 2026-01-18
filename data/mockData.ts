@@ -1142,3 +1142,52 @@ export const mockIngredientLibrary: IngredientLibrary[] = [
         nutritionPer100g: { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, isCalculated: false }
     }
 ];
+
+// Recipe Comments
+export const mockRecipeComments: import('../types').RecipeComment[] = [
+    {
+        id: 'comment1',
+        recipeId: '1', // Μουσακάς
+        userId: 'user2',
+        content: 'Εξαιρετική συνταγή! Θα ήθελα να προσθέσουμε λίγο περισσότερη κανέλα στο κιμά για extra άρωμα.',
+        upvotes: ['user1', 'user3'],
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString() // 2 days ago
+    },
+    {
+        id: 'comment2',
+        recipeId: '1',
+        userId: 'user1',
+        content: '@Maria Καλή ιδέα! Να το δοκιμάσουμε στο επόμενο batch. Τι λες για 1/4 κ.γ. extra;',
+        mentions: ['user2'],
+        parentId: 'comment1',
+        upvotes: ['user2'],
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // 1 day ago
+    },
+    {
+        id: 'comment3',
+        recipeId: '1',
+        userId: 'user3',
+        content: 'Τα λαχανικά χρειάζονται λίγο περισσότερο ψήσιμο. Ίσως +5 λεπτά στους 180°C;',
+        upvotes: ['user2'],
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString() // 12 hours ago
+    },
+    {
+        id: 'comment4',
+        recipeId: '2', // Τυρόπιτα
+        userId: 'user2',
+        content: '@Chef Yannis Έχουμε δοκιμάσει με φέτα + ανθότυρο (70/30); Πολύ καλύτερη υφή!',
+        mentions: ['user1'],
+        upvotes: ['user1'],
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString() // 6 hours ago
+    },
+    {
+        id: 'comment5',
+        recipeId: '2',
+        userId: 'user1',
+        content: 'Ωραία σκέψη! Ας το κάνουμε επίσημη παραλλαγή. @Nikos μπορείς να το τεστάρεις αύριο;',
+        mentions: ['user3'],
+        parentId: 'comment4',
+        upvotes: ['user2', 'user3'],
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString() // 3 hours ago
+    }
+];

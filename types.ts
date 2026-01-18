@@ -85,10 +85,22 @@ export interface RecipeVersion {
   id: string;
   recipeId: string;
   version: number;
-  changes: Partial<Recipe>;
+  changes: string[]; // Array of change descriptions
   changedBy: string;
   changedAt: string;
   comment?: string;
+}
+
+export interface RecipeComment {
+  id: string;
+  recipeId: string;
+  userId: string;
+  content: string;
+  mentions?: string[]; // User IDs that were mentioned
+  upvotes?: string[]; // User IDs who upvoted
+  parentId?: string; // For replies
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Recipe {

@@ -10,7 +10,8 @@ import {
   RecipeStep,
   RolePermissions,
   User,
-  NutritionInfo
+  NutritionInfo,
+  RecipeComment
 } from '../types';
 import { Icon } from './common/Icon';
 import PrintLabel from './common/PrintLabel';
@@ -29,8 +30,12 @@ import {
 } from '../utils/nutritionCalculator';
 import { CookingMode } from './common/CookingMode';
 import { SmartScaling } from './common/SmartScaling';
-import { duplicateRecipe, smartRound } from '../utils/recipeHelpers';
+import { duplicateRecipe, smartRound, createRecipeVersion } from '../utils/recipeHelpers';
 import { useToast } from '../hooks/use-toast';
+import { RecipeVersionHistory } from './common/RecipeVersionHistory';
+import { VersionCompare } from './common/VersionCompare';
+import { RecipeVersion, RecipeComment } from '../types';
+import { RecipeComments } from './common/RecipeComments';
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -47,9 +52,14 @@ interface RecipeDetailProps {
   rolePermissions: RolePermissions;
   language: Exclude<LanguageMode, 'both'>;
   withApiKeyCheck: (action: () => void) => void;
+  users: User[]; // All team users for @mentions
+  comments: RecipeComment[];
+  onAddComment: (comment: Omit<RecipeComment, 'id' | 'createdAt'>) => void;
+  onUpvoteComment: (commentId: string, userId: string) => void;
+  onReplyComment: (parentId: string, content: string, userId: string, mentions?: string[]) => void;
 }
 
-type Tab = 'ingredients' | 'steps' | 'allergens' | 'costing' | 'nutrition';
+type Tab = 'ingredients' | 'steps' | 'allergens' | 'costing' | 'nutrition' | 'comments';
 
 const RecipeDetail: React.FC<RecipeDetailProps> = ({
   recipe,
@@ -65,7 +75,12 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
   currentUserRole,
   rolePermissions,
   language,
-  withApiKeyCheck
+  withApiKeyCheck,
+  users,
+  comments,
+  onAddComment,
+  onUpvoteComment,
+  onReplyComment
 }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -75,6 +90,8 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCookingModeOpen, setIsCookingModeOpen] = useState(false);
   const [showSmartScaling, setShowSmartScaling] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [compareVersions, setCompareVersions] = useState<{ versionA: RecipeVersion; versionB: RecipeVersion } | null>(null);
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiContent, setAiContent] = useState('');
@@ -120,6 +137,39 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
       description: duplicated.name,
       variant: 'success'
     });
+  };
+
+  // Handle version restore
+  const handleRestoreVersion = (version: RecipeVersion) => {
+    if (!canManage || !onUpdateRecipes) return;
+    
+    // Create a new version with current state before restoring
+    const currentVersion = createRecipeVersion(
+      recipe,
+      [`Επαναφορά από v${version.version}`],
+      currentUser.id,
+      `Επαναφορά στην έκδοση v${version.version}`
+    );
+    
+    const updatedRecipe = {
+      ...recipe,
+      currentVersion: (recipe.currentVersion || 1) + 1,
+      versions: [...(recipe.versions || []), currentVersion]
+    };
+    
+    onSaveRecipe(updatedRecipe);
+    setShowVersionHistory(false);
+    toast({
+      title: t('version_restored'),
+      description: `Επαναφορά στην έκδοση v${version.version}`,
+      variant: 'success'
+    });
+  };
+
+  // Handle version compare
+  const handleCompareVersions = (versionA: RecipeVersion, versionB: RecipeVersion) => {
+    setCompareVersions({ versionA, versionB });
+    setShowVersionHistory(false);
   };
 
   const scalingFactor = useMemo(
@@ -328,17 +378,26 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
     }
   };
 
-  const TabButton: React.FC<{ tab: Tab; label: string }> = ({ tab, label }) => (
+  const TabButton: React.FC<{ tab: Tab; label: string; badge?: number }> = ({ tab, label, badge }) => (
     <button
       type="button"
       onClick={() => setActiveTab(tab)}
-      className={`px-4 py-2 font-semibold text-sm rounded-full ${
+      className={`px-4 py-2 font-semibold text-sm rounded-full flex items-center gap-2 ${
         activeTab === tab
           ? 'bg-brand-dark text-white'
           : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20'
       }`}
     >
       {label}
+      {badge !== undefined && badge > 0 && (
+        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+          activeTab === tab 
+            ? 'bg-white/20 text-white' 
+            : 'bg-brand-yellow text-slate-900'
+        }`}>
+          {badge}
+        </span>
+      )}
     </button>
   );
 
@@ -565,6 +624,20 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
                     <Icon name="copy" className="w-4 h-4" /> {t('duplicate')}
                   </button>
                   
+                  {/* Version History Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowVersionHistory(true)}
+                    className="flex items-center gap-2 text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900 lift-on-hover"
+                  >
+                    <Icon name="history" className="w-4 h-4" /> {t('version_history')}
+                    {recipe.versions && recipe.versions.length > 0 && (
+                      <span className="px-1.5 py-0.5 bg-purple-600 text-white text-xs rounded-full">
+                        {recipe.versions.length}
+                      </span>
+                    )}
+                  </button>
+                  
                   <button
                     type="button"
                     onClick={() =>
@@ -612,6 +685,11 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
               <TabButton
                 tab="nutrition"
                 label={t('recipe_detail_tab_nutrition')}
+              />
+              <TabButton
+                tab="comments"
+                label={t('comments')}
+                badge={comments.filter(c => c.recipeId === recipe.id).length}
               />
             </div>
             {activeTab === 'ingredients' && (
@@ -886,6 +964,18 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
                 )}
               </div>
             )}
+
+            {activeTab === 'comments' && (
+              <RecipeComments
+                recipe={recipe}
+                currentUser={currentUser}
+                users={users}
+                comments={comments.filter(c => c.recipeId === recipe.id)}
+                onAddComment={(comment) => onAddComment({ ...comment, recipeId: recipe.id })}
+                onUpvote={onUpvoteComment}
+                onReply={onReplyComment}
+              />
+            )}
           </div>
       </div>
 
@@ -955,6 +1045,26 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Version History Modal */}
+      {showVersionHistory && (
+        <RecipeVersionHistory
+          recipe={recipe}
+          users={[currentUser]} // TODO: Pass all team users
+          onClose={() => setShowVersionHistory(false)}
+          onRestore={handleRestoreVersion}
+          onCompare={handleCompareVersions}
+        />
+      )}
+      
+      {/* Version Compare Modal */}
+      {compareVersions && (
+        <VersionCompare
+          versionA={compareVersions.versionA}
+          versionB={compareVersions.versionB}
+          onClose={() => setCompareVersions(null)}
+        />
       )}
     </>
   );

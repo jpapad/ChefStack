@@ -155,6 +155,16 @@ const translations: Record<Language, Record<string, string>> = {
     smart_scaling: 'Έξυπνη Κλιμάκωση',
     smart_scaling_applied: 'Η έξυπνη κλιμάκωση εφαρμόστηκε',
     error_permission_denied: 'Δεν έχετε δικαίωμα για αυτή την ενέργεια',
+    version_history: 'Ιστορικό Εκδόσεων',
+    version_restored: 'Επαναφορά έκδοσης ολοκληρώθηκε',
+    comments: 'Σχόλια',
+    add_comment: 'Προσθήκη Σχολίου',
+    reply: 'Απάντηση',
+    upvote: 'Upvote',
+    upvotes: 'Upvotes',
+    no_comments_yet: 'Δεν υπάρχουν σχόλια ακόμα',
+    be_first_to_comment: 'Γίνε ο πρώτος που θα σχολιάσει αυτή τη συνταγή',
+    write_comment_placeholder: 'Γράψε το σχόλιό σου... (χρησιμοποίησε @ για mentions)',
     
     // Dashboard
     dashboard_top_recipes: 'Κορυφαίες Συνταγές',
@@ -682,6 +692,16 @@ const translations: Record<Language, Record<string, string>> = {
     smart_scaling: 'Smart Scaling',
     smart_scaling_applied: 'Smart scaling applied',
     error_permission_denied: 'You don\'t have permission for this action',
+    version_history: 'Version History',
+    version_restored: 'Version restored successfully',
+    comments: 'Comments',
+    add_comment: 'Add Comment',
+    reply: 'Reply',
+    upvote: 'Upvote',
+    upvotes: 'Upvotes',
+    no_comments_yet: 'No comments yet',
+    be_first_to_comment: 'Be the first to comment on this recipe',
+    write_comment_placeholder: 'Write your comment... (use @ for mentions)',
     
     // Dashboard
     dashboard_top_recipes: 'Top Recipes',

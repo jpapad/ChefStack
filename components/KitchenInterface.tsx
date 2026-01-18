@@ -33,7 +33,8 @@ import type {
   EmailReport,
   ReportHistory,
   TeamTask,
-  ChatMessage
+  ChatMessage,
+  RecipeComment
 } from '../types';
 import { ALL_PERMISSIONS } from '../types';
 
@@ -148,6 +149,8 @@ interface KitchenInterfaceProps {
   setTeamTasks: React.Dispatch<React.SetStateAction<TeamTask[]>>;
   chatMessages: ChatMessage[];
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  recipeComments: RecipeComment[];
+  setRecipeComments: React.Dispatch<React.SetStateAction<RecipeComment[]>>;
 }
 
 const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
@@ -209,7 +212,9 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     teamTasks,
     setTeamTasks,
     chatMessages,
-    setChatMessages
+    setChatMessages,
+    recipeComments,
+    setRecipeComments
   } = props;
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -442,6 +447,50 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     await api.deleteRecipe(recipeToDelete.id);
     setRecipes((prev) => prev.filter((r) => r.id !== recipeToDelete.id));
     setSelectedRecipeId(null);
+  };
+
+  // Comment handlers
+  const handleAddComment = (comment: Omit<RecipeComment, 'id' | 'createdAt'>) => {
+    const newComment: RecipeComment = {
+      ...comment,
+      id: `comment_${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    setRecipeComments((prev) => [...prev, newComment]);
+  };
+
+  const handleUpvoteComment = (commentId: string, userId: string) => {
+    setRecipeComments((prev) =>
+      prev.map((comment) => {
+        if (comment.id !== commentId) return comment;
+        const upvotes = comment.upvotes || [];
+        const hasUpvoted = upvotes.includes(userId);
+        return {
+          ...comment,
+          upvotes: hasUpvoted
+            ? upvotes.filter((id) => id !== userId)
+            : [...upvotes, userId]
+        };
+      })
+    );
+  };
+
+  const handleReplyComment = (
+    parentId: string,
+    content: string,
+    userId: string,
+    mentions?: string[]
+  ) => {
+    const newComment: RecipeComment = {
+      id: `comment_${Date.now()}`,
+      recipeId: recipeComments.find((c) => c.id === parentId)?.recipeId || '',
+      userId,
+      content,
+      mentions,
+      parentId,
+      createdAt: new Date().toISOString()
+    };
+    setRecipeComments((prev) => [...prev, newComment]);
   };
 
   const handleStartImportedRecipe = (importedData: Partial<Recipe>) => {
@@ -1100,6 +1149,11 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                 language={language}
                 rolePermissions={rolePermissions}
                 withApiKeyCheck={withApiKeyCheck}
+                users={teamUsers}
+                comments={recipeComments}
+                onAddComment={handleAddComment}
+                onUpvoteComment={handleUpvoteComment}
+                onReplyComment={handleReplyComment}
               />
             ) : (
               <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-xl flex items-center justify-center h-full text-light-text-secondary dark:text-dark-text-secondary p-6">

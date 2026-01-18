@@ -26,7 +26,8 @@ import {
   EmailReport,
   ReportHistory,
   TeamTask,
-  ChatMessage
+  ChatMessage,
+  RecipeComment
 } from './types';
 import AuthView from './components/auth/AuthView';
 import ResetPasswordView from './components/auth/ResetPasswordView';
@@ -114,6 +115,7 @@ const AppContent: React.FC = () => {
   const [reportHistory, setReportHistory] = useState<ReportHistory[]>([]);
   const [teamTasks, setTeamTasks] = useState<TeamTask[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [recipeComments, setRecipeComments] = useState<RecipeComment[]>([]);
 
   // Derived team-scoped data
   const teamRecipes = recipes.filter((r) => r.teamId === currentTeamId);
@@ -152,6 +154,7 @@ const AppContent: React.FC = () => {
         setReportHistory(data.reportHistory || []);
         setTeamTasks(data.teamTasks || []);
         setChatMessages(data.chatMessages || []);
+        setRecipeComments(data.recipeComments || []);
 
         // Έλεγξε αν υπάρχει ενεργό session
         if (supabase) {
@@ -424,6 +427,8 @@ const AppContent: React.FC = () => {
       setTeamTasks={setTeamTasks}
       chatMessages={chatMessages}
       setChatMessages={setChatMessages}
+      recipeComments={recipeComments}
+      setRecipeComments={setRecipeComments}
     />
   );
 };
