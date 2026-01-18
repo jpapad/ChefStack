@@ -689,7 +689,7 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
               <TabButton
                 tab="comments"
                 label={t('comments')}
-                badge={comments.filter(c => c.recipeId === recipe.id).length}
+                badge={(comments || []).filter(c => c.recipeId === recipe.id).length}
               />
             </div>
             {activeTab === 'ingredients' && (
@@ -970,7 +970,7 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
                 recipe={recipe}
                 currentUser={currentUser}
                 users={users}
-                comments={comments.filter(c => c.recipeId === recipe.id)}
+                comments={(comments || []).filter(c => c.recipeId === recipe.id)}
                 onAddComment={(comment) => onAddComment({ ...comment, recipeId: recipe.id })}
                 onUpvote={onUpvoteComment}
                 onReply={onReplyComment}
