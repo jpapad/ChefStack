@@ -1,5 +1,5 @@
 // Fix: Populated mockData.ts with sample data for the application.
-import { Recipe, IngredientCost, Workstation, PrepTask, PrepTaskStatus, HaccpLog, HaccpLogType, HaccpLogCategoryKey, HaccpReminder, Supplier, InventoryItem, Menu, User, Team, Notification, Message, Shift, ShiftSchedule, Channel, InventoryLocation, InventoryTransaction, HaccpItem, WasteLog, KitchenOrder, RecipeVariation, EmailReport, ReportHistory, TeamTask, ChatMessage, IngredientLibrary } from '../types';
+import { Recipe, IngredientCost, Workstation, PrepTask, PrepTaskStatus, HaccpLog, HaccpLogType, HaccpLogCategoryKey, HaccpReminder, Supplier, InventoryItem, Menu, User, Team, Notification, Message, Shift, ShiftSchedule, Channel, InventoryLocation, InventoryTransaction, HaccpItem, WasteLog, KitchenOrder, RecipeVariation, EmailReport, ReportHistory, TeamTask, ChatMessage, IngredientLibrary, RecipeSchedule } from '../types';
 
 export const mockTeams: Team[] = [
     { id: 'team1', name: 'Κεντρική Κουζίνα' },
@@ -1189,5 +1189,77 @@ export const mockRecipeComments: import('../types').RecipeComment[] = [
         parentId: 'comment4',
         upvotes: ['user2', 'user3'],
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString() // 3 hours ago
+    }
+];
+export const mockRecipeSchedules: import('../types').RecipeSchedule[] = [
+    {
+        id: 'schedule1',
+        recipeId: '1', // Μοσχαράκι Κοκκινιστό
+        teamId: 'team1',
+        scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().split('T')[0], // Tomorrow
+        scheduledTime: '12:00',
+        servings: 40,
+        notes: 'Για το event της Παρασκευής - προετοιμασία από το πρωί',
+        assignedTo: ['user2', 'user3'],
+        status: 'pending',
+        notificationSent: false,
+        createdBy: 'user1',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
+    },
+    {
+        id: 'schedule2',
+        recipeId: '2', // Παστίτσιο
+        teamId: 'team1',
+        scheduledDate: new Date().toISOString().split('T')[0], // Today
+        scheduledTime: '10:00',
+        servings: 30,
+        recurrence: 'weekly',
+        assignedTo: ['user2'],
+        status: 'in_progress',
+        notificationSent: true,
+        createdBy: 'user1',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString()
+    },
+    {
+        id: 'schedule3',
+        recipeId: '3', // Μουσακάς
+        teamId: 'team1',
+        scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString().split('T')[0], // 3 days from now
+        scheduledTime: '14:30',
+        servings: 50,
+        notes: 'Double batch για catering',
+        assignedTo: ['user2', 'user3'],
+        status: 'pending',
+        notificationSent: false,
+        createdBy: 'user1',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
+    },
+    {
+        id: 'schedule4',
+        recipeId: '4', // Σουτζουκάκια
+        teamId: 'team1',
+        scheduledDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString().split('T')[0], // 2 days ago
+        scheduledTime: '11:00',
+        servings: 25,
+        assignedTo: ['user3'],
+        status: 'completed',
+        notificationSent: true,
+        createdBy: 'user2',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString()
+    },
+    {
+        id: 'schedule5',
+        recipeId: '5', // Λαζάνια
+        teamId: 'team1',
+        scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString().split('T')[0], // 1 week from now
+        scheduledTime: '09:00',
+        servings: 60,
+        notes: 'Μεγάλη παραγγελία - χρειάζεται extra προετοιμασία',
+        recurrence: 'none',
+        assignedTo: ['user2', 'user3'],
+        status: 'pending',
+        notificationSent: false,
+        createdBy: 'user1',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString()
     }
 ];

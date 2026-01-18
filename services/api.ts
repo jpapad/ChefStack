@@ -28,7 +28,8 @@ import {
   ReportHistory,
   TeamTask,
   ChatMessage,
-  RecipeComment
+  RecipeComment,
+  RecipeSchedule
 } from '../types';
 import * as mockData from '../data/mockData';
 
@@ -355,6 +356,7 @@ export const api = {
     teamTasks: TeamTask[];
     chatMessages: ChatMessage[];
     recipeComments: RecipeComment[];
+    recipeSchedules: RecipeSchedule[];
   }> => {
     if (useMockApi) {
       console.warn('Supabase not configured, returning mock data.');
@@ -387,7 +389,8 @@ export const api = {
             reportHistory: mockData.mockReportHistory,
             teamTasks: mockData.mockTeamTasks,
             chatMessages: mockData.mockChatMessages,
-            recipeComments: mockData.mockRecipeComments
+            recipeComments: mockData.mockRecipeComments,
+            recipeSchedules: mockData.mockRecipeSchedules
           })
         )
       );
