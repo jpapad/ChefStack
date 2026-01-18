@@ -221,7 +221,9 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
     chatMessages,
     setChatMessages,
     recipeComments,
-    setRecipeComments
+    setRecipeComments,
+    recipeSchedules,
+    setRecipeSchedules
   } = props;
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
