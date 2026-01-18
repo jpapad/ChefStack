@@ -637,11 +637,15 @@ const RecipeList: React.FC<RecipeListProps> = ({
                   isSelected={selectedRecipeId === recipe.id}
                   onClick={() => onSelectRecipe(recipe.id)}
                   isBookMode={isBookMode}
-                  isBookSelected={bookSelectedIds.has(recipe.id)}
-                  onBookSelect={handleBookSelect}
-                  isBulkMode={isBulkMode}
-                  isBulkSelected={bulkSelectedIds.has(recipe.id)}
-                  onBulkSelect={handleBulkSelect}
+                  isBookSelected={bookSelectedIds.includes(recipe.id)}
+                  onBookSelect={onBookSelect}
+                  isBulkMode={showBulkActions}
+                  isBulkSelected={selectedRecipeIds.includes(recipe.id)}
+                  onBulkSelect={(id) => {
+                    setSelectedRecipeIds(prev =>
+                      prev.includes(id) ? prev.filter(rid => rid !== id) : [...prev, id]
+                    );
+                  }}
                 />
               ))}
             </div>
