@@ -28,6 +28,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
     icon: 'book-open',
     items: [
       { view: 'recipes', labelKey: 'nav_recipes', icon: 'book-open' },
+      { view: 'schedules', labelKey: 'nav_schedules', icon: 'calendar-clock' },
       { view: 'menus', labelKey: 'nav_menus', icon: 'list' },
       {
         view: 'kitchen_service',

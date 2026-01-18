@@ -36,6 +36,7 @@ import { RecipeVersionHistory } from './common/RecipeVersionHistory';
 import { VersionCompare } from './common/VersionCompare';
 import { RecipeVersion } from '../types';
 import { RecipeComments } from './common/RecipeComments';
+import { RecipeScheduler } from './recipes/RecipeScheduler';
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -92,6 +93,7 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
   const [showSmartScaling, setShowSmartScaling] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [compareVersions, setCompareVersions] = useState<{ versionA: RecipeVersion; versionB: RecipeVersion } | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiContent, setAiContent] = useState('');
@@ -638,6 +640,15 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
                     )}
                   </button>
                   
+                  {/* Schedule Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsScheduleModalOpen(true)}
+                    className="flex items-center gap-2 text-sm font-semibold bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 px-3 py-1.5 rounded-full hover:bg-orange-200 dark:hover:bg-orange-900 lift-on-hover"
+                  >
+                    <Icon name="calendar" className="w-4 h-4" /> {t('schedule_recipe')}
+                  </button>
+                  
                   <button
                     type="button"
                     onClick={() =>
@@ -1064,6 +1075,25 @@ const RecipeDetail: React.FC<RecipeDetailProps> = ({
           versionA={compareVersions.versionA}
           versionB={compareVersions.versionB}
           onClose={() => setCompareVersions(null)}
+        />
+      )}
+      
+      {/* Recipe Scheduler Modal */}
+      {isScheduleModalOpen && (
+        <RecipeScheduler
+          recipe={recipe}
+          teamMembers={users}
+          existingSchedules={[]}
+          onClose={() => setIsScheduleModalOpen(false)}
+          onSave={(schedule) => {
+            // TODO: Handle save schedule
+            console.log('Schedule saved:', schedule);
+            toast({
+              title: t('recipe_scheduled'),
+              variant: 'success'
+            });
+            setIsScheduleModalOpen(false);
+          }}
         />
       )}
     </>

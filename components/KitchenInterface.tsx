@@ -77,6 +77,10 @@ import type { HandoverNote } from './collaboration/ShiftHandoverNotes';
 import type { Notification as CollabNotification } from './collaboration/NotificationCenter';
 import ChefCopilot from './ai/ChefCopilot';
 import ApiKeyPromptModal from './common/ApiKeyPromptModal';
+import { SchedulesView } from './schedules/SchedulesView';
+import { KitchenDisplayView } from './kds/KitchenDisplayView';
+import { EmailReportsView } from './reports/EmailReportsView';
+import { useTranslation } from '../i18n';
 
 // 🆕 Kitchen–Service view
 import KitchenServiceView from './kitchen/KitchenServiceView';
@@ -1577,6 +1581,24 @@ const KitchenInterface: React.FC<KitchenInterfaceProps> = (props) => {
                   }
                 })
               );
+            }}
+          />
+        );
+      
+      case 'schedules':
+        return (
+          <SchedulesView
+            schedules={recipeSchedules.filter(s => s.teamId === currentTeamId)}
+            recipes={teamRecipesFiltered}
+            users={teamUsers}
+            currentUserId={user.id}
+            onUpdateSchedule={(schedule) => {
+              setRecipeSchedules(prev =>
+                prev.map(s => s.id === schedule.id ? schedule : s)
+              );
+            }}
+            onDeleteSchedule={(scheduleId) => {
+              setRecipeSchedules(prev => prev.filter(s => s.id !== scheduleId));
             }}
           />
         );

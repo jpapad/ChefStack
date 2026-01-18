@@ -357,7 +357,8 @@ export type View =
   | 'user_manual'
   | 'analytics'
   | 'collaboration'
-  | 'copilot';
+  | 'copilot'
+  | 'schedules';
 
 export type LogoPosition = 'top' | 'bottom' | 'left' | 'right';
 

@@ -53,6 +53,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     nav_dashboard: 'Πίνακας Ελέγχου',
     nav_recipes: 'Συνταγές',
+    nav_schedules: 'Προγραμματισμένες',
     nav_menus: 'Μενού',
     nav_shopping_list: 'Λίστα Αγορών',
     nav_labels: 'Ετικέτες',
@@ -621,6 +622,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     nav_dashboard: 'Dashboard',
     nav_recipes: 'Recipes',
+    nav_schedules: 'Scheduled',
     nav_menus: 'Menus',
     nav_shopping_list: 'Shopping List',
     nav_labels: 'Labels',
