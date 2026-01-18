@@ -174,7 +174,7 @@ const AppContent: React.FC = () => {
 
               if (
                 lastUsedTeamId &&
-                foundUser.memberships.some(
+                (foundUser.memberships || []).some(
                   (m) => m.teamId === lastUsedTeamId
                 )
               ) {
@@ -251,7 +251,7 @@ const AppContent: React.FC = () => {
 
         if (
           lastUsedTeamId &&
-          user.memberships.some((m) => m.teamId === lastUsedTeamId)
+          (user.memberships || []).some((m) => m.teamId === lastUsedTeamId)
         ) {
           setCurrentTeamId(lastUsedTeamId);
           console.log('📍 Restored last team:', lastUsedTeamId);
@@ -325,7 +325,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleSetCurrentTeam = (teamId: string) => {
-    const userIsMember = currentUser?.memberships.some(
+    const userIsMember = (currentUser?.memberships || []).some(
       (m) => m.teamId === teamId
     );
     if (userIsMember) {
